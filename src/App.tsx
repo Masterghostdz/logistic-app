@@ -1,27 +1,62 @@
+
+import React from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Index from "./pages/Index";
-import NotFound from "./pages/NotFound";
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { SettingsProvider } from './contexts/SettingsContext';
+import LoginForm from './components/LoginForm';
+import Header from './components/Header';
+import ChauffeurDashboard from './components/dashboards/ChauffeurDashboard';
+import PlanificateurDashboard from './components/dashboards/PlanificateurDashboard';
+import FinancierDashboard from './components/dashboards/FinancierDashboard';
+import AdminDashboard from './components/dashboards/AdminDashboard';
 
-const queryClient = new QueryClient();
+const AppContent = () => {
+  const { user, isAuthenticated } = useAuth();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
+  if (!isAuthenticated || !user) {
+    return <LoginForm />;
+  }
+
+  const renderDashboard = () => {
+    switch (user.role) {
+      case 'chauffeur':
+        return <ChauffeurDashboard />;
+      case 'planificateur':
+        return <PlanificateurDashboard />;
+      case 'financier':
+      case 'financier_unite':
+        return <FinancierDashboard />;
+      case 'admin':
+        return <AdminDashboard />;
+      default:
+        return <div>Rôle non reconnu</div>;
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <Header />
+      <main className="flex-1">
+        {renderDashboard()}
+      </main>
+    </div>
+  );
+};
+
+const App = () => {
+  return (
     <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
+      <SettingsProvider>
+        <AuthProvider>
+          <Toaster />
+          <Sonner />
+          <AppContent />
+        </AuthProvider>
+      </SettingsProvider>
     </TooltipProvider>
-  </QueryClientProvider>
-);
+  );
+};
 
 export default App;

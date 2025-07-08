@@ -1,12 +1,42 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+
+import React from 'react';
+import { useAuth } from '../contexts/AuthContext';
+import LoginForm from '../components/LoginForm';
+import ChauffeurDashboard from '../components/dashboards/ChauffeurDashboard';
+import PlanificateurDashboard from '../components/dashboards/PlanificateurDashboard';
+import FinancierDashboard from '../components/dashboards/FinancierDashboard';
+import AdminDashboard from '../components/dashboards/AdminDashboard';
+import Header from '../components/Header';
 
 const Index = () => {
+  const { user, isAuthenticated } = useAuth();
+
+  if (!isAuthenticated || !user) {
+    return <LoginForm />;
+  }
+
+  const renderDashboard = () => {
+    switch (user.role) {
+      case 'chauffeur':
+        return <ChauffeurDashboard />;
+      case 'planificateur':
+        return <PlanificateurDashboard />;
+      case 'financier':
+      case 'financier_unite':
+        return <FinancierDashboard />;
+      case 'admin':
+        return <AdminDashboard />;
+      default:
+        return <div>Rôle non reconnu</div>;
+    }
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
-      </div>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <Header />
+      <main className="flex-1">
+        {renderDashboard()}
+      </main>
     </div>
   );
 };
