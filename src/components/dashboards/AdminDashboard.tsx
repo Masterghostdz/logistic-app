@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
@@ -11,31 +10,61 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from '../../hooks/useTranslation';
 import { User } from '../../types';
-import { Plus, Users, Settings, Shield, Activity, Edit, Trash2 } from 'lucide-react';
+import { Plus, Users, Settings, Shield, Activity, Edit, Trash2, Search, Filter } from 'lucide-react';
 import { toast } from 'sonner';
+import PasswordChangeDialog from '../PasswordChangeDialog';
+import SearchAndFilter from '../SearchAndFilter';
 
 const AdminDashboard = () => {
   const { user } = useAuth();
   const { t } = useTranslation();
   const [users, setUsers] = useState<User[]>([]);
+  const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [showNewUser, setShowNewUser] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterRole, setFilterRole] = useState('all');
   const [userForm, setUserForm] = useState({
     username: '',
     fullName: '',
-    email: '',
     phone: '',
     role: 'chauffeur',
-    password: ''
+    password: '',
+    vehicleType: '',
+    employeeType: 'interne'
   });
 
+  const vehicleTypes = [
+    'mini_vehicule', 'fourgon', 'camion_2_5t', 'camion_3_5t', 
+    'camion_5t', 'camion_7_5t', 'camion_10t', 'camion_15t', 'camion_20t'
+  ];
+
   useEffect(() => {
-    // Charger les utilisateurs depuis localStorage
     const savedUsers = localStorage.getItem('logigrine_users');
     if (savedUsers) {
-      setUsers(JSON.parse(savedUsers));
+      const loadedUsers = JSON.parse(savedUsers);
+      setUsers(loadedUsers);
+      setFilteredUsers(loadedUsers);
     }
   }, []);
+
+  useEffect(() => {
+    let filtered = users;
+
+    if (searchTerm) {
+      filtered = filtered.filter(u => 
+        u.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        u.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        u.phone.includes(searchTerm)
+      );
+    }
+
+    if (filterRole !== 'all') {
+      filtered = filtered.filter(u => u.role === filterRole);
+    }
+
+    setFilteredUsers(filtered);
+  }, [users, searchTerm, filterRole]);
 
   const handleCreateUser = (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,11 +79,14 @@ const AdminDashboard = () => {
       fullName: userForm.fullName,
       firstName,
       lastName,
-      email: userForm.email,
       phone: userForm.phone,
       createdAt: new Date().toISOString(),
       isActive: true,
-      password: userForm.password
+      password: userForm.password,
+      ...(userForm.role === 'chauffeur' && {
+        vehicleType: userForm.vehicleType as any,
+        employeeType: userForm.employeeType as any
+      })
     };
 
     const updatedUsers = [...users, newUser];
@@ -65,10 +97,11 @@ const AdminDashboard = () => {
     setUserForm({
       username: '',
       fullName: '',
-      email: '',
       phone: '',
       role: 'chauffeur',
-      password: ''
+      password: '',
+      vehicleType: '',
+      employeeType: 'interne'
     });
     
     setShowNewUser(false);
@@ -80,10 +113,11 @@ const AdminDashboard = () => {
     setUserForm({
       username: userToEdit.username,
       fullName: userToEdit.fullName,
-      email: userToEdit.email || '',
       phone: userToEdit.phone,
       role: userToEdit.role,
-      password: userToEdit.password || ''
+      password: userToEdit.password || '',
+      vehicleType: userToEdit.vehicleType || '',
+      employeeType: userToEdit.employeeType || 'interne'
     });
     setShowNewUser(true);
   };
@@ -102,10 +136,13 @@ const AdminDashboard = () => {
       fullName: userForm.fullName,
       firstName,
       lastName,
-      email: userForm.email,
       phone: userForm.phone,
       role: userForm.role as any,
-      password: userForm.password
+      password: userForm.password,
+      ...(userForm.role === 'chauffeur' && {
+        vehicleType: userForm.vehicleType as any,
+        employeeType: userForm.employeeType as any
+      })
     };
 
     const updatedUsers = users.map(u => 
@@ -114,14 +151,14 @@ const AdminDashboard = () => {
     setUsers(updatedUsers);
     localStorage.setItem('logigrine_users', JSON.stringify(updatedUsers));
     
-    // Réinitialiser le formulaire
     setUserForm({
       username: '',
       fullName: '',
-      email: '',
       phone: '',
       role: 'chauffeur',
-      password: ''
+      password: '',
+      vehicleType: '',
+      employeeType: 'interne'
     });
     
     setEditingUser(null);
@@ -150,6 +187,13 @@ const AdminDashboard = () => {
     setUsers(updatedUsers);
     localStorage.setItem('logigrine_users', JSON.stringify(updatedUsers));
     toast.success('Statut utilisateur modifié');
+  };
+
+  const getDisplayName = (user: User) => {
+    if (user.role === 'chauffeur' && user.employeeType === 'externe') {
+      return `TP - ${user.fullName}`;
+    }
+    return user.fullName;
   };
 
   const getRoleBadgeColor = (role: string) => {
@@ -187,6 +231,8 @@ const AdminDashboard = () => {
     financierUsers: users.filter(u => u.role === 'financier' || u.role === 'financier_unite').length
   };
 
+  const filterOptions = roleOptions.map(role => ({ value: role.value, label: role.label }));
+
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
@@ -199,102 +245,128 @@ const AdminDashboard = () => {
             Gestion complète du système Logigrine
           </p>
         </div>
-        <Dialog open={showNewUser} onOpenChange={setShowNewUser}>
-          <DialogTrigger asChild>
-            <Button className="flex items-center gap-2">
-              <Plus className="h-4 w-4" />
-              {editingUser ? 'Modifier utilisateur' : 'Nouvel utilisateur'}
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>{editingUser ? 'Modifier utilisateur' : 'Créer un utilisateur'}</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={editingUser ? handleUpdateUser : handleCreateUser} className="space-y-4">
-              <div>
-                <Label htmlFor="username">Nom d'utilisateur</Label>
-                <Input
-                  id="username"
-                  value={userForm.username}
-                  onChange={(e) => setUserForm({...userForm, username: e.target.value})}
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="fullName">Nom & Prénom</Label>
-                <Input
-                  id="fullName"
-                  value={userForm.fullName}
-                  onChange={(e) => setUserForm({...userForm, fullName: e.target.value})}
-                  required
-                  placeholder="Jean Martin"
-                />
-              </div>
-              <div>
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={userForm.email}
-                  onChange={(e) => setUserForm({...userForm, email: e.target.value})}
-                />
-              </div>
-              <div>
-                <Label htmlFor="phone">Téléphone</Label>
-                <Input
-                  id="phone"
-                  value={userForm.phone}
-                  onChange={(e) => setUserForm({...userForm, phone: e.target.value})}
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="role">Rôle</Label>
-                <Select value={userForm.role} onValueChange={(value) => setUserForm({...userForm, role: value})}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {roleOptions.map(role => (
-                      <SelectItem key={role.value} value={role.value}>
-                        {role.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="password">Mot de passe</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={userForm.password}
-                  onChange={(e) => setUserForm({...userForm, password: e.target.value})}
-                  required
-                />
-              </div>
-              <div className="flex justify-end space-x-2">
-                <Button type="button" variant="outline" onClick={() => {
-                  setShowNewUser(false);
-                  setEditingUser(null);
-                  setUserForm({
-                    username: '',
-                    fullName: '',
-                    email: '',
-                    phone: '',
-                    role: 'chauffeur',
-                    password: ''
-                  });
-                }}>
-                  {t('forms.cancel')}
-                </Button>
-                <Button type="submit">
-                  {editingUser ? 'Modifier' : t('forms.save')}
-                </Button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
+        <div className="flex gap-2">
+          <PasswordChangeDialog />
+          <Dialog open={showNewUser} onOpenChange={setShowNewUser}>
+            <DialogTrigger asChild>
+              <Button className="flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                {editingUser ? 'Modifier utilisateur' : 'Nouvel utilisateur'}
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle>{editingUser ? 'Modifier utilisateur' : 'Créer un utilisateur'}</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={editingUser ? handleUpdateUser : handleCreateUser} className="space-y-4">
+                <div>
+                  <Label htmlFor="username">Nom d'utilisateur</Label>
+                  <Input
+                    id="username"
+                    value={userForm.username}
+                    onChange={(e) => setUserForm({...userForm, username: e.target.value})}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="fullName">Nom & Prénom</Label>
+                  <Input
+                    id="fullName"
+                    value={userForm.fullName}
+                    onChange={(e) => setUserForm({...userForm, fullName: e.target.value})}
+                    required
+                    placeholder="Jean Martin"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="phone">Téléphone</Label>
+                  <Input
+                    id="phone"
+                    value={userForm.phone}
+                    onChange={(e) => setUserForm({...userForm, phone: e.target.value})}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="role">Rôle</Label>
+                  <Select value={userForm.role} onValueChange={(value) => setUserForm({...userForm, role: value})}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {roleOptions.map(role => (
+                        <SelectItem key={role.value} value={role.value}>
+                          {role.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {userForm.role === 'chauffeur' && (
+                  <>
+                    <div>
+                      <Label htmlFor="vehicleType">Type de véhicule</Label>
+                      <Select value={userForm.vehicleType} onValueChange={(value) => setUserForm({...userForm, vehicleType: value})}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Sélectionner un véhicule" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {vehicleTypes.map(type => (
+                            <SelectItem key={type} value={type}>
+                              {t(`vehicles.${type}`)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="employeeType">Type d'employé</Label>
+                      <Select value={userForm.employeeType} onValueChange={(value) => setUserForm({...userForm, employeeType: value})}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="interne">Interne</SelectItem>
+                          <SelectItem value="externe">Externe</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </>
+                )}
+                <div>
+                  <Label htmlFor="password">Mot de passe</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    value={userForm.password}
+                    onChange={(e) => setUserForm({...userForm, password: e.target.value})}
+                    required
+                  />
+                </div>
+                <div className="flex justify-end space-x-2">
+                  <Button type="button" variant="outline" onClick={() => {
+                    setShowNewUser(false);
+                    setEditingUser(null);
+                    setUserForm({
+                      username: '',
+                      fullName: '',
+                      phone: '',
+                      role: 'chauffeur',
+                      password: '',
+                      vehicleType: '',
+                      employeeType: 'interne'
+                    });
+                  }}>
+                    {t('forms.cancel')}
+                  </Button>
+                  <Button type="submit">
+                    {editingUser ? 'Modifier' : t('forms.save')}
+                  </Button>
+                </div>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       {/* Statistiques */}
@@ -365,8 +437,18 @@ const AdminDashboard = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
+              <SearchAndFilter
+                searchValue={searchTerm}
+                onSearchChange={setSearchTerm}
+                filterValue={filterRole}
+                onFilterChange={setFilterRole}
+                filterOptions={filterOptions}
+                searchPlaceholder="Rechercher par nom, username ou téléphone..."
+                filterPlaceholder="Filtrer par rôle"
+              />
+              
               <div className="space-y-4">
-                {users.map((u) => (
+                {filteredUsers.map((u) => (
                   <div key={u.id} className="flex items-center justify-between p-4 border rounded-lg">
                     <div className="flex items-center gap-4">
                       <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
@@ -375,9 +457,14 @@ const AdminDashboard = () => {
                         </span>
                       </div>
                       <div>
-                        <div className="font-medium">{u.fullName}</div>
-                        <div className="text-sm text-gray-500">{u.email}</div>
+                        <div className="font-medium">{getDisplayName(u)}</div>
                         <div className="text-sm text-gray-500">@{u.username}</div>
+                        <div className="text-sm text-gray-500">{u.phone}</div>
+                        {u.role === 'chauffeur' && u.vehicleType && (
+                          <div className="text-xs text-gray-400">
+                            {t(`vehicles.${u.vehicleType}`)} - {u.employeeType}
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div className="flex items-center gap-2">

@@ -1,27 +1,25 @@
-
 export interface User {
   id: string;
   username: string;
   role: 'chauffeur' | 'planificateur' | 'financier' | 'financier_unite' | 'admin';
   firstName: string;
   lastName: string;
-  fullName: string; // Added fullName property
-  email?: string; // Optional for chauffeur accounts
+  fullName: string;
   phone: string;
   avatar?: string;
   createdAt: string;
   isActive: boolean;
-  password?: string; // For password management
+  password?: string;
   vehicleType?: 'mini_vehicule' | 'fourgon' | 'camion_2_5t' | 'camion_3_5t' | 'camion_5t' | 'camion_7_5t' | 'camion_10t' | 'camion_15t' | 'camion_20t';
   employeeType?: 'interne' | 'externe';
 }
 
 export interface Declaration {
   id: string;
-  number: string; // Format: DCP/AA/MM/XXXX
-  programNumber: string; // XXXX part that user enters manually
-  year: string; // AA part (24,25,26,27,28)
-  month: string; // MM part (01-12)
+  number: string;
+  programNumber: string;
+  year: string;
+  month: string;
   chauffeurId: string;
   chauffeurName: string;
   distance?: number;
@@ -39,15 +37,18 @@ export interface Chauffeur {
   id: string;
   firstName: string;
   lastName: string;
-  fullName: string; // Added fullName property
+  fullName: string;
   username: string;
   password: string;
-  email?: string;
   phone: string;
   vehicleType: 'mini_vehicule' | 'fourgon' | 'camion_2_5t' | 'camion_3_5t' | 'camion_5t' | 'camion_7_5t' | 'camion_10t' | 'camion_15t' | 'camion_20t';
   employeeType: 'interne' | 'externe';
   isActive: boolean;
   createdAt: string;
+  coordinates?: {
+    lat: number;
+    lng: number;
+  };
 }
 
 export interface Company {
