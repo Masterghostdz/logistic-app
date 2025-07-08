@@ -157,7 +157,8 @@ const PlanificateurDashboard = () => {
     }
   ]);
 
-  const [filterStatus, setFilterStatus] = useState<string>('');
+  const [searchValue, setSearchValue] = useState('');
+  const [filterStatus, setFilterStatus] = useState<string>('all');
   const [showCreateChauffeur, setShowCreateChauffeur] = useState(false);
   const [newChauffeur, setNewChauffeur] = useState({
     firstName: '',
@@ -181,12 +182,22 @@ const PlanificateurDashboard = () => {
   // Filtrage des déclarations
   const filteredDeclarations = useMemo(() => {
     return declarations.filter(declaration => {
-      if (filterStatus && filterStatus !== 'tous' && declaration.status !== filterStatus) {
+      // Filter by search
+      if (searchValue) {
+        const searchLower = searchValue.toLowerCase();
+        if (!declaration.number.toLowerCase().includes(searchLower) &&
+            !declaration.chauffeurName.toLowerCase().includes(searchLower)) {
+          return false;
+        }
+      }
+      
+      // Filter by status
+      if (filterStatus && filterStatus !== 'all' && declaration.status !== filterStatus) {
         return false;
       }
       return true;
     });
-  }, [declarations, filterStatus]);
+  }, [declarations, searchValue, filterStatus]);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -386,15 +397,17 @@ const PlanificateurDashboard = () => {
             </div>
 
             <SearchAndFilter
-              onFilterChange={(filters) => {
-                setFilterStatus(filters.status || '');
-              }}
-              statusOptions={[
-                { value: 'tous', label: 'Tous' },
+              searchValue={searchValue}
+              onSearchChange={setSearchValue}
+              filterValue={filterStatus}
+              onFilterChange={setFilterStatus}
+              filterOptions={[
                 { value: 'en_cours', label: 'En Attente' },
                 { value: 'valide', label: 'Validé' },
                 { value: 'refuse', label: 'Refusé' }
               ]}
+              searchPlaceholder="Rechercher par numéro ou chauffeur..."
+              filterPlaceholder="Filtrer par statut..."
             />
 
             <Card>
