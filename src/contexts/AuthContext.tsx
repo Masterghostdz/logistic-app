@@ -11,9 +11,7 @@ const demoAccounts = [
     username: 'chauffeur',
     password: 'demo123',
     role: 'chauffeur' as const,
-    firstName: 'Jean',
-    lastName: 'Martin',
-    email: 'jean.martin@logigrine.com',
+    fullName: 'Jean Martin',
     phone: '+33 6 12 34 56 78',
     createdAt: new Date().toISOString(),
     isActive: true
@@ -23,8 +21,7 @@ const demoAccounts = [
     username: 'planificateur',
     password: 'demo123',
     role: 'planificateur' as const,
-    firstName: 'Marie',
-    lastName: 'Dubois',
+    fullName: 'Marie Dubois',
     email: 'marie.dubois@logigrine.com',
     phone: '+33 6 23 45 67 89',
     createdAt: new Date().toISOString(),
@@ -35,8 +32,7 @@ const demoAccounts = [
     username: 'financier',
     password: 'demo123',
     role: 'financier' as const,
-    firstName: 'Pierre',
-    lastName: 'Moreau',
+    fullName: 'Pierre Moreau',
     email: 'pierre.moreau@logigrine.com',
     phone: '+33 6 34 56 78 90',
     createdAt: new Date().toISOString(),
@@ -47,8 +43,7 @@ const demoAccounts = [
     username: 'financier_unite',
     password: 'demo123',
     role: 'financier_unite' as const,
-    firstName: 'Sophie',
-    lastName: 'Bernard',
+    fullName: 'Sophie Bernard',
     email: 'sophie.bernard@logigrine.com',
     phone: '+33 6 45 67 89 01',
     createdAt: new Date().toISOString(),
@@ -59,8 +54,7 @@ const demoAccounts = [
     username: 'admin',
     password: 'admin123',
     role: 'admin' as const,
-    firstName: 'Admin',
-    lastName: 'System',
+    fullName: 'Admin System',
     email: 'admin@logigrine.com',
     phone: '+33 6 56 78 90 12',
     createdAt: new Date().toISOString(),
@@ -73,7 +67,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    // Vérifier s'il y a un utilisateur connecté dans localStorage
+    // Initialize demo accounts in localStorage if not exists
+    const existingUsers = localStorage.getItem('logigrine_users');
+    if (!existingUsers) {
+      localStorage.setItem('logigrine_users', JSON.stringify(demoAccounts));
+    }
+
+    // Check for saved user
     const savedUser = localStorage.getItem('logigrine_user');
     if (savedUser) {
       try {
@@ -88,8 +88,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, []);
 
   const login = async (username: string, password: string): Promise<boolean> => {
-    const account = demoAccounts.find(
-      acc => acc.username === username && acc.password === password
+    const users = JSON.parse(localStorage.getItem('logigrine_users') || '[]');
+    const account = users.find(
+      (acc: any) => acc.username === username && acc.password === password && acc.isActive
     );
 
     if (account) {
@@ -103,6 +104,23 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return false;
   };
 
+  const changePassword = async (oldPassword: string, newPassword: string): Promise<boolean> => {
+    if (!user) return false;
+
+    const users = JSON.parse(localStorage.getItem('logigrine_users') || '[]');
+    const userIndex = users.findIndex((u: any) => u.id === user.id);
+    
+    if (userIndex === -1 || users[userIndex].password !== oldPassword) {
+      return false;
+    }
+
+    // Update password
+    users[userIndex].password = newPassword;
+    localStorage.setItem('logigrine_users', JSON.stringify(users));
+    
+    return true;
+  };
+
   const logout = () => {
     setUser(null);
     setIsAuthenticated(false);
@@ -110,7 +128,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, isAuthenticated }}>
+    <AuthContext.Provider value={{ user, login, logout, changePassword, isAuthenticated }}>
       {children}
     </AuthContext.Provider>
   );

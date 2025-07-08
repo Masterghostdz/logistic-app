@@ -1,20 +1,22 @@
-
 export interface User {
   id: string;
   username: string;
   role: 'chauffeur' | 'planificateur' | 'financier' | 'financier_unite' | 'admin';
-  firstName: string;
-  lastName: string;
-  email: string;
+  fullName: string; // Changed from firstName/lastName to single field
+  email?: string; // Optional for chauffeur accounts
   phone: string;
   avatar?: string;
   createdAt: string;
   isActive: boolean;
+  password?: string; // For password management
 }
 
 export interface Declaration {
   id: string;
   number: string; // Format: DCP/AA/MM/XXXX
+  programNumber: string; // XXXX part that user enters manually
+  year: string; // AA part (24,25,26,27,28)
+  month: string; // MM part (01-12)
   chauffeurId: string;
   chauffeurName: string;
   distance?: number;
@@ -30,9 +32,9 @@ export interface Declaration {
 
 export interface Chauffeur {
   id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
+  fullName: string; // Changed from firstName/lastName
+  username: string;
+  password: string;
   phone: string;
   vehicleType: 'mini_vehicule' | 'fourgon' | 'camion_2_5t' | 'camion_3_5t' | 'camion_5t' | 'camion_7_5t' | 'camion_10t' | 'camion_15t' | 'camion_20t';
   employeeType: 'interne' | 'externe';
@@ -40,10 +42,17 @@ export interface Chauffeur {
   createdAt: string;
 }
 
+export interface Company {
+  id: string;
+  name: string;
+  createdAt: string;
+}
+
 export interface Warehouse {
   id: string;
   name: string;
-  company: string;
+  companyId: string;
+  companyName: string;
   phone: string;
   address: string;
   coordinates: {
@@ -72,6 +81,7 @@ export interface AuthContextType {
   user: User | null;
   login: (username: string, password: string) => Promise<boolean>;
   logout: () => void;
+  changePassword: (oldPassword: string, newPassword: string) => Promise<boolean>;
   isAuthenticated: boolean;
 }
 
