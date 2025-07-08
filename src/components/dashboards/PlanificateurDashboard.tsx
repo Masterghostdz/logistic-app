@@ -1,749 +1,513 @@
-
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
+import React, { useState, useMemo } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
+import { Textarea } from '../ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
-import { useAuth } from '../../contexts/AuthContext';
-import { useTranslation } from '../../hooks/useTranslation';
-import { Declaration, Chauffeur, Warehouse, User } from '../../types';
-import { CheckCircle, XCircle, Clock, Users, MapPin, Plus, Edit, Trash2, FileText } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
 import { toast } from 'sonner';
-import OpenStreetMap from '../OpenStreetMap';
-import PasswordChangeDialog from '../PasswordChangeDialog';
+import { 
+  FileText, 
+  Check, 
+  X, 
+  Plus, 
+  Eye, 
+  User, 
+  MapPin,
+  Settings,
+  ClipboardList
+} from 'lucide-react';
+import { Declaration, Chauffeur } from '../../types';
 import SearchAndFilter from '../SearchAndFilter';
+import ProfilePage from '../ProfilePage';
+import TracageSection from '../TracageSection';
 
 const PlanificateurDashboard = () => {
-  const { user } = useAuth();
-  const { t } = useTranslation();
-  const [declarations, setDeclarations] = useState<Declaration[]>([]);
-  const [filteredDeclarations, setFilteredDeclarations] = useState<Declaration[]>([]);
-  const [chauffeurs, setChauffeurs] = useState<Chauffeur[]>([]);
-  const [filteredChauffeurs, setFilteredChauffeurs] = useState<Chauffeur[]>([]);
-  const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
-  const [filteredWarehouses, setFilteredWarehouses] = useState<Warehouse[]>([]);
-  
-  // Search and filter states
-  const [declarationSearch, setDeclarationSearch] = useState('');
-  const [declarationFilter, setDeclarationFilter] = useState('all');
-  const [chauffeurSearch, setChauffeurSearch] = useState('');
-  const [chauffeurFilter, setChauffeurFilter] = useState('all');
-  const [warehouseSearch, setWarehouseSearch] = useState('');
-  const [warehouseFilter, setWarehouseFilter] = useState('all');
-  
-  // Modal states
-  const [showNewChauffeur, setShowNewChauffeur] = useState(false);
-  const [showNewWarehouse, setShowNewWarehouse] = useState(false);
-  const [editingChauffeur, setEditingChauffeur] = useState<Chauffeur | null>(null);
-  const [editingWarehouse, setEditingWarehouse] = useState<Warehouse | null>(null);
-  
-  const [chauffeurForm, setChauffeurForm] = useState({
-    fullName: '',
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [declarations, setDeclarations] = useState<Declaration[]>([
+    {
+      id: '1',
+      number: 'DECL-2024-001',
+      programNumber: 'PROG-001',
+      year: '2024',
+      month: 'Janvier',
+      chauffeurId: '1',
+      chauffeurName: 'Ahmed Benali',
+      distance: 1250,
+      deliveryFees: 75000,
+      notes: 'Livraison dans les délais',
+      photos: [],
+      status: 'en_cours',
+      createdAt: '2024-01-15T10:30:00Z'
+    },
+    {
+      id: '2',
+      number: 'DECL-2024-002',
+      programNumber: 'PROG-002',
+      year: '2024',
+      month: 'Février',
+      chauffeurId: '2',
+      chauffeurName: 'Fatima Said',
+      distance: 800,
+      deliveryFees: 48000,
+      notes: 'Retard dû à la circulation',
+      photos: [],
+      status: 'valide',
+      createdAt: '2024-02-20T09:15:00Z',
+      validatedAt: '2024-02-22T14:00:00Z',
+      validatedBy: 'Planificateur'
+    },
+    {
+      id: '3',
+      number: 'DECL-2024-003',
+      programNumber: 'PROG-001',
+      year: '2024',
+      month: 'Janvier',
+      chauffeurId: '3',
+      chauffeurName: 'Ali Hassan',
+      distance: 2000,
+      deliveryFees: 120000,
+      notes: 'Livraison urgente',
+      photos: [],
+      status: 'valide',
+      createdAt: '2024-01-28T16:45:00Z',
+      validatedAt: '2024-01-30T11:30:00Z',
+      validatedBy: 'Planificateur'
+    },
+    {
+      id: '4',
+      number: 'DECL-2024-004',
+      programNumber: 'PROG-003',
+      year: '2024',
+      month: 'Mars',
+      chauffeurId: '1',
+      chauffeurName: 'Ahmed Benali',
+      distance: 600,
+      deliveryFees: 36000,
+      notes: 'Problème technique avec le véhicule',
+      photos: [],
+      status: 'refuse',
+      createdAt: '2024-03-05T14:00:00Z',
+      validatedAt: '2024-03-07T10:00:00Z',
+      validatedBy: 'Planificateur',
+      refusalReason: 'Photos manquantes'
+    },
+    {
+      id: '5',
+      number: 'DECL-2024-005',
+      programNumber: 'PROG-002',
+      year: '2024',
+      month: 'Février',
+      chauffeurId: '2',
+      chauffeurName: 'Fatima Said',
+      distance: 1500,
+      deliveryFees: 90000,
+      notes: 'Livraison effectuée sans incident',
+      photos: [],
+      status: 'valide',
+      createdAt: '2024-02-10T12:00:00Z',
+      validatedAt: '2024-02-12T15:45:00Z',
+      validatedBy: 'Planificateur'
+    }
+  ]);
+
+  const [chauffeurs, setChauffeurs] = useState<Chauffeur[]>([
+    {
+      id: '1',
+      firstName: 'Ahmed',
+      lastName: 'Benali',
+      fullName: 'Ahmed Benali',
+      username: 'abenali',
+      password: 'demo123',
+      phone: '+213 55 12 34 56',
+      vehicleType: 'Camion 3.5T',
+      employeeType: 'interne',
+      isActive: true,
+      createdAt: new Date().toISOString()
+    },
+    {
+      id: '2',
+      firstName: 'Fatima',
+      lastName: 'Said',
+      fullName: 'Fatima Said',
+      username: 'fsaid',
+      password: 'demo123',
+      phone: '+213 66 98 76 54',
+      vehicleType: 'Camionnette',
+      employeeType: 'externe',
+      isActive: true,
+      createdAt: new Date().toISOString()
+    },
+    {
+      id: '3',
+      firstName: 'Ali',
+      lastName: 'Hassan',
+      fullName: 'Ali Hassan',
+      username: 'ahassan',
+      password: 'demo123',
+      phone: '+213 77 55 44 33',
+      vehicleType: 'Utilitaire',
+      employeeType: 'interne',
+      isActive: false,
+      createdAt: new Date().toISOString()
+    }
+  ]);
+
+  const [filterStatus, setFilterStatus] = useState<string>('');
+  const [showCreateChauffeur, setShowCreateChauffeur] = useState(false);
+  const [newChauffeur, setNewChauffeur] = useState({
+    firstName: '',
+    lastName: '',
     username: '',
     password: '',
     phone: '',
     vehicleType: '',
-    employeeType: 'interne'
-  });
-  
-  const [warehouseForm, setWarehouseForm] = useState({
-    name: '',
-    companyName: '',
-    phone: '',
-    address: '',
-    lat: '',
-    lng: ''
+    employeeType: 'interne' as 'interne' | 'externe'
   });
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  // Statistiques
+  const stats = useMemo(() => {
+    const enAttente = declarations.filter(d => d.status === 'en_cours').length;
+    
+    return {
+      enAttente
+    };
+  }, [declarations]);
 
-  const loadData = () => {
-    try {
-      // Charger toutes les déclarations
-      const allDeclarations: Declaration[] = [];
-      const savedUsers = localStorage.getItem('logigrine_users') || '[]';
-      const users = JSON.parse(savedUsers);
-      
-      users.forEach((u: any) => {
-        if (u.role === 'chauffeur') {
-          const userDeclarations = localStorage.getItem(`declarations_${u.id}`);
-          if (userDeclarations) {
-            allDeclarations.push(...JSON.parse(userDeclarations));
-          }
-        }
-      });
-      
-      // Trier les déclarations: en_cours en premier
-      allDeclarations.sort((a, b) => {
-        if (a.status === 'en_cours' && b.status !== 'en_cours') return -1;
-        if (a.status !== 'en_cours' && b.status === 'en_cours') return 1;
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-      });
-      
-      setDeclarations(allDeclarations);
-      setFilteredDeclarations(allDeclarations);
-      
-      // Charger les chauffeurs depuis les utilisateurs
-      const chauffeurUsers = users.filter((u: any) => u.role === 'chauffeur');
-      const chauffeursData = chauffeurUsers.map((u: any) => ({
-        id: u.id,
-        fullName: u.fullName,
-        firstName: u.firstName,
-        lastName: u.lastName,
-        username: u.username,
-        password: u.password || 'demo123',
-        phone: u.phone,
-        vehicleType: u.vehicleType || 'mini_vehicule',
-        employeeType: u.employeeType || 'interne',
-        isActive: u.isActive,
-        createdAt: u.createdAt,
-        coordinates: u.coordinates || null
-      }));
-      setChauffeurs(chauffeursData);
-      setFilteredChauffeurs(chauffeursData);
-      
-      // Charger les entrepôts
-      const savedWarehouses = localStorage.getItem('warehouses');
-      if (savedWarehouses) {
-        const warehousesData = JSON.parse(savedWarehouses);
-        setWarehouses(warehousesData);
-        setFilteredWarehouses(warehousesData);
+  // Filtrage des déclarations
+  const filteredDeclarations = useMemo(() => {
+    return declarations.filter(declaration => {
+      if (filterStatus && filterStatus !== 'tous' && declaration.status !== filterStatus) {
+        return false;
       }
-    } catch (error) {
-      console.error('Error loading data:', error);
-      toast.error('Erreur lors du chargement des données');
-    }
-  };
-
-  // Filter declarations
-  useEffect(() => {
-    let filtered = declarations;
-
-    if (declarationSearch) {
-      filtered = filtered.filter(d => 
-        d.number.toLowerCase().includes(declarationSearch.toLowerCase()) ||
-        d.chauffeurName.toLowerCase().includes(declarationSearch.toLowerCase()) ||
-        d.programNumber.includes(declarationSearch)
-      );
-    }
-
-    if (declarationFilter !== 'all') {
-      filtered = filtered.filter(d => d.status === declarationFilter);
-    }
-
-    // Toujours garder les en_cours en premier
-    filtered.sort((a, b) => {
-      if (a.status === 'en_cours' && b.status !== 'en_cours') return -1;
-      if (a.status !== 'en_cours' && b.status === 'en_cours') return 1;
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      return true;
     });
+  }, [declarations, filterStatus]);
 
-    setFilteredDeclarations(filtered);
-  }, [declarations, declarationSearch, declarationFilter]);
-
-  // Filter chauffeurs
-  useEffect(() => {
-    let filtered = chauffeurs;
-
-    if (chauffeurSearch) {
-      filtered = filtered.filter(c => 
-        c.fullName.toLowerCase().includes(chauffeurSearch.toLowerCase()) ||
-        c.username.toLowerCase().includes(chauffeurSearch.toLowerCase()) ||
-        c.phone.includes(chauffeurSearch)
-      );
-    }
-
-    if (chauffeurFilter !== 'all') {
-      filtered = filtered.filter(c => c.employeeType === chauffeurFilter);
-    }
-
-    setFilteredChauffeurs(filtered);
-  }, [chauffeurs, chauffeurSearch, chauffeurFilter]);
-
-  // Filter warehouses
-  useEffect(() => {
-    let filtered = warehouses;
-
-    if (warehouseSearch) {
-      filtered = filtered.filter(w => 
-        w.name.toLowerCase().includes(warehouseSearch.toLowerCase()) ||
-        w.companyName.toLowerCase().includes(warehouseSearch.toLowerCase()) ||
-        w.address.toLowerCase().includes(warehouseSearch.toLowerCase())
-      );
-    }
-
-    setFilteredWarehouses(filtered);
-  }, [warehouses, warehouseSearch, warehouseFilter]);
-
-  const handleValidateDeclaration = (id: string) => {
-    const updatedDeclarations = declarations.map(d => 
-      d.id === id ? { ...d, status: 'valide' as const, validatedAt: new Date().toISOString(), validatedBy: user?.fullName } : d
-    );
-    setDeclarations(updatedDeclarations);
-    
-    // Sauvegarder dans localStorage
-    const declaration = declarations.find(d => d.id === id);
-    if (declaration) {
-      const userDeclarations = JSON.parse(localStorage.getItem(`declarations_${declaration.chauffeurId}`) || '[]');
-      const updatedUserDeclarations = userDeclarations.map((d: Declaration) => 
-        d.id === id ? { ...d, status: 'valide', validatedAt: new Date().toISOString(), validatedBy: user?.fullName } : d
-      );
-      localStorage.setItem(`declarations_${declaration.chauffeurId}`, JSON.stringify(updatedUserDeclarations));
-    }
-    
-    toast.success('Déclaration validée');
-  };
-
-  const handleRefuseDeclaration = (id: string) => {
-    const reason = prompt('Raison du refus:');
-    if (!reason) return;
-    
-    const updatedDeclarations = declarations.map(d => 
-      d.id === id ? { ...d, status: 'refuse' as const, refusalReason: reason } : d
-    );
-    setDeclarations(updatedDeclarations);
-    
-    // Sauvegarder dans localStorage
-    const declaration = declarations.find(d => d.id === id);
-    if (declaration) {
-      const userDeclarations = JSON.parse(localStorage.getItem(`declarations_${declaration.chauffeurId}`) || '[]');
-      const updatedUserDeclarations = userDeclarations.map((d: Declaration) => 
-        d.id === id ? { ...d, status: 'refuse', refusalReason: reason } : d
-      );
-      localStorage.setItem(`declarations_${declaration.chauffeurId}`, JSON.stringify(updatedUserDeclarations));
-    }
-    
-    toast.success('Déclaration refusée');
-  };
-
-  const handleDeleteDeclaration = (id: string) => {
-    if (!confirm('Êtes-vous sûr de vouloir supprimer cette déclaration ?')) return;
-    
-    const declaration = declarations.find(d => d.id === id);
-    if (declaration) {
-      // Supprimer de la liste locale
-      setDeclarations(declarations.filter(d => d.id !== id));
-      
-      // Supprimer du localStorage du chauffeur
-      const userDeclarations = JSON.parse(localStorage.getItem(`declarations_${declaration.chauffeurId}`) || '[]');
-      const updatedUserDeclarations = userDeclarations.filter((d: Declaration) => d.id !== id);
-      localStorage.setItem(`declarations_${declaration.chauffeurId}`, JSON.stringify(updatedUserDeclarations));
-      
-      toast.success('Déclaration supprimée');
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'en_cours':
+        return <Badge className="bg-yellow-100 text-yellow-800">En Attente</Badge>;
+      case 'valide':
+        return <Badge className="bg-green-100 text-green-800">Validé</Badge>;
+      case 'refuse':
+        return <Badge className="bg-red-100 text-red-800">Refusé</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
     }
   };
 
-  const handleCreateChauffeur = (e: React.FormEvent) => {
+  const handleCreateChauffeur = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    try {
-      const nameParts = chauffeurForm.fullName.trim().split(' ');
-      const firstName = nameParts[0] || '';
-      const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
-      
-      const newChauffeurId = Date.now().toString();
-      
-      // Créer le chauffeur dans la liste des chauffeurs  
-      const newChauffeur: Chauffeur = {
-        id: newChauffeurId,
-        fullName: chauffeurForm.fullName,
-        firstName,
-        lastName,
-        username: chauffeurForm.username,
-        password: chauffeurForm.password,
-        phone: chauffeurForm.phone,
-        vehicleType: chauffeurForm.vehicleType as any,
-        employeeType: chauffeurForm.employeeType as any,
-        isActive: true,
-        createdAt: new Date().toISOString()
-      };
-
-      // Créer l'utilisateur dans la liste des utilisateurs
-      const newUser: User = {
-        id: newChauffeurId,
-        username: chauffeurForm.username,
-        role: 'chauffeur',
-        fullName: chauffeurForm.fullName,
-        firstName,
-        lastName,
-        phone: chauffeurForm.phone,
-        createdAt: new Date().toISOString(),
-        isActive: true,
-        password: chauffeurForm.password,
-        vehicleType: chauffeurForm.vehicleType as any,
-        employeeType: chauffeurForm.employeeType as any
-      };
-
-      // Mettre à jour les chauffeurs localement d'abord
-      const updatedChauffeurs = [...chauffeurs, newChauffeur];
-      setChauffeurs(updatedChauffeurs);
-      
-      // Mettre à jour les utilisateurs dans localStorage
-      const users = JSON.parse(localStorage.getItem('logigrine_users') || '[]');
-      const updatedUsers = [...users, newUser];
-      localStorage.setItem('logigrine_users', JSON.stringify(updatedUsers));
-      
-      // Reset form et fermer le modal
-      setChauffeurForm({
-        fullName: '',
-        username: '',
-        password: '',
-        phone: '',
-        vehicleType: '',
-        employeeType: 'interne'
-      });
-      
-      setShowNewChauffeur(false);
-      setEditingChauffeur(null);
-      toast.success('Chauffeur créé avec succès');
-      
-      // Recharger les données pour s'assurer que tout est synchronisé
-      setTimeout(() => {
-        loadData();
-      }, 100);
-      
-    } catch (error) {
-      console.error('Error creating chauffeur:', error);
-      toast.error('Erreur lors de la création du chauffeur');
+    if (!newChauffeur.firstName || !newChauffeur.lastName || !newChauffeur.username || !newChauffeur.password) {
+      toast.error('Veuillez remplir tous les champs obligatoires');
+      return;
     }
-  };
 
-  const handleEditChauffeur = (chauffeur: Chauffeur) => {
-    setEditingChauffeur(chauffeur);
-    setChauffeurForm({
-      fullName: chauffeur.fullName,
-      username: chauffeur.username,
-      password: chauffeur.password,
-      phone: chauffeur.phone,
-      vehicleType: chauffeur.vehicleType,
-      employeeType: chauffeur.employeeType
-    });
-    setShowNewChauffeur(true);
-  };
-
-  const handleUpdateChauffeur = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!editingChauffeur) return;
-    
-    try {
-      const nameParts = chauffeurForm.fullName.trim().split(' ');
-      const firstName = nameParts[0] || '';
-      const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
-      
-      // Mettre à jour le chauffeur
-      const updatedChauffeur: Chauffeur = {
-        ...editingChauffeur,
-        fullName: chauffeurForm.fullName,
-        firstName,
-        lastName,
-        username: chauffeurForm.username,
-        password: chauffeurForm.password,
-        phone: chauffeurForm.phone,
-        vehicleType: chauffeurForm.vehicleType as any,
-        employeeType: chauffeurForm.employeeType as any
-      };
-
-      // Mettre à jour dans la liste des chauffeurs
-      const updatedChauffeurs = chauffeurs.map(c => 
-        c.id === editingChauffeur.id ? updatedChauffeur : c
-      );
-      setChauffeurs(updatedChauffeurs);
-      
-      // Mettre à jour dans la liste des utilisateurs
-      const users = JSON.parse(localStorage.getItem('logigrine_users') || '[]');
-      const updatedUsers = users.map((u: any) => 
-        u.id === editingChauffeur.id ? {
-          ...u,
-          fullName: chauffeurForm.fullName,
-          firstName,
-          lastName,
-          username: chauffeurForm.username,
-          password: chauffeurForm.password,
-          phone: chauffeurForm.phone,
-          vehicleType: chauffeurForm.vehicleType,
-          employeeType: chauffeurForm.employeeType
-        } : u
-      );
-      localStorage.setItem('logigrine_users', JSON.stringify(updatedUsers));
-      
-      // Reset form
-      setChauffeurForm({
-        fullName: '',
-        username: '',
-        password: '',
-        phone: '',
-        vehicleType: '',
-        employeeType: 'interne'
-      });
-      
-      setEditingChauffeur(null);
-      setShowNewChauffeur(false);
-      toast.success('Chauffeur modifié avec succès');
-      
-    } catch (error) {
-      console.error('Error updating chauffeur:', error);
-      toast.error('Erreur lors de la modification du chauffeur');
-    }
-  };
-
-  const handleDeleteChauffeur = (id: string) => {
-    if (!confirm('Êtes-vous sûr de vouloir supprimer ce chauffeur ?')) return;
-    
-    // Supprimer de la liste des chauffeurs
-    setChauffeurs(chauffeurs.filter(c => c.id !== id));
-    
-    // Supprimer de la liste des utilisateurs
-    const users = JSON.parse(localStorage.getItem('logigrine_users') || '[]');
-    const updatedUsers = users.filter((u: any) => u.id !== id);
-    localStorage.setItem('logigrine_users', JSON.stringify(updatedUsers));
-    
-    // Supprimer les déclarations du chauffeur
-    localStorage.removeItem(`declarations_${id}`);
-    setDeclarations(declarations.filter(d => d.chauffeurId !== id));
-    
-    toast.success('Chauffeur supprimé');
-  };
-
-  const handleCreateWarehouse = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    const newWarehouse: Warehouse = {
+    const chauffeur: Chauffeur = {
       id: Date.now().toString(),
-      name: warehouseForm.name,
-      companyId: '1',
-      companyName: warehouseForm.companyName,
-      phone: warehouseForm.phone,
-      address: warehouseForm.address,
-      coordinates: {
-        lat: parseFloat(warehouseForm.lat),
-        lng: parseFloat(warehouseForm.lng)
-      },
+      firstName: newChauffeur.firstName,
+      lastName: newChauffeur.lastName,
+      fullName: `${newChauffeur.firstName} ${newChauffeur.lastName}`,
+      username: newChauffeur.username,
+      password: newChauffeur.password,
+      phone: newChauffeur.phone,
+      vehicleType: newChauffeur.vehicleType,
+      employeeType: newChauffeur.employeeType,
+      isActive: true,
       createdAt: new Date().toISOString()
     };
 
-    const updatedWarehouses = [...warehouses, newWarehouse];
-    setWarehouses(updatedWarehouses);
-    localStorage.setItem('warehouses', JSON.stringify(updatedWarehouses));
-    
-    setWarehouseForm({
-      name: '',
-      companyName: '',
+    setChauffeurs(prev => [...prev, chauffeur]);
+    setNewChauffeur({
+      firstName: '',
+      lastName: '',
+      username: '',
+      password: '',
       phone: '',
-      address: '',
-      lat: '',
-      lng: ''
+      vehicleType: '',
+      employeeType: 'interne'
     });
-    
-    setShowNewWarehouse(false);
-    toast.success('Entrepôt créé avec succès');
+    setShowCreateChauffeur(false);
+    toast.success('Chauffeur créé avec succès');
   };
 
-  const handleEditWarehouse = (warehouse: Warehouse) => {
-    setEditingWarehouse(warehouse);
-    setWarehouseForm({
-      name: warehouse.name,
-      companyName: warehouse.companyName,
-      phone: warehouse.phone,
-      address: warehouse.address,
-      lat: warehouse.coordinates.lat.toString(),
-      lng: warehouse.coordinates.lng.toString()
-    });
-    setShowNewWarehouse(true);
+  const handleValidateDeclaration = (id: string) => {
+    setDeclarations(prev => prev.map(d => 
+      d.id === id 
+        ? { ...d, status: 'valide', validatedAt: new Date().toISOString(), validatedBy: 'Planificateur' }
+        : d
+    ));
+    toast.success('Déclaration validée');
   };
 
-  const handleUpdateWarehouse = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!editingWarehouse) return;
-    
-    const updatedWarehouse: Warehouse = {
-      ...editingWarehouse,
-      name: warehouseForm.name,
-      companyName: warehouseForm.companyName,
-      phone: warehouseForm.phone,
-      address: warehouseForm.address,
-      coordinates: {
-        lat: parseFloat(warehouseForm.lat),
-        lng: parseFloat(warehouseForm.lng)
-      }
-    };
+  const handleRejectDeclaration = (id: string) => {
+    setDeclarations(prev => prev.map(d => 
+      d.id === id 
+        ? { ...d, status: 'refuse', validatedAt: new Date().toISOString(), validatedBy: 'Planificateur' }
+        : d
+    ));
+    toast.success('Déclaration refusée');
+  };
 
-    const updatedWarehouses = warehouses.map(w => 
-      w.id === editingWarehouse.id ? updatedWarehouse : w
+  const handleEnAttenteClick = () => {
+    setFilterStatus('en_cours');
+    setActiveTab('declarations');
+  };
+
+  if (activeTab === 'profile') {
+    return <ProfilePage onBack={() => setActiveTab('dashboard')} />;
+  }
+
+  if (activeTab === 'tracage') {
+    return (
+      <div className="p-6">
+        <div className="flex items-center gap-4 mb-6">
+          <Button variant="ghost" onClick={() => setActiveTab('dashboard')}>
+            ← Retour au tableau de bord
+          </Button>
+        </div>
+        <TracageSection />
+      </div>
     );
-    setWarehouses(updatedWarehouses);
-    localStorage.setItem('warehouses', JSON.stringify(updatedWarehouses));
-    
-    setWarehouseForm({
-      name: '',
-      companyName: '',
-      phone: '',
-      address: '',
-      lat: '',
-      lng: ''
-    });
-    
-    setEditingWarehouse(null);
-    setShowNewWarehouse(false);
-    toast.success('Entrepôt modifié avec succès');
-  };
-
-  const handleDeleteWarehouse = (id: string) => {
-    if (!confirm('Êtes-vous sûr de vouloir supprimer cet entrepôt ?')) return;
-    
-    const updatedWarehouses = warehouses.filter(w => w.id !== id);
-    setWarehouses(updatedWarehouses);
-    localStorage.setItem('warehouses', JSON.stringify(updatedWarehouses));
-    toast.success('Entrepôt supprimé');
-  };
-
-  const getDisplayName = (chauffeur: Chauffeur) => {
-    return chauffeur.employeeType === 'externe' ? `TP - ${chauffeur.fullName}` : chauffeur.fullName;
-  };
-
-  const vehicleTypes = [
-    'mini_vehicule', 'fourgon', 'camion_2_5t', 'camion_3_5t', 
-    'camion_5t', 'camion_7_5t', 'camion_10t', 'camion_15t', 'camion_20t'
-  ];
-
-  const stats = {
-    totalDeclarations: declarations.length,
-    pendingDeclarations: declarations.filter(d => d.status === 'en_cours').length,
-    totalChauffeurs: chauffeurs.length,
-    totalWarehouses: warehouses.length
-  };
-
-  // Filter options
-  const declarationFilterOptions = [
-    { value: 'en_cours', label: 'En cours' },
-    { value: 'valide', label: 'Validées' },
-    { value: 'refuse', label: 'Refusées' }
-  ];
-
-  const chauffeurFilterOptions = [
-    { value: 'interne', label: 'Internes' },
-    { value: 'externe', label: 'Externes (TP)' }
-  ];
+  }
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            Dashboard - Planificateur
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
-            Gestion des déclarations, chauffeurs et entrepôts
-          </p>
-        </div>
-        <PasswordChangeDialog />
+    <div className="flex h-[calc(100vh-4rem)]">
+      {/* Sidebar */}
+      <div className="w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 p-4">
+        <nav className="space-y-2">
+          <Button
+            variant={activeTab === 'dashboard' ? 'default' : 'ghost'}
+            className="w-full justify-start"
+            onClick={() => setActiveTab('dashboard')}
+          >
+            <ClipboardList className="mr-2 h-4 w-4" />
+            Tableau de bord
+          </Button>
+          <Button
+            variant={activeTab === 'declarations' ? 'default' : 'ghost'}
+            className="w-full justify-start"
+            onClick={() => setActiveTab('declarations')}
+          >
+            <FileText className="mr-2 h-4 w-4" />
+            Déclarations
+          </Button>
+          <Button
+            variant={activeTab === 'chauffeurs' ? 'default' : 'ghost'}
+            className="w-full justify-start"
+            onClick={() => setActiveTab('chauffeurs')}
+          >
+            <User className="mr-2 h-4 w-4" />
+            Chauffeurs
+          </Button>
+          <Button
+            variant={activeTab === 'tracage' ? 'default' : 'ghost'}
+            className="w-full justify-start"
+            onClick={() => setActiveTab('tracage')}
+          >
+            <MapPin className="mr-2 h-4 w-4" />
+            Traçage
+          </Button>
+          <Button
+            variant={activeTab === 'profile' ? 'default' : 'ghost'}
+            className="w-full justify-start"
+            onClick={() => setActiveTab('profile')}
+          >
+            <Settings className="mr-2 h-4 w-4" />
+            Profil
+          </Button>
+        </nav>
       </div>
 
-      {/* Statistiques */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Total Déclarations
-            </CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalDeclarations}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              En Attente de Validation
-            </CardTitle>
-            <Clock className="h-4 w-4 text-orange-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-orange-600">{stats.pendingDeclarations}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Total Chauffeurs
-            </CardTitle>
-            <Users className="h-4 w-4 text-blue-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{stats.totalChauffeurs}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Total Entrepôts
-            </CardTitle>
-            <MapPin className="h-4 w-4 text-green-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">{stats.totalWarehouses}</div>
-          </CardContent>
-        </Card>
-      </div>
+      {/* Main Content */}
+      <div className="flex-1 p-6 overflow-auto">
+        {activeTab === 'dashboard' && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h1 className="text-3xl font-bold">Tableau de bord - Planificateur</h1>
+            </div>
 
-      {/* Onglets */}
-      <Tabs defaultValue="declarations" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="declarations">Déclarations</TabsTrigger>
-          <TabsTrigger value="chauffeurs">Chauffeurs</TabsTrigger>
-          <TabsTrigger value="warehouses">Entrepôts</TabsTrigger>
-          <TabsTrigger value="tracage">Traçage</TabsTrigger>
-        </TabsList>
+            {/* Statistiques */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <Card 
+                className="cursor-pointer hover:shadow-md transition-shadow"
+                onClick={handleEnAttenteClick}
+              >
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">En Attente de Validation</CardTitle>
+                  <FileText className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-yellow-600">{stats.enAttente}</div>
+                  <p className="text-xs text-muted-foreground">Cliquez pour filtrer</p>
+                </CardContent>
+              </Card>
+            </div>
 
-        {/* Déclarations */}
-        <TabsContent value="declarations" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Validation des déclarations</CardTitle>
-              <CardDescription>
-                Gérez et validez les déclarations des chauffeurs
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <SearchAndFilter
-                searchValue={declarationSearch}
-                onSearchChange={setDeclarationSearch}
-                filterValue={declarationFilter}
-                onFilterChange={setDeclarationFilter}
-                filterOptions={declarationFilterOptions}
-                searchPlaceholder="Rechercher par numéro, chauffeur ou programme..."
-                filterPlaceholder="Filtrer par statut"
-              />
-              
-              {filteredDeclarations.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  Aucune déclaration trouvée
-                </div>
-              ) : (
+            {/* Déclarations récentes */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Déclarations récentes</CardTitle>
+              </CardHeader>
+              <CardContent>
                 <div className="space-y-4">
-                  {filteredDeclarations.map((declaration) => (
-                    <div key={declaration.id} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div className="flex items-center gap-4">
-                        <div>
-                          <div className="font-medium">{declaration.number}</div>
-                          <div className="text-sm text-gray-500">
-                            {declaration.chauffeurName} - {new Date(declaration.createdAt).toLocaleDateString()}
-                          </div>
-                        </div>
-                        <div className="text-sm">
-                          {declaration.distance && (
-                            <span className="text-gray-600">
-                              {declaration.distance} km
-                            </span>
-                          )}
-                          {declaration.deliveryFees && (
-                            <span className="text-gray-600 ml-2">
-                              {declaration.deliveryFees} FCFA
-                            </span>
-                          )}
+                  {declarations.slice(0, 5).map((declaration) => (
+                    <div key={declaration.id} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div>
+                        <div className="font-medium">{declaration.number}</div>
+                        <div className="text-sm text-gray-500">
+                          {declaration.chauffeurName} - {declaration.month} {declaration.year}
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Badge className={
-                          declaration.status === 'en_cours' ? 'bg-orange-100 text-orange-800' :
-                          declaration.status === 'valide' ? 'bg-green-100 text-green-800' :
-                          'bg-red-100 text-red-800'
-                        }>
-                          {declaration.status === 'en_cours' ? 'En cours' :
-                           declaration.status === 'valide' ? 'Validée' : 'Refusée'}
-                        </Badge>
-                        <div className="flex gap-1">
-                          {declaration.status === 'en_cours' && (
-                            <>
-                              <Button
-                                size="sm"
-                                onClick={() => handleValidateDeclaration(declaration.id)}
-                              >
-                                <CheckCircle className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleRefuseDeclaration(declaration.id)}
-                              >
-                                <XCircle className="h-4 w-4" />
-                              </Button>
-                            </>
-                          )}
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => handleDeleteDeclaration(declaration.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
+                        {getStatusBadge(declaration.status)}
+                        <Button size="sm" variant="outline">
+                          <Eye className="h-4 w-4" />
+                        </Button>
                       </div>
                     </div>
                   ))}
                 </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
-        {/* Chauffeurs */}
-        <TabsContent value="chauffeurs" className="space-y-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle>Gestion des Chauffeurs</CardTitle>
-                <CardDescription>
-                  Gérez les chauffeurs et leurs informations
-                </CardDescription>
-              </div>
-              <Dialog open={showNewChauffeur} onOpenChange={setShowNewChauffeur}>
+        {activeTab === 'declarations' && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold">Gestion des Déclarations</h2>
+            </div>
+
+            <SearchAndFilter
+              onFilterChange={(filters) => {
+                setFilterStatus(filters.status || '');
+              }}
+              statusOptions={[
+                { value: 'tous', label: 'Tous' },
+                { value: 'en_cours', label: 'En Attente' },
+                { value: 'valide', label: 'Validé' },
+                { value: 'refuse', label: 'Refusé' }
+              ]}
+            />
+
+            <Card>
+              <CardContent className="p-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Numéro</TableHead>
+                      <TableHead>Chauffeur</TableHead>
+                      <TableHead>Période</TableHead>
+                      <TableHead>Distance</TableHead>
+                      <TableHead>Frais</TableHead>
+                      <TableHead>Statut</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredDeclarations.map((declaration) => (
+                      <TableRow key={declaration.id}>
+                        <TableCell className="font-medium">{declaration.number}</TableCell>
+                        <TableCell>{declaration.chauffeurName}</TableCell>
+                        <TableCell>{declaration.month} {declaration.year}</TableCell>
+                        <TableCell>{declaration.distance} km</TableCell>
+                        <TableCell>{declaration.deliveryFees?.toLocaleString()} DA</TableCell>
+                        <TableCell>{getStatusBadge(declaration.status)}</TableCell>
+                        <TableCell>
+                          <div className="flex gap-2">
+                            <Button size="sm" variant="outline">
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            {declaration.status === 'en_cours' && (
+                              <>
+                                <Button 
+                                  size="sm" 
+                                  variant="outline" 
+                                  className="text-green-600 hover:text-green-700"
+                                  onClick={() => handleValidateDeclaration(declaration.id)}
+                                >
+                                  <Check className="h-4 w-4" />
+                                </Button>
+                                <Button 
+                                  size="sm" 
+                                  variant="outline" 
+                                  className="text-red-600 hover:text-red-700"
+                                  onClick={() => handleRejectDeclaration(declaration.id)}
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              </>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {activeTab === 'chauffeurs' && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold">Gestion des Chauffeurs</h2>
+              <Dialog open={showCreateChauffeur} onOpenChange={setShowCreateChauffeur}>
                 <DialogTrigger asChild>
-                  <Button>
-                    <Plus className="h-4 w-4 mr-2" />
-                    {editingChauffeur ? 'Modifier chauffeur' : 'Nouveau Chauffeur'}
+                  <Button className="flex items-center gap-2">
+                    <Plus className="h-4 w-4" />
+                    Ajouter un chauffeur
                   </Button>
                 </DialogTrigger>
-                <DialogContent>
+                <DialogContent className="max-w-md">
                   <DialogHeader>
-                    <DialogTitle>{editingChauffeur ? 'Modifier chauffeur' : 'Nouveau Chauffeur'}</DialogTitle>
+                    <DialogTitle>Créer un nouveau chauffeur</DialogTitle>
                   </DialogHeader>
-                  <form onSubmit={editingChauffeur ? handleUpdateChauffeur : handleCreateChauffeur} className="space-y-4">
-                    <div>
-                      <Label htmlFor="fullName">Nom & Prénom</Label>
-                      <Input
-                        id="fullName"
-                        value={chauffeurForm.fullName}
-                        onChange={(e) => setChauffeurForm({...chauffeurForm, fullName: e.target.value})}
-                        required
-                        placeholder="Jean Martin"
-                      />
+                  <form onSubmit={handleCreateChauffeur} className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="firstName">Prénom *</Label>
+                        <Input
+                          id="firstName"
+                          value={newChauffeur.firstName}
+                          onChange={(e) => setNewChauffeur({ ...newChauffeur, firstName: e.target.value })}
+                          required
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="lastName">Nom *</Label>
+                        <Input
+                          id="lastName"
+                          value={newChauffeur.lastName}
+                          onChange={(e) => setNewChauffeur({ ...newChauffeur, lastName: e.target.value })}
+                          required
+                        />
+                      </div>
                     </div>
                     <div>
-                      <Label htmlFor="username">Nom d'utilisateur</Label>
+                      <Label htmlFor="username">Nom d'utilisateur *</Label>
                       <Input
                         id="username"
-                        value={chauffeurForm.username}
-                        onChange={(e) => setChauffeurForm({...chauffeurForm, username: e.target.value})}
+                        value={newChauffeur.username}
+                        onChange={(e) => setNewChauffeur({ ...newChauffeur, username: e.target.value })}
                         required
                       />
                     </div>
                     <div>
-                      <Label htmlFor="password">Mot de passe</Label>
+                      <Label htmlFor="password">Mot de passe *</Label>
                       <Input
                         id="password"
                         type="password"
-                        value={chauffeurForm.password}
-                        onChange={(e) => setChauffeurForm({...chauffeurForm, password: e.target.value})}
+                        value={newChauffeur.password}
+                        onChange={(e) => setNewChauffeur({ ...newChauffeur, password: e.target.value })}
                         required
                       />
                     </div>
@@ -751,29 +515,26 @@ const PlanificateurDashboard = () => {
                       <Label htmlFor="phone">Téléphone</Label>
                       <Input
                         id="phone"
-                        value={chauffeurForm.phone}
-                        onChange={(e) => setChauffeurForm({...chauffeurForm, phone: e.target.value})}
-                        required
+                        value={newChauffeur.phone}
+                        onChange={(e) => setNewChauffeur({ ...newChauffeur, phone: e.target.value })}
                       />
                     </div>
                     <div>
                       <Label htmlFor="vehicleType">Type de véhicule</Label>
-                      <Select value={chauffeurForm.vehicleType} onValueChange={(value) => setChauffeurForm({...chauffeurForm, vehicleType: value})}>
+                      <Select value={newChauffeur.vehicleType} onValueChange={(value) => setNewChauffeur({ ...newChauffeur, vehicleType: value })}>
                         <SelectTrigger>
-                          <SelectValue placeholder="Sélectionner un véhicule" />
+                          <SelectValue placeholder="Sélectionner un type" />
                         </SelectTrigger>
                         <SelectContent>
-                          {vehicleTypes.map(type => (
-                            <SelectItem key={type} value={type}>
-                              {type.replace('_', ' ')}
-                            </SelectItem>
-                          ))}
+                          <SelectItem value="Camion 3.5T">Camion 3.5T</SelectItem>
+                          <SelectItem value="Camionnette">Camionnette</SelectItem>
+                          <SelectItem value="Utilitaire">Utilitaire</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                     <div>
                       <Label htmlFor="employeeType">Type d'employé</Label>
-                      <Select value={chauffeurForm.employeeType} onValueChange={(value) => setChauffeurForm({...chauffeurForm, employeeType: value})}>
+                      <Select value={newChauffeur.employeeType} onValueChange={(value: 'interne' | 'externe') => setNewChauffeur({ ...newChauffeur, employeeType: value })}>
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
@@ -783,285 +544,60 @@ const PlanificateurDashboard = () => {
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className="flex justify-end space-x-2">
-                      <Button type="button" variant="outline" onClick={() => {
-                        setShowNewChauffeur(false);
-                        setEditingChauffeur(null);
-                        setChauffeurForm({
-                          fullName: '',
-                          username: '',
-                          password: '',
-                          phone: '',
-                          vehicleType: '',
-                          employeeType: 'interne'
-                        });
-                      }}>
+                    <div className="flex gap-2 pt-4">
+                      <Button type="submit" className="flex-1">Créer</Button>
+                      <Button type="button" variant="outline" onClick={() => setShowCreateChauffeur(false)}>
                         Annuler
-                      </Button>
-                      <Button type="submit">
-                        {editingChauffeur ? 'Modifier' : 'Créer'}
                       </Button>
                     </div>
                   </form>
                 </DialogContent>
               </Dialog>
-            </CardHeader>
-            <CardContent>
-              <SearchAndFilter
-                searchValue={chauffeurSearch}
-                onSearchChange={setChauffeurSearch}
-                filterValue={chauffeurFilter}
-                onFilterChange={setChauffeurFilter}
-                filterOptions={chauffeurFilterOptions}
-                searchPlaceholder="Rechercher par nom, username ou téléphone..."
-                filterPlaceholder="Filtrer par type"
-              />
-              
-              {filteredChauffeurs.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  Aucun chauffeur trouvé
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {filteredChauffeurs.map((chauffeur) => (
-                    <div key={chauffeur.id} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div className="flex items-center gap-4">
-                        <div>
-                          <div className="font-medium">{getDisplayName(chauffeur)}</div>
-                          <div className="text-sm text-gray-500">@{chauffeur.username}</div>
-                          <div className="text-sm text-gray-500">{chauffeur.phone}</div>
-                        </div>
-                        <div className="text-sm">
-                          <Badge className="mr-2">{chauffeur.vehicleType.replace('_', ' ')}</Badge>
-                          <Badge variant="outline">
-                            {chauffeur.employeeType === 'externe' ? 'TP-' : ''}{chauffeur.employeeType}
+            </div>
+
+            <Card>
+              <CardContent className="p-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Nom complet</TableHead>
+                      <TableHead>Téléphone</TableHead>
+                      <TableHead>Type de véhicule</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Statut</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {chauffeurs.map((chauffeur) => (
+                      <TableRow key={chauffeur.id}>
+                        <TableCell className="font-medium">{chauffeur.fullName}</TableCell>
+                        <TableCell>{chauffeur.phone}</TableCell>
+                        <TableCell>{chauffeur.vehicleType}</TableCell>
+                        <TableCell>
+                          <Badge variant={chauffeur.employeeType === 'interne' ? 'default' : 'secondary'}>
+                            {chauffeur.employeeType === 'interne' ? 'Interne' : 'Externe'}
                           </Badge>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Badge className={chauffeur.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
-                          {chauffeur.isActive ? 'Actif' : 'Inactif'}
-                        </Badge>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleEditChauffeur(chauffeur)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          onClick={() => handleDeleteChauffeur(chauffeur.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Entrepôts */}
-        <TabsContent value="warehouses" className="space-y-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Liste des entrepôts */}
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <div>
-                  <CardTitle>Gestion des Entrepôts</CardTitle>
-                  <CardDescription>
-                    Gérez les entrepôts et leurs localisations
-                  </CardDescription>
-                </div>
-                <Dialog open={showNewWarehouse} onOpenChange={setShowNewWarehouse}>
-                  <DialogTrigger asChild>
-                    <Button>
-                      <Plus className="h-4 w-4 mr-2" />
-                      {editingWarehouse ? 'Modifier entrepôt' : 'Nouvel Entrepôt'}
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>{editingWarehouse ? 'Modifier entrepôt' : 'Nouvel Entrepôt'}</DialogTitle>
-                    </DialogHeader>
-                    <form onSubmit={editingWarehouse ? handleUpdateWarehouse : handleCreateWarehouse} className="space-y-4">
-                      <div>
-                        <Label htmlFor="name">Nom de l'entrepôt</Label>
-                        <Input
-                          id="name"
-                          value={warehouseForm.name}
-                          onChange={(e) => setWarehouseForm({...warehouseForm, name: e.target.value})}
-                          required
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="companyName">Société</Label>
-                        <Input
-                          id="companyName"
-                          value={warehouseForm.companyName}
-                          onChange={(e) => setWarehouseForm({...warehouseForm, companyName: e.target.value})}
-                          required
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="phone">Téléphone</Label>
-                        <Input
-                          id="phone"
-                          value={warehouseForm.phone}
-                          onChange={(e) => setWarehouseForm({...warehouseForm, phone: e.target.value})}
-                          required
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="address">Adresse</Label>
-                        <Input
-                          id="address"
-                          value={warehouseForm.address}
-                          onChange={(e) => setWarehouseForm({...warehouseForm, address: e.target.value})}
-                          required
-                        />
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <Label htmlFor="lat">Latitude</Label>
-                          <Input
-                            id="lat"
-                            type="number"
-                            step="any"
-                            value={warehouseForm.lat}
-                            onChange={(e) => setWarehouseForm({...warehouseForm, lat: e.target.value})}
-                            required
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="lng">Longitude</Label>
-                          <Input
-                            id="lng"
-                            type="number"
-                            step="any"
-                            value={warehouseForm.lng}
-                            onChange={(e) => setWarehouseForm({...warehouseForm, lng: e.target.value})}
-                            required
-                          />
-                        </div>
-                      </div>
-                      <div className="flex justify-end space-x-2">
-                        <Button type="button" variant="outline" onClick={() => {
-                          setShowNewWarehouse(false);
-                          setEditingWarehouse(null);
-                          setWarehouseForm({
-                            name: '',
-                            companyName: '',
-                            phone: '',
-                            address: '',
-                            lat: '',
-                            lng: ''
-                          });
-                        }}>
-                          Annuler
-                        </Button>
-                        <Button type="submit">
-                          {editingWarehouse ? 'Modifier' : 'Créer'}
-                        </Button>
-                      </div>
-                    </form>
-                  </DialogContent>
-                </Dialog>
-              </CardHeader>
-              <CardContent>
-                <SearchAndFilter
-                  searchValue={warehouseSearch}
-                  onSearchChange={setWarehouseSearch}
-                  filterValue={warehouseFilter}
-                  onFilterChange={setWarehouseFilter}
-                  filterOptions={[]}
-                  searchPlaceholder="Rechercher par nom, société ou adresse..."
-                  filterPlaceholder="Filtrer"
-                />
-                
-                {filteredWarehouses.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
-                    Aucun entrepôt trouvé
-                  </div>
-                ) : (
-                  <div className="space-y-4 max-h-96 overflow-y-auto">
-                    {filteredWarehouses.map((warehouse) => (
-                      <div key={warehouse.id} className="flex items-center justify-between p-4 border rounded-lg">
-                        <div className="flex items-center gap-4">
-                          <MapPin className="h-5 w-5 text-green-500" />
-                          <div>
-                            <div className="font-medium">{warehouse.name}</div>
-                            <div className="text-sm text-gray-500">{warehouse.companyName}</div>
-                            <div className="text-sm text-gray-500">{warehouse.address}</div>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <div className="text-sm text-gray-500">
-                            {warehouse.coordinates.lat.toFixed(4)}, {warehouse.coordinates.lng.toFixed(4)}
-                          </div>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleEditWarehouse(warehouse)}
-                          >
-                            <Edit className="h-4 w-4" />
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={chauffeur.isActive ? 'default' : 'secondary'}>
+                            {chauffeur.isActive ? 'Actif' : 'Inactif'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Button size="sm" variant="outline">
+                            <Eye className="h-4 w-4" />
                           </Button>
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => handleDeleteWarehouse(warehouse.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
+                        </TableCell>
+                      </TableRow>
                     ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Carte des entrepôts */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Localisation des entrepôts</CardTitle>
-                <CardDescription>
-                  Visualisez tous les entrepôts sur la carte
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="h-96">
-                  <OpenStreetMap warehouses={filteredWarehouses} />
-                </div>
+                  </TableBody>
+                </Table>
               </CardContent>
             </Card>
           </div>
-        </TabsContent>
-
-        {/* Traçage */}
-        <TabsContent value="tracage" className="space-y-4">
-          <div className="grid grid-cols-1 gap-6">
-            {/* Carte de traçage des chauffeurs et entrepôts */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Traçage des chauffeurs et entrepôts</CardTitle>
-                <CardDescription>
-                  Localisation des chauffeurs et entrepôts sur la carte
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="h-96">
-                  <OpenStreetMap warehouses={warehouses} chauffeurs={chauffeurs} />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-      </Tabs>
+        )}
+      </div>
     </div>
   );
 };
