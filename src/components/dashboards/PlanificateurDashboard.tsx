@@ -60,57 +60,66 @@ const PlanificateurDashboard = () => {
   });
 
   useEffect(() => {
-    // Charger toutes les déclarations
-    const allDeclarations: Declaration[] = [];
-    const savedUsers = localStorage.getItem('logigrine_users') || '[]';
-    const users = JSON.parse(savedUsers);
-    
-    users.forEach((u: any) => {
-      if (u.role === 'chauffeur') {
-        const userDeclarations = localStorage.getItem(`declarations_${u.id}`);
-        if (userDeclarations) {
-          allDeclarations.push(...JSON.parse(userDeclarations));
-        }
-      }
-    });
-    
-    // Trier les déclarations: en_cours en premier
-    allDeclarations.sort((a, b) => {
-      if (a.status === 'en_cours' && b.status !== 'en_cours') return -1;
-      if (a.status !== 'en_cours' && b.status === 'en_cours') return 1;
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-    });
-    
-    setDeclarations(allDeclarations);
-    setFilteredDeclarations(allDeclarations);
-    
-    // Charger les chauffeurs depuis les utilisateurs
-    const chauffeurUsers = users.filter((u: any) => u.role === 'chauffeur');
-    const chauffeursData = chauffeurUsers.map((u: any) => ({
-      id: u.id,
-      fullName: u.fullName,
-      firstName: u.firstName,
-      lastName: u.lastName,
-      username: u.username,
-      password: u.password || 'demo123',
-      phone: u.phone,
-      vehicleType: u.vehicleType || 'mini_vehicule',
-      employeeType: u.employeeType || 'interne',
-      isActive: u.isActive,
-      createdAt: u.createdAt,
-      coordinates: u.coordinates || null
-    }));
-    setChauffeurs(chauffeursData);
-    setFilteredChauffeurs(chauffeursData);
-    
-    // Charger les entrepôts
-    const savedWarehouses = localStorage.getItem('warehouses');
-    if (savedWarehouses) {
-      const warehousesData = JSON.parse(savedWarehouses);
-      setWarehouses(warehousesData);
-      setFilteredWarehouses(warehousesData);
-    }
+    loadData();
   }, []);
+
+  const loadData = () => {
+    try {
+      // Charger toutes les déclarations
+      const allDeclarations: Declaration[] = [];
+      const savedUsers = localStorage.getItem('logigrine_users') || '[]';
+      const users = JSON.parse(savedUsers);
+      
+      users.forEach((u: any) => {
+        if (u.role === 'chauffeur') {
+          const userDeclarations = localStorage.getItem(`declarations_${u.id}`);
+          if (userDeclarations) {
+            allDeclarations.push(...JSON.parse(userDeclarations));
+          }
+        }
+      });
+      
+      // Trier les déclarations: en_cours en premier
+      allDeclarations.sort((a, b) => {
+        if (a.status === 'en_cours' && b.status !== 'en_cours') return -1;
+        if (a.status !== 'en_cours' && b.status === 'en_cours') return 1;
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      });
+      
+      setDeclarations(allDeclarations);
+      setFilteredDeclarations(allDeclarations);
+      
+      // Charger les chauffeurs depuis les utilisateurs
+      const chauffeurUsers = users.filter((u: any) => u.role === 'chauffeur');
+      const chauffeursData = chauffeurUsers.map((u: any) => ({
+        id: u.id,
+        fullName: u.fullName,
+        firstName: u.firstName,
+        lastName: u.lastName,
+        username: u.username,
+        password: u.password || 'demo123',
+        phone: u.phone,
+        vehicleType: u.vehicleType || 'mini_vehicule',
+        employeeType: u.employeeType || 'interne',
+        isActive: u.isActive,
+        createdAt: u.createdAt,
+        coordinates: u.coordinates || null
+      }));
+      setChauffeurs(chauffeursData);
+      setFilteredChauffeurs(chauffeursData);
+      
+      // Charger les entrepôts
+      const savedWarehouses = localStorage.getItem('warehouses');
+      if (savedWarehouses) {
+        const warehousesData = JSON.parse(savedWarehouses);
+        setWarehouses(warehousesData);
+        setFilteredWarehouses(warehousesData);
+      }
+    } catch (error) {
+      console.error('Error loading data:', error);
+      toast.error('Erreur lors du chargement des données');
+    }
+  };
 
   // Filter declarations
   useEffect(() => {
@@ -239,8 +248,6 @@ const PlanificateurDashboard = () => {
       const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
       
       const newChauffeurId = Date.now().toString();
-      console.log('Creating chauffeur with ID:', newChauffeurId);
-      console.log('Form data:', chauffeurForm);
       
       // Créer le chauffeur dans la liste des chauffeurs  
       const newChauffeur: Chauffeur = {
@@ -273,20 +280,14 @@ const PlanificateurDashboard = () => {
         employeeType: chauffeurForm.employeeType as any
       };
 
-      console.log('New chauffeur object:', newChauffeur);
-      console.log('New user object:', newUser);
-
       // Mettre à jour les chauffeurs localement d'abord
       const updatedChauffeurs = [...chauffeurs, newChauffeur];
       setChauffeurs(updatedChauffeurs);
-      console.log('Updated local chauffeurs:', updatedChauffeurs);
       
       // Mettre à jour les utilisateurs dans localStorage
       const users = JSON.parse(localStorage.getItem('logigrine_users') || '[]');
       const updatedUsers = [...users, newUser];
       localStorage.setItem('logigrine_users', JSON.stringify(updatedUsers));
-      
-      console.log('Updated users in localStorage:', updatedUsers);
       
       // Reset form et fermer le modal
       setChauffeurForm({
@@ -302,6 +303,11 @@ const PlanificateurDashboard = () => {
       setEditingChauffeur(null);
       toast.success('Chauffeur créé avec succès');
       
+      // Recharger les données pour s'assurer que tout est synchronisé
+      setTimeout(() => {
+        loadData();
+      }, 100);
+      
     } catch (error) {
       console.error('Error creating chauffeur:', error);
       toast.error('Erreur lors de la création du chauffeur');
@@ -309,7 +315,6 @@ const PlanificateurDashboard = () => {
   };
 
   const handleEditChauffeur = (chauffeur: Chauffeur) => {
-    console.log('Editing chauffeur:', chauffeur);
     setEditingChauffeur(chauffeur);
     setChauffeurForm({
       fullName: chauffeur.fullName,
@@ -331,15 +336,6 @@ const PlanificateurDashboard = () => {
       const nameParts = chauffeurForm.fullName.trim().split(' ');
       const firstName = nameParts[0] || '';
       const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
-      
-      console.log('Updating chauffeur with data:', {
-        fullName: chauffeurForm.fullName,
-        firstName,
-        lastName,
-        username: chauffeurForm.username,
-        vehicleType: chauffeurForm.vehicleType,
-        employeeType: chauffeurForm.employeeType
-      });
       
       // Mettre à jour le chauffeur
       const updatedChauffeur: Chauffeur = {
@@ -376,8 +372,6 @@ const PlanificateurDashboard = () => {
         } : u
       );
       localStorage.setItem('logigrine_users', JSON.stringify(updatedUsers));
-      
-      console.log('Updated users in localStorage:', updatedUsers);
       
       // Reset form
       setChauffeurForm({
@@ -448,7 +442,7 @@ const PlanificateurDashboard = () => {
     });
     
     setShowNewWarehouse(false);
-    toast.success(t('forms.success'));
+    toast.success('Entrepôt créé avec succès');
   };
 
   const handleEditWarehouse = (warehouse: Warehouse) => {
@@ -544,7 +538,7 @@ const PlanificateurDashboard = () => {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            {t('nav.dashboard')} - Planificateur
+            Dashboard - Planificateur
           </h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
             Gestion des déclarations, chauffeurs et entrepôts
@@ -558,7 +552,7 @@ const PlanificateurDashboard = () => {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              {t('dashboard.totalDeclarations')}
+              Total Déclarations
             </CardTitle>
             <FileText className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
@@ -569,7 +563,7 @@ const PlanificateurDashboard = () => {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              {t('dashboard.pendingValidations')}
+              En Attente de Validation
             </CardTitle>
             <Clock className="h-4 w-4 text-orange-500" />
           </CardHeader>
@@ -580,7 +574,7 @@ const PlanificateurDashboard = () => {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              {t('dashboard.totalChauffeurs')}
+              Total Chauffeurs
             </CardTitle>
             <Users className="h-4 w-4 text-blue-500" />
           </CardHeader>
@@ -591,7 +585,7 @@ const PlanificateurDashboard = () => {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              {t('dashboard.totalWarehouses')}
+              Total Entrepôts
             </CardTitle>
             <MapPin className="h-4 w-4 text-green-500" />
           </CardHeader>
@@ -604,9 +598,9 @@ const PlanificateurDashboard = () => {
       {/* Onglets */}
       <Tabs defaultValue="declarations" className="space-y-4">
         <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="declarations">{t('nav.declarations')}</TabsTrigger>
-          <TabsTrigger value="chauffeurs">{t('nav.chauffeurs')}</TabsTrigger>
-          <TabsTrigger value="warehouses">{t('nav.warehouses')}</TabsTrigger>
+          <TabsTrigger value="declarations">Déclarations</TabsTrigger>
+          <TabsTrigger value="chauffeurs">Chauffeurs</TabsTrigger>
+          <TabsTrigger value="warehouses">Entrepôts</TabsTrigger>
           <TabsTrigger value="tracage">Traçage</TabsTrigger>
         </TabsList>
 
@@ -664,7 +658,8 @@ const PlanificateurDashboard = () => {
                           declaration.status === 'valide' ? 'bg-green-100 text-green-800' :
                           'bg-red-100 text-red-800'
                         }>
-                          {t(`declarations.${declaration.status}`)}
+                          {declaration.status === 'en_cours' ? 'En cours' :
+                           declaration.status === 'valide' ? 'Validée' : 'Refusée'}
                         </Badge>
                         <div className="flex gap-1">
                           {declaration.status === 'en_cours' && (
@@ -706,7 +701,7 @@ const PlanificateurDashboard = () => {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
-                <CardTitle>{t('chauffeurs.title')}</CardTitle>
+                <CardTitle>Gestion des Chauffeurs</CardTitle>
                 <CardDescription>
                   Gérez les chauffeurs et leurs informations
                 </CardDescription>
@@ -715,12 +710,12 @@ const PlanificateurDashboard = () => {
                 <DialogTrigger asChild>
                   <Button>
                     <Plus className="h-4 w-4 mr-2" />
-                    {editingChauffeur ? 'Modifier chauffeur' : t('chauffeurs.new')}
+                    {editingChauffeur ? 'Modifier chauffeur' : 'Nouveau Chauffeur'}
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
-                    <DialogTitle>{editingChauffeur ? 'Modifier chauffeur' : t('chauffeurs.new')}</DialogTitle>
+                    <DialogTitle>{editingChauffeur ? 'Modifier chauffeur' : 'Nouveau Chauffeur'}</DialogTitle>
                   </DialogHeader>
                   <form onSubmit={editingChauffeur ? handleUpdateChauffeur : handleCreateChauffeur} className="space-y-4">
                     <div>
@@ -753,7 +748,7 @@ const PlanificateurDashboard = () => {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="phone">{t('chauffeurs.phone')}</Label>
+                      <Label htmlFor="phone">Téléphone</Label>
                       <Input
                         id="phone"
                         value={chauffeurForm.phone}
@@ -762,29 +757,29 @@ const PlanificateurDashboard = () => {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="vehicleType">{t('chauffeurs.vehicleType')}</Label>
+                      <Label htmlFor="vehicleType">Type de véhicule</Label>
                       <Select value={chauffeurForm.vehicleType} onValueChange={(value) => setChauffeurForm({...chauffeurForm, vehicleType: value})}>
                         <SelectTrigger>
-                          <SelectValue placeholder={t('chauffeurs.vehicleType')} />
+                          <SelectValue placeholder="Sélectionner un véhicule" />
                         </SelectTrigger>
                         <SelectContent>
                           {vehicleTypes.map(type => (
                             <SelectItem key={type} value={type}>
-                              {t(`vehicles.${type}`)}
+                              {type.replace('_', ' ')}
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
                     </div>
                     <div>
-                      <Label htmlFor="employeeType">{t('chauffeurs.employeeType')}</Label>
+                      <Label htmlFor="employeeType">Type d'employé</Label>
                       <Select value={chauffeurForm.employeeType} onValueChange={(value) => setChauffeurForm({...chauffeurForm, employeeType: value})}>
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="interne">{t('chauffeurs.internal')}</SelectItem>
-                          <SelectItem value="externe">{t('chauffeurs.external')}</SelectItem>
+                          <SelectItem value="interne">Interne</SelectItem>
+                          <SelectItem value="externe">Externe</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -801,10 +796,10 @@ const PlanificateurDashboard = () => {
                           employeeType: 'interne'
                         });
                       }}>
-                        {t('forms.cancel')}
+                        Annuler
                       </Button>
                       <Button type="submit">
-                        {editingChauffeur ? 'Modifier' : t('forms.save')}
+                        {editingChauffeur ? 'Modifier' : 'Créer'}
                       </Button>
                     </div>
                   </form>
@@ -837,7 +832,7 @@ const PlanificateurDashboard = () => {
                           <div className="text-sm text-gray-500">{chauffeur.phone}</div>
                         </div>
                         <div className="text-sm">
-                          <Badge className="mr-2">{t(`vehicles.${chauffeur.vehicleType}`)}</Badge>
+                          <Badge className="mr-2">{chauffeur.vehicleType.replace('_', ' ')}</Badge>
                           <Badge variant="outline">
                             {chauffeur.employeeType === 'externe' ? 'TP-' : ''}{chauffeur.employeeType}
                           </Badge>
@@ -845,7 +840,7 @@ const PlanificateurDashboard = () => {
                       </div>
                       <div className="flex items-center gap-2">
                         <Badge className={chauffeur.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
-                          {chauffeur.isActive ? t('chauffeurs.active') : t('chauffeurs.inactive')}
+                          {chauffeur.isActive ? 'Actif' : 'Inactif'}
                         </Badge>
                         <Button
                           size="sm"
@@ -877,7 +872,7 @@ const PlanificateurDashboard = () => {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <div>
-                  <CardTitle>{t('warehouses.title')}</CardTitle>
+                  <CardTitle>Gestion des Entrepôts</CardTitle>
                   <CardDescription>
                     Gérez les entrepôts et leurs localisations
                   </CardDescription>
@@ -886,16 +881,16 @@ const PlanificateurDashboard = () => {
                   <DialogTrigger asChild>
                     <Button>
                       <Plus className="h-4 w-4 mr-2" />
-                      {editingWarehouse ? 'Modifier entrepôt' : t('warehouses.new')}
+                      {editingWarehouse ? 'Modifier entrepôt' : 'Nouvel Entrepôt'}
                     </Button>
                   </DialogTrigger>
                   <DialogContent>
                     <DialogHeader>
-                      <DialogTitle>{editingWarehouse ? 'Modifier entrepôt' : t('warehouses.new')}</DialogTitle>
+                      <DialogTitle>{editingWarehouse ? 'Modifier entrepôt' : 'Nouvel Entrepôt'}</DialogTitle>
                     </DialogHeader>
                     <form onSubmit={editingWarehouse ? handleUpdateWarehouse : handleCreateWarehouse} className="space-y-4">
                       <div>
-                        <Label htmlFor="name">{t('warehouses.name')}</Label>
+                        <Label htmlFor="name">Nom de l'entrepôt</Label>
                         <Input
                           id="name"
                           value={warehouseForm.name}
@@ -904,7 +899,7 @@ const PlanificateurDashboard = () => {
                         />
                       </div>
                       <div>
-                        <Label htmlFor="companyName">{t('warehouses.company')}</Label>
+                        <Label htmlFor="companyName">Société</Label>
                         <Input
                           id="companyName"
                           value={warehouseForm.companyName}
@@ -913,7 +908,7 @@ const PlanificateurDashboard = () => {
                         />
                       </div>
                       <div>
-                        <Label htmlFor="phone">{t('warehouses.phone')}</Label>
+                        <Label htmlFor="phone">Téléphone</Label>
                         <Input
                           id="phone"
                           value={warehouseForm.phone}
@@ -922,7 +917,7 @@ const PlanificateurDashboard = () => {
                         />
                       </div>
                       <div>
-                        <Label htmlFor="address">{t('warehouses.address')}</Label>
+                        <Label htmlFor="address">Adresse</Label>
                         <Input
                           id="address"
                           value={warehouseForm.address}
@@ -932,7 +927,7 @@ const PlanificateurDashboard = () => {
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <Label htmlFor="lat">{t('warehouses.latitude')}</Label>
+                          <Label htmlFor="lat">Latitude</Label>
                           <Input
                             id="lat"
                             type="number"
@@ -943,7 +938,7 @@ const PlanificateurDashboard = () => {
                           />
                         </div>
                         <div>
-                          <Label htmlFor="lng">{t('warehouses.longitude')}</Label>
+                          <Label htmlFor="lng">Longitude</Label>
                           <Input
                             id="lng"
                             type="number"
@@ -967,10 +962,10 @@ const PlanificateurDashboard = () => {
                             lng: ''
                           });
                         }}>
-                          {t('forms.cancel')}
+                          Annuler
                         </Button>
                         <Button type="submit">
-                          {editingWarehouse ? 'Modifier' : t('forms.save')}
+                          {editingWarehouse ? 'Modifier' : 'Créer'}
                         </Button>
                       </div>
                     </form>
@@ -1050,39 +1045,17 @@ const PlanificateurDashboard = () => {
         {/* Traçage */}
         <TabsContent value="tracage" className="space-y-4">
           <div className="grid grid-cols-1 gap-6">
-            {/* Carte de traçage des chauffeurs */}
+            {/* Carte de traçage des chauffeurs et entrepôts */}
             <Card>
               <CardHeader>
-                <CardTitle>Traçage des chauffeurs</CardTitle>
+                <CardTitle>Traçage des chauffeurs et entrepôts</CardTitle>
                 <CardDescription>
-                  Localisation des chauffeurs et entrepôts
+                  Localisation des chauffeurs et entrepôts sur la carte
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="h-96">
                   <OpenStreetMap warehouses={warehouses} chauffeurs={chauffeurs} />
-                </div>
-              </CardContent>
-            </Card>
-            
-            {/* Section coming soon pour fonctionnalités avancées */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Fonctionnalités avancées</CardTitle>
-                <CardDescription>
-                  Outils de traçage en temps réel
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8 text-gray-500">
-                  <div className="text-2xl mb-2">🚧</div>
-                  <div>Coming Soon</div>
-                  <div className="text-sm">
-                    • Traçage GPS en temps réel<br/>
-                    • Historique des trajets<br/>
-                    • Notifications de position<br/>
-                    • Optimisation d'itinéraires
-                  </div>
                 </div>
               </CardContent>
             </Card>
