@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
@@ -145,12 +144,23 @@ const PlanificateurDashboard = () => {
   const handleCreateChauffeur = (e: React.FormEvent) => {
     e.preventDefault();
     
-    const [firstName, ...lastNameParts] = chauffeurForm.fullName.split(' ');
-    const lastName = lastNameParts.join(' ') || '';
+    // Safer name splitting to avoid recursion
+    const nameParts = chauffeurForm.fullName.trim().split(' ');
+    const firstName = nameParts[0] || '';
+    const lastName = nameParts.slice(1).join(' ') || '';
     
     const newChauffeurId = Date.now().toString();
     
-    // Créer le chauffeur dans la liste des chauffeurs
+    console.log('Creating chauffeur with data:', {
+      fullName: chauffeurForm.fullName,
+      firstName,
+      lastName,
+      username: chauffeurForm.username,
+      vehicleType: chauffeurForm.vehicleType,
+      employeeType: chauffeurForm.employeeType
+    });
+    
+    // Créer le chauffeur dans la liste des chauffeurs  
     const newChauffeur: Chauffeur = {
       id: newChauffeurId,
       fullName: chauffeurForm.fullName,
@@ -181,29 +191,42 @@ const PlanificateurDashboard = () => {
       employeeType: chauffeurForm.employeeType as any
     };
 
-    // Mettre à jour les chauffeurs
-    const updatedChauffeurs = [...chauffeurs, newChauffeur];
-    setChauffeurs(updatedChauffeurs);
-    
-    // Mettre à jour les utilisateurs
-    const users = JSON.parse(localStorage.getItem('logigrine_users') || '[]');
-    const updatedUsers = [...users, newUser];
-    localStorage.setItem('logigrine_users', JSON.stringify(updatedUsers));
-    
-    setChauffeurForm({
-      fullName: '',
-      username: '',
-      password: '',
-      phone: '',
-      vehicleType: '',
-      employeeType: 'interne'
-    });
-    
-    setShowNewChauffeur(false);
-    toast.success('Chauffeur créé avec succès');
+    console.log('New chauffeur object:', newChauffeur);
+    console.log('New user object:', newUser);
+
+    try {
+      // Mettre à jour les chauffeurs
+      const updatedChauffeurs = [...chauffeurs, newChauffeur];
+      setChauffeurs(updatedChauffeurs);
+      
+      // Mettre à jour les utilisateurs
+      const users = JSON.parse(localStorage.getItem('logigrine_users') || '[]');
+      const updatedUsers = [...users, newUser];
+      localStorage.setItem('logigrine_users', JSON.stringify(updatedUsers));
+      
+      console.log('Updated users in localStorage:', updatedUsers);
+      
+      // Reset form
+      setChauffeurForm({
+        fullName: '',
+        username: '',
+        password: '',
+        phone: '',
+        vehicleType: '',
+        employeeType: 'interne'
+      });
+      
+      setShowNewChauffeur(false);
+      toast.success('Chauffeur créé avec succès');
+      
+    } catch (error) {
+      console.error('Error creating chauffeur:', error);
+      toast.error('Erreur lors de la création du chauffeur');
+    }
   };
 
   const handleEditChauffeur = (chauffeur: Chauffeur) => {
+    console.log('Editing chauffeur:', chauffeur);
     setEditingChauffeur(chauffeur);
     setChauffeurForm({
       fullName: chauffeur.fullName,
@@ -221,57 +244,77 @@ const PlanificateurDashboard = () => {
     
     if (!editingChauffeur) return;
     
-    const [firstName, ...lastNameParts] = chauffeurForm.fullName.split(' ');
-    const lastName = lastNameParts.join(' ') || '';
+    // Safer name splitting to avoid recursion
+    const nameParts = chauffeurForm.fullName.trim().split(' ');
+    const firstName = nameParts[0] || '';
+    const lastName = nameParts.slice(1).join(' ') || '';
     
-    // Mettre à jour le chauffeur
-    const updatedChauffeur: Chauffeur = {
-      ...editingChauffeur,
+    console.log('Updating chauffeur with data:', {
       fullName: chauffeurForm.fullName,
       firstName,
       lastName,
       username: chauffeurForm.username,
-      password: chauffeurForm.password,
-      phone: chauffeurForm.phone,
-      vehicleType: chauffeurForm.vehicleType as any,
-      employeeType: chauffeurForm.employeeType as any,
-    };
-
-    // Mettre à jour dans la liste des chauffeurs
-    const updatedChauffeurs = chauffeurs.map(c => 
-      c.id === editingChauffeur.id ? updatedChauffeur : c
-    );
-    setChauffeurs(updatedChauffeurs);
+      vehicleType: chauffeurForm.vehicleType,
+      employeeType: chauffeurForm.employeeType
+    });
     
-    // Mettre à jour dans la liste des utilisateurs
-    const users = JSON.parse(localStorage.getItem('logigrine_users') || '[]');
-    const updatedUsers = users.map((u: any) => 
-      u.id === editingChauffeur.id ? {
-        ...u,
+    try {
+      // Mettre à jour le chauffeur
+      const updatedChauffeur: Chauffeur = {
+        ...editingChauffeur,
         fullName: chauffeurForm.fullName,
         firstName,
         lastName,
         username: chauffeurForm.username,
         password: chauffeurForm.password,
         phone: chauffeurForm.phone,
-        vehicleType: chauffeurForm.vehicleType,
-        employeeType: chauffeurForm.employeeType
-      } : u
-    );
-    localStorage.setItem('logigrine_users', JSON.stringify(updatedUsers));
-    
-    setChauffeurForm({
-      fullName: '',
-      username: '',
-      password: '',
-      phone: '',
-      vehicleType: '',
-      employeeType: 'interne'
-    });
-    
-    setEditingChauffeur(null);
-    setShowNewChauffeur(false);
-    toast.success('Chauffeur modifié avec succès');
+        vehicleType: chauffeurForm.vehicleType as any,
+        employeeType: chauffeurForm.employeeType as any,
+      };
+
+      // Mettre à jour dans la liste des chauffeurs
+      const updatedChauffeurs = chauffeurs.map(c => 
+        c.id === editingChauffeur.id ? updatedChauffeur : c
+      );
+      setChauffeurs(updatedChauffeurs);
+      
+      // Mettre à jour dans la liste des utilisateurs
+      const users = JSON.parse(localStorage.getItem('logigrine_users') || '[]');
+      const updatedUsers = users.map((u: any) => 
+        u.id === editingChauffeur.id ? {
+          ...u,
+          fullName: chauffeurForm.fullName,
+          firstName,
+          lastName,
+          username: chauffeurForm.username,
+          password: chauffeurForm.password,
+          phone: chauffeurForm.phone,
+          vehicleType: chauffeurForm.vehicleType,
+          employeeType: chauffeurForm.employeeType
+        } : u
+      );
+      localStorage.setItem('logigrine_users', JSON.stringify(updatedUsers));
+      
+      console.log('Updated users in localStorage:', updatedUsers);
+      
+      // Reset form
+      setChauffeurForm({
+        fullName: '',
+        username: '',
+        password: '',
+        phone: '',
+        vehicleType: '',
+        employeeType: 'interne'
+      });
+      
+      setEditingChauffeur(null);
+      setShowNewChauffeur(false);
+      toast.success('Chauffeur modifié avec succès');
+      
+    } catch (error) {
+      console.error('Error updating chauffeur:', error);
+      toast.error('Erreur lors de la modification du chauffeur');
+    }
   };
 
   const handleDeleteChauffeur = (id: string) => {
