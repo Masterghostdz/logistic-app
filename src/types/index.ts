@@ -1,7 +1,8 @@
+
 export interface User {
   id: string;
   username: string;
-  role: 'chauffeur' | 'planificateur' | 'financier' | 'financier_unite' | 'admin';
+  role: 'chauffeur' | 'planificateur' | 'financier' | 'admin';
   firstName: string;
   lastName: string;
   fullName: string;
@@ -10,7 +11,7 @@ export interface User {
   createdAt: string;
   isActive: boolean;
   password?: string;
-  vehicleType?: 'mini_vehicule' | 'fourgon' | 'camion_2_5t' | 'camion_3_5t' | 'camion_5t' | 'camion_7_5t' | 'camion_10t' | 'camion_15t' | 'camion_20t';
+  vehicleType?: string;
   employeeType?: 'interne' | 'externe';
 }
 
@@ -41,7 +42,7 @@ export interface Chauffeur {
   username: string;
   password: string;
   phone: string;
-  vehicleType: 'mini_vehicule' | 'fourgon' | 'camion_2_5t' | 'camion_3_5t' | 'camion_5t' | 'camion_7_5t' | 'camion_10t' | 'camion_15t' | 'camion_20t';
+  vehicleType: string;
   employeeType: 'interne' | 'externe';
   isActive: boolean;
   createdAt: string;
@@ -68,6 +69,12 @@ export interface Warehouse {
     lat: number;
     lng: number;
   };
+  createdAt: string;
+}
+
+export interface VehicleType {
+  id: string;
+  name: string;
   createdAt: string;
 }
 

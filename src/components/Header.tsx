@@ -27,8 +27,6 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle, showMenuButton = false })
         return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
       case 'financier':
         return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
-      case 'financier_unite':
-        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
       case 'chauffeur':
         return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200';
       default:
@@ -56,12 +54,11 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle, showMenuButton = false })
               </Button>
             )}
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">L</span>
-              </div>
-              <h1 className="text-xl font-bold text-gray-900 dark:text-white">
-                {t('header.title')}
-              </h1>
+              <img 
+                src="/lovable-uploads/691c7b4f-298c-4d87-a195-fb432aab8f82.png" 
+                alt="Logigrine Logo" 
+                className="h-8"
+              />
             </div>
           </div>
 
