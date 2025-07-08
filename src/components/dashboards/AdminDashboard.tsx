@@ -22,8 +22,7 @@ const AdminDashboard = () => {
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [userForm, setUserForm] = useState({
     username: '',
-    firstName: '',
-    lastName: '',
+    fullName: '',
     email: '',
     phone: '',
     role: 'chauffeur',
@@ -35,83 +34,27 @@ const AdminDashboard = () => {
     const savedUsers = localStorage.getItem('logigrine_users');
     if (savedUsers) {
       setUsers(JSON.parse(savedUsers));
-    } else {
-      // Initialiser avec les comptes de démonstration
-      const demoUsers: User[] = [
-        {
-          id: '1',
-          username: 'chauffeur',
-          role: 'chauffeur',
-          firstName: 'Jean',
-          lastName: 'Martin',
-          email: 'jean.martin@logigrine.com',
-          phone: '+33 6 12 34 56 78',
-          createdAt: new Date().toISOString(),
-          isActive: true
-        },
-        {
-          id: '2',
-          username: 'planificateur',
-          role: 'planificateur',
-          firstName: 'Marie',
-          lastName: 'Dubois',
-          email: 'marie.dubois@logigrine.com',
-          phone: '+33 6 23 45 67 89',
-          createdAt: new Date().toISOString(),
-          isActive: true
-        },
-        {
-          id: '3',
-          username: 'financier',
-          role: 'financier',
-          firstName: 'Pierre',
-          lastName: 'Moreau',
-          email: 'pierre.moreau@logigrine.com',
-          phone: '+33 6 34 56 78 90',
-          createdAt: new Date().toISOString(),
-          isActive: true
-        },
-        {
-          id: '4',
-          username: 'financier_unite',
-          role: 'financier_unite',
-          firstName: 'Sophie',
-          lastName: 'Bernard',
-          email: 'sophie.bernard@logigrine.com',
-          phone: '+33 6 45 67 89 01',
-          createdAt: new Date().toISOString(),
-          isActive: true
-        },
-        {
-          id: '5',
-          username: 'admin',
-          role: 'admin',
-          firstName: 'Admin',
-          lastName: 'System',
-          email: 'admin@logigrine.com',
-          phone: '+33 6 56 78 90 12',
-          createdAt: new Date().toISOString(),
-          isActive: true
-        }
-      ];
-      setUsers(demoUsers);
-      localStorage.setItem('logigrine_users', JSON.stringify(demoUsers));
     }
   }, []);
 
   const handleCreateUser = (e: React.FormEvent) => {
     e.preventDefault();
     
+    const [firstName, ...lastNameParts] = userForm.fullName.split(' ');
+    const lastName = lastNameParts.join(' ') || '';
+    
     const newUser: User = {
       id: Date.now().toString(),
       username: userForm.username,
       role: userForm.role as any,
-      firstName: userForm.firstName,
-      lastName: userForm.lastName,
+      fullName: userForm.fullName,
+      firstName,
+      lastName,
       email: userForm.email,
       phone: userForm.phone,
       createdAt: new Date().toISOString(),
-      isActive: true
+      isActive: true,
+      password: userForm.password
     };
 
     const updatedUsers = [...users, newUser];
@@ -121,8 +64,7 @@ const AdminDashboard = () => {
     // Réinitialiser le formulaire
     setUserForm({
       username: '',
-      firstName: '',
-      lastName: '',
+      fullName: '',
       email: '',
       phone: '',
       role: 'chauffeur',
@@ -133,11 +75,67 @@ const AdminDashboard = () => {
     toast.success(t('forms.success'));
   };
 
+  const handleEditUser = (userToEdit: User) => {
+    setEditingUser(userToEdit);
+    setUserForm({
+      username: userToEdit.username,
+      fullName: userToEdit.fullName,
+      email: userToEdit.email || '',
+      phone: userToEdit.phone,
+      role: userToEdit.role,
+      password: userToEdit.password || ''
+    });
+    setShowNewUser(true);
+  };
+
+  const handleUpdateUser = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!editingUser) return;
+    
+    const [firstName, ...lastNameParts] = userForm.fullName.split(' ');
+    const lastName = lastNameParts.join(' ') || '';
+    
+    const updatedUser: User = {
+      ...editingUser,
+      username: userForm.username,
+      fullName: userForm.fullName,
+      firstName,
+      lastName,
+      email: userForm.email,
+      phone: userForm.phone,
+      role: userForm.role as any,
+      password: userForm.password
+    };
+
+    const updatedUsers = users.map(u => 
+      u.id === editingUser.id ? updatedUser : u
+    );
+    setUsers(updatedUsers);
+    localStorage.setItem('logigrine_users', JSON.stringify(updatedUsers));
+    
+    // Réinitialiser le formulaire
+    setUserForm({
+      username: '',
+      fullName: '',
+      email: '',
+      phone: '',
+      role: 'chauffeur',
+      password: ''
+    });
+    
+    setEditingUser(null);
+    setShowNewUser(false);
+    toast.success('Utilisateur modifié avec succès');
+  };
+
   const handleDeleteUser = (id: string) => {
     if (id === user?.id) {
       toast.error('Vous ne pouvez pas supprimer votre propre compte');
       return;
     }
+    
+    if (!confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ?')) return;
     
     const updatedUsers = users.filter(u => u.id !== id);
     setUsers(updatedUsers);
@@ -205,14 +203,14 @@ const AdminDashboard = () => {
           <DialogTrigger asChild>
             <Button className="flex items-center gap-2">
               <Plus className="h-4 w-4" />
-              Nouvel utilisateur
+              {editingUser ? 'Modifier utilisateur' : 'Nouvel utilisateur'}
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
-              <DialogTitle>Créer un utilisateur</DialogTitle>
+              <DialogTitle>{editingUser ? 'Modifier utilisateur' : 'Créer un utilisateur'}</DialogTitle>
             </DialogHeader>
-            <form onSubmit={handleCreateUser} className="space-y-4">
+            <form onSubmit={editingUser ? handleUpdateUser : handleCreateUser} className="space-y-4">
               <div>
                 <Label htmlFor="username">Nom d'utilisateur</Label>
                 <Input
@@ -222,25 +220,15 @@ const AdminDashboard = () => {
                   required
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="firstName">Prénom</Label>
-                  <Input
-                    id="firstName"
-                    value={userForm.firstName}
-                    onChange={(e) => setUserForm({...userForm, firstName: e.target.value})}
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="lastName">Nom</Label>
-                  <Input
-                    id="lastName"
-                    value={userForm.lastName}
-                    onChange={(e) => setUserForm({...userForm, lastName: e.target.value})}
-                    required
-                  />
-                </div>
+              <div>
+                <Label htmlFor="fullName">Nom & Prénom</Label>
+                <Input
+                  id="fullName"
+                  value={userForm.fullName}
+                  onChange={(e) => setUserForm({...userForm, fullName: e.target.value})}
+                  required
+                  placeholder="Jean Martin"
+                />
               </div>
               <div>
                 <Label htmlFor="email">Email</Label>
@@ -249,7 +237,6 @@ const AdminDashboard = () => {
                   type="email"
                   value={userForm.email}
                   onChange={(e) => setUserForm({...userForm, email: e.target.value})}
-                  required
                 />
               </div>
               <div>
@@ -287,11 +274,22 @@ const AdminDashboard = () => {
                 />
               </div>
               <div className="flex justify-end space-x-2">
-                <Button type="button" variant="outline" onClick={() => setShowNewUser(false)}>
+                <Button type="button" variant="outline" onClick={() => {
+                  setShowNewUser(false);
+                  setEditingUser(null);
+                  setUserForm({
+                    username: '',
+                    fullName: '',
+                    email: '',
+                    phone: '',
+                    role: 'chauffeur',
+                    password: ''
+                  });
+                }}>
                   {t('forms.cancel')}
                 </Button>
                 <Button type="submit">
-                  {t('forms.save')}
+                  {editingUser ? 'Modifier' : t('forms.save')}
                 </Button>
               </div>
             </form>
@@ -373,11 +371,11 @@ const AdminDashboard = () => {
                     <div className="flex items-center gap-4">
                       <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
                         <span className="text-blue-600 font-medium">
-                          {u.firstName.charAt(0)}{u.lastName.charAt(0)}
+                          {u.fullName.split(' ').map(n => n.charAt(0)).join('')}
                         </span>
                       </div>
                       <div>
-                        <div className="font-medium">{u.firstName} {u.lastName}</div>
+                        <div className="font-medium">{u.fullName}</div>
                         <div className="text-sm text-gray-500">{u.email}</div>
                         <div className="text-sm text-gray-500">@{u.username}</div>
                       </div>
@@ -393,6 +391,13 @@ const AdminDashboard = () => {
                         <Button
                           size="sm"
                           variant="outline"
+                          onClick={() => handleEditUser(u)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
                           onClick={() => handleToggleUserStatus(u.id)}
                         >
                           {u.isActive ? 'Désactiver' : 'Activer'}
@@ -400,7 +405,7 @@ const AdminDashboard = () => {
                         {u.id !== user?.id && (
                           <Button
                             size="sm"
-                            variant="outline"
+                            variant="destructive"
                             onClick={() => handleDeleteUser(u.id)}
                           >
                             <Trash2 className="h-4 w-4" />
