@@ -36,10 +36,7 @@ const AppContent = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <Header />
-      <main className="flex-1">
-        {renderDashboard()}
-      </main>
+      {renderDashboard()}
     </div>
   );
 };

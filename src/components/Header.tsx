@@ -12,9 +12,10 @@ import SettingsDialog from './SettingsDialog';
 interface HeaderProps {
   onMenuToggle?: () => void;
   showMenuButton?: boolean;
+  onProfileClick?: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ onMenuToggle, showMenuButton = false }) => {
+const Header: React.FC<HeaderProps> = ({ onMenuToggle, showMenuButton = false, onProfileClick }) => {
   const { user, logout } = useAuth();
   const { t } = useTranslation();
   const [showSettings, setShowSettings] = useState(false);
@@ -91,9 +92,9 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle, showMenuButton = false })
                   </div>
                 </div>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={onProfileClick}>
                   <User className="mr-2 h-4 w-4" />
-                  <span>{t('header.profile')}</span>
+                  <span>Profil</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setShowSettings(true)}>
                   <Settings className="mr-2 h-4 w-4" />

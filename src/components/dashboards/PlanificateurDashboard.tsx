@@ -25,6 +25,7 @@ import { Declaration, Chauffeur } from '../../types';
 import SearchAndFilter from '../SearchAndFilter';
 import ProfilePage from '../ProfilePage';
 import TracageSection from '../TracageSection';
+import Header from '../Header';
 
 const PlanificateurDashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -271,345 +272,352 @@ const PlanificateurDashboard = () => {
     setActiveTab('declarations');
   };
 
+  const handleProfileClick = () => {
+    setActiveTab('profile');
+  };
+
   if (activeTab === 'profile') {
-    return <ProfilePage onBack={() => setActiveTab('dashboard')} />;
+    return (
+      <div>
+        <Header onProfileClick={handleProfileClick} />
+        <ProfilePage onBack={() => setActiveTab('dashboard')} />
+      </div>
+    );
   }
 
   if (activeTab === 'tracage') {
     return (
-      <div className="p-6">
-        <div className="flex items-center gap-4 mb-6">
-          <Button variant="ghost" onClick={() => setActiveTab('dashboard')}>
-            ← Retour au tableau de bord
-          </Button>
+      <div>
+        <Header onProfileClick={handleProfileClick} />
+        <div className="p-6">
+          <div className="flex items-center gap-4 mb-6">
+            <Button variant="ghost" onClick={() => setActiveTab('dashboard')}>
+              ← Retour au tableau de bord
+            </Button>
+          </div>
+          <TracageSection />
         </div>
-        <TracageSection />
       </div>
     );
   }
 
   return (
-    <div className="flex h-[calc(100vh-4rem)]">
-      {/* Sidebar */}
-      <div className="w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 p-4">
-        <nav className="space-y-2">
-          <Button
-            variant={activeTab === 'dashboard' ? 'default' : 'ghost'}
-            className="w-full justify-start"
-            onClick={() => setActiveTab('dashboard')}
-          >
-            <ClipboardList className="mr-2 h-4 w-4" />
-            Tableau de bord
-          </Button>
-          <Button
-            variant={activeTab === 'declarations' ? 'default' : 'ghost'}
-            className="w-full justify-start"
-            onClick={() => setActiveTab('declarations')}
-          >
-            <FileText className="mr-2 h-4 w-4" />
-            Déclarations
-          </Button>
-          <Button
-            variant={activeTab === 'chauffeurs' ? 'default' : 'ghost'}
-            className="w-full justify-start"
-            onClick={() => setActiveTab('chauffeurs')}
-          >
-            <User className="mr-2 h-4 w-4" />
-            Chauffeurs
-          </Button>
-          <Button
-            variant={activeTab === 'tracage' ? 'default' : 'ghost'}
-            className="w-full justify-start"
-            onClick={() => setActiveTab('tracage')}
-          >
-            <MapPin className="mr-2 h-4 w-4" />
-            Traçage
-          </Button>
-          <Button
-            variant={activeTab === 'profile' ? 'default' : 'ghost'}
-            className="w-full justify-start"
-            onClick={() => setActiveTab('profile')}
-          >
-            <Settings className="mr-2 h-4 w-4" />
-            Profil
-          </Button>
-        </nav>
-      </div>
+    <div>
+      <Header onProfileClick={handleProfileClick} />
+      <div className="flex h-[calc(100vh-4rem)]">
+        {/* Sidebar */}
+        <div className="w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 p-4">
+          <nav className="space-y-2">
+            <Button
+              variant={activeTab === 'dashboard' ? 'default' : 'ghost'}
+              className="w-full justify-start"
+              onClick={() => setActiveTab('dashboard')}
+            >
+              <ClipboardList className="mr-2 h-4 w-4" />
+              Tableau de bord
+            </Button>
+            <Button
+              variant={activeTab === 'declarations' ? 'default' : 'ghost'}
+              className="w-full justify-start"
+              onClick={() => setActiveTab('declarations')}
+            >
+              <FileText className="mr-2 h-4 w-4" />
+              Déclarations
+            </Button>
+            <Button
+              variant={activeTab === 'chauffeurs' ? 'default' : 'ghost'}
+              className="w-full justify-start"
+              onClick={() => setActiveTab('chauffeurs')}
+            >
+              <User className="mr-2 h-4 w-4" />
+              Chauffeurs
+            </Button>
+            <Button
+              variant={activeTab === 'tracage' ? 'default' : 'ghost'}
+              className="w-full justify-start"
+              onClick={() => setActiveTab('tracage')}
+            >
+              <MapPin className="mr-2 h-4 w-4" />
+              Traçage
+            </Button>
+          </nav>
+        </div>
 
-      {/* Main Content */}
-      <div className="flex-1 p-6 overflow-auto">
-        {activeTab === 'dashboard' && (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h1 className="text-3xl font-bold">Tableau de bord - Planificateur</h1>
-            </div>
+        {/* Main Content */}
+        <div className="flex-1 p-6 overflow-auto">
+          {activeTab === 'dashboard' && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h1 className="text-3xl font-bold">Tableau de bord - Planificateur</h1>
+              </div>
 
-            {/* Statistiques */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Card 
-                className="cursor-pointer hover:shadow-md transition-shadow"
-                onClick={handleEnAttenteClick}
-              >
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">En Attente de Validation</CardTitle>
-                  <FileText className="h-4 w-4 text-muted-foreground" />
+              {/* Statistiques */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <Card 
+                  className="cursor-pointer hover:shadow-md transition-shadow"
+                  onClick={handleEnAttenteClick}
+                >
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">En Attente de Validation</CardTitle>
+                    <FileText className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-yellow-600">{stats.enAttente}</div>
+                    <p className="text-xs text-muted-foreground">Cliquez pour filtrer</p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Déclarations récentes */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Déclarations récentes</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-yellow-600">{stats.enAttente}</div>
-                  <p className="text-xs text-muted-foreground">Cliquez pour filtrer</p>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Déclarations récentes */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Déclarations récentes</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {declarations.slice(0, 5).map((declaration) => (
-                    <div key={declaration.id} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div>
-                        <div className="font-medium">{declaration.number}</div>
-                        <div className="text-sm text-gray-500">
-                          {declaration.chauffeurName} - {declaration.month} {declaration.year}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {getStatusBadge(declaration.status)}
-                        <Button size="sm" variant="outline">
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
-        {activeTab === 'declarations' && (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold">Gestion des Déclarations</h2>
-            </div>
-
-            <SearchAndFilter
-              searchValue={searchValue}
-              onSearchChange={setSearchValue}
-              filterValue={filterStatus}
-              onFilterChange={setFilterStatus}
-              filterOptions={[
-                { value: 'en_cours', label: 'En Attente' },
-                { value: 'valide', label: 'Validé' },
-                { value: 'refuse', label: 'Refusé' }
-              ]}
-              searchPlaceholder="Rechercher par numéro ou chauffeur..."
-              filterPlaceholder="Filtrer par statut..."
-            />
-
-            <Card>
-              <CardContent className="p-0">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Numéro</TableHead>
-                      <TableHead>Chauffeur</TableHead>
-                      <TableHead>Période</TableHead>
-                      <TableHead>Distance</TableHead>
-                      <TableHead>Frais</TableHead>
-                      <TableHead>Statut</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredDeclarations.map((declaration) => (
-                      <TableRow key={declaration.id}>
-                        <TableCell className="font-medium">{declaration.number}</TableCell>
-                        <TableCell>{declaration.chauffeurName}</TableCell>
-                        <TableCell>{declaration.month} {declaration.year}</TableCell>
-                        <TableCell>{declaration.distance} km</TableCell>
-                        <TableCell>{declaration.deliveryFees?.toLocaleString()} DA</TableCell>
-                        <TableCell>{getStatusBadge(declaration.status)}</TableCell>
-                        <TableCell>
-                          <div className="flex gap-2">
-                            <Button size="sm" variant="outline">
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            {declaration.status === 'en_cours' && (
-                              <>
-                                <Button 
-                                  size="sm" 
-                                  variant="outline" 
-                                  className="text-green-600 hover:text-green-700"
-                                  onClick={() => handleValidateDeclaration(declaration.id)}
-                                >
-                                  <Check className="h-4 w-4" />
-                                </Button>
-                                <Button 
-                                  size="sm" 
-                                  variant="outline" 
-                                  className="text-red-600 hover:text-red-700"
-                                  onClick={() => handleRejectDeclaration(declaration.id)}
-                                >
-                                  <X className="h-4 w-4" />
-                                </Button>
-                              </>
-                            )}
+                  <div className="space-y-4">
+                    {declarations.slice(0, 5).map((declaration) => (
+                      <div key={declaration.id} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div>
+                          <div className="font-medium">{declaration.number}</div>
+                          <div className="text-sm text-gray-500">
+                            {declaration.chauffeurName} - {declaration.month} {declaration.year}
                           </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
-        {activeTab === 'chauffeurs' && (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold">Gestion des Chauffeurs</h2>
-              <Dialog open={showCreateChauffeur} onOpenChange={setShowCreateChauffeur}>
-                <DialogTrigger asChild>
-                  <Button className="flex items-center gap-2">
-                    <Plus className="h-4 w-4" />
-                    Ajouter un chauffeur
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-md">
-                  <DialogHeader>
-                    <DialogTitle>Créer un nouveau chauffeur</DialogTitle>
-                  </DialogHeader>
-                  <form onSubmit={handleCreateChauffeur} className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="firstName">Prénom *</Label>
-                        <Input
-                          id="firstName"
-                          value={newChauffeur.firstName}
-                          onChange={(e) => setNewChauffeur({ ...newChauffeur, firstName: e.target.value })}
-                          required
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="lastName">Nom *</Label>
-                        <Input
-                          id="lastName"
-                          value={newChauffeur.lastName}
-                          onChange={(e) => setNewChauffeur({ ...newChauffeur, lastName: e.target.value })}
-                          required
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <Label htmlFor="username">Nom d'utilisateur *</Label>
-                      <Input
-                        id="username"
-                        value={newChauffeur.username}
-                        onChange={(e) => setNewChauffeur({ ...newChauffeur, username: e.target.value })}
-                        required
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="password">Mot de passe *</Label>
-                      <Input
-                        id="password"
-                        type="password"
-                        value={newChauffeur.password}
-                        onChange={(e) => setNewChauffeur({ ...newChauffeur, password: e.target.value })}
-                        required
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="phone">Téléphone</Label>
-                      <Input
-                        id="phone"
-                        value={newChauffeur.phone}
-                        onChange={(e) => setNewChauffeur({ ...newChauffeur, phone: e.target.value })}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="vehicleType">Type de véhicule</Label>
-                      <Select value={newChauffeur.vehicleType} onValueChange={(value) => setNewChauffeur({ ...newChauffeur, vehicleType: value })}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Sélectionner un type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Camion 3.5T">Camion 3.5T</SelectItem>
-                          <SelectItem value="Camionnette">Camionnette</SelectItem>
-                          <SelectItem value="Utilitaire">Utilitaire</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label htmlFor="employeeType">Type d'employé</Label>
-                      <Select value={newChauffeur.employeeType} onValueChange={(value: 'interne' | 'externe') => setNewChauffeur({ ...newChauffeur, employeeType: value })}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="interne">Interne</SelectItem>
-                          <SelectItem value="externe">Externe</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="flex gap-2 pt-4">
-                      <Button type="submit" className="flex-1">Créer</Button>
-                      <Button type="button" variant="outline" onClick={() => setShowCreateChauffeur(false)}>
-                        Annuler
-                      </Button>
-                    </div>
-                  </form>
-                </DialogContent>
-              </Dialog>
-            </div>
-
-            <Card>
-              <CardContent className="p-0">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Nom complet</TableHead>
-                      <TableHead>Téléphone</TableHead>
-                      <TableHead>Type de véhicule</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Statut</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {chauffeurs.map((chauffeur) => (
-                      <TableRow key={chauffeur.id}>
-                        <TableCell className="font-medium">{chauffeur.fullName}</TableCell>
-                        <TableCell>{chauffeur.phone}</TableCell>
-                        <TableCell>{chauffeur.vehicleType}</TableCell>
-                        <TableCell>
-                          <Badge variant={chauffeur.employeeType === 'interne' ? 'default' : 'secondary'}>
-                            {chauffeur.employeeType === 'interne' ? 'Interne' : 'Externe'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={chauffeur.isActive ? 'default' : 'secondary'}>
-                            {chauffeur.isActive ? 'Actif' : 'Inactif'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {getStatusBadge(declaration.status)}
                           <Button size="sm" variant="outline">
                             <Eye className="h-4 w-4" />
                           </Button>
-                        </TableCell>
-                      </TableRow>
+                        </div>
+                      </div>
                     ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </div>
-        )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {activeTab === 'declarations' && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold">Gestion des Déclarations</h2>
+              </div>
+
+              <SearchAndFilter
+                searchValue={searchValue}
+                onSearchChange={setSearchValue}
+                filterValue={filterStatus}
+                onFilterChange={setFilterStatus}
+                filterOptions={[
+                  { value: 'en_cours', label: 'En Attente' },
+                  { value: 'valide', label: 'Validé' },
+                  { value: 'refuse', label: 'Refusé' }
+                ]}
+                searchPlaceholder="Rechercher par numéro ou chauffeur..."
+                filterPlaceholder="Filtrer par statut..."
+              />
+
+              <Card>
+                <CardContent className="p-0">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Numéro</TableHead>
+                        <TableHead>Chauffeur</TableHead>
+                        <TableHead>Période</TableHead>
+                        <TableHead>Distance</TableHead>
+                        <TableHead>Frais</TableHead>
+                        <TableHead>Statut</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredDeclarations.map((declaration) => (
+                        <TableRow key={declaration.id}>
+                          <TableCell className="font-medium">{declaration.number}</TableCell>
+                          <TableCell>{declaration.chauffeurName}</TableCell>
+                          <TableCell>{declaration.month} {declaration.year}</TableCell>
+                          <TableCell>{declaration.distance} km</TableCell>
+                          <TableCell>{declaration.deliveryFees?.toLocaleString()} DA</TableCell>
+                          <TableCell>{getStatusBadge(declaration.status)}</TableCell>
+                          <TableCell>
+                            <div className="flex gap-2">
+                              <Button size="sm" variant="outline">
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                              {declaration.status === 'en_cours' && (
+                                <>
+                                  <Button 
+                                    size="sm" 
+                                    variant="outline" 
+                                    className="text-green-600 hover:text-green-700"
+                                    onClick={() => handleValidateDeclaration(declaration.id)}
+                                  >
+                                    <Check className="h-4 w-4" />
+                                  </Button>
+                                  <Button 
+                                    size="sm" 
+                                    variant="outline" 
+                                    className="text-red-600 hover:text-red-700"
+                                    onClick={() => handleRejectDeclaration(declaration.id)}
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </Button>
+                                </>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {activeTab === 'chauffeurs' && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold">Gestion des Chauffeurs</h2>
+                <Dialog open={showCreateChauffeur} onOpenChange={setShowCreateChauffeur}>
+                  <DialogTrigger asChild>
+                    <Button className="flex items-center gap-2">
+                      <Plus className="h-4 w-4" />
+                      Ajouter un chauffeur
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>Créer un nouveau chauffeur</DialogTitle>
+                    </DialogHeader>
+                    <form onSubmit={handleCreateChauffeur} className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="firstName">Prénom *</Label>
+                          <Input
+                            id="firstName"
+                            value={newChauffeur.firstName}
+                            onChange={(e) => setNewChauffeur({ ...newChauffeur, firstName: e.target.value })}
+                            required
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="lastName">Nom *</Label>
+                          <Input
+                            id="lastName"
+                            value={newChauffeur.lastName}
+                            onChange={(e) => setNewChauffeur({ ...newChauffeur, lastName: e.target.value })}
+                            required
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <Label htmlFor="username">Nom d'utilisateur *</Label>
+                        <Input
+                          id="username"
+                          value={newChauffeur.username}
+                          onChange={(e) => setNewChauffeur({ ...newChauffeur, username: e.target.value })}
+                          required
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="password">Mot de passe *</Label>
+                        <Input
+                          id="password"
+                          type="password"
+                          value={newChauffeur.password}
+                          onChange={(e) => setNewChauffeur({ ...newChauffeur, password: e.target.value })}
+                          required
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="phone">Téléphone</Label>
+                        <Input
+                          id="phone"
+                          value={newChauffeur.phone}
+                          onChange={(e) => setNewChauffeur({ ...newChauffeur, phone: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="vehicleType">Type de véhicule</Label>
+                        <Select value={newChauffeur.vehicleType} onValueChange={(value) => setNewChauffeur({ ...newChauffeur, vehicleType: value })}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Sélectionner un type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Camion 3.5T">Camion 3.5T</SelectItem>
+                            <SelectItem value="Camionnette">Camionnette</SelectItem>
+                            <SelectItem value="Utilitaire">Utilitaire</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label htmlFor="employeeType">Type d'employé</Label>
+                        <Select value={newChauffeur.employeeType} onValueChange={(value: 'interne' | 'externe') => setNewChauffeur({ ...newChauffeur, employeeType: value })}>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="interne">Interne</SelectItem>
+                            <SelectItem value="externe">Externe</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="flex gap-2 pt-4">
+                        <Button type="submit" className="flex-1">Créer</Button>
+                        <Button type="button" variant="outline" onClick={() => setShowCreateChauffeur(false)}>
+                          Annuler
+                        </Button>
+                      </div>
+                    </form>
+                  </DialogContent>
+                </Dialog>
+              </div>
+
+              <Card>
+                <CardContent className="p-0">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Nom complet</TableHead>
+                        <TableHead>Téléphone</TableHead>
+                        <TableHead>Type de véhicule</TableHead>
+                        <TableHead>Type</TableHead>
+                        <TableHead>Statut</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {chauffeurs.map((chauffeur) => (
+                        <TableRow key={chauffeur.id}>
+                          <TableCell className="font-medium">{chauffeur.fullName}</TableCell>
+                          <TableCell>{chauffeur.phone}</TableCell>
+                          <TableCell>{chauffeur.vehicleType}</TableCell>
+                          <TableCell>
+                            <Badge variant={chauffeur.employeeType === 'interne' ? 'default' : 'secondary'}>
+                              {chauffeur.employeeType === 'interne' ? 'Interne' : 'Externe'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={chauffeur.isActive ? 'default' : 'secondary'}>
+                              {chauffeur.isActive ? 'Actif' : 'Inactif'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Button size="sm" variant="outline">
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
