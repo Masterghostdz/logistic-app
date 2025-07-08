@@ -22,7 +22,6 @@ const Index = () => {
       case 'planificateur':
         return <PlanificateurDashboard />;
       case 'financier':
-      case 'financier_unite':
         return <FinancierDashboard />;
       case 'admin':
         return <AdminDashboard />;
