@@ -67,11 +67,25 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    // Initialize demo accounts in localStorage if not exists
-    const existingUsers = localStorage.getItem('logigrine_users');
-    if (!existingUsers) {
-      localStorage.setItem('logigrine_users', JSON.stringify(demoAccounts));
-    }
+    console.log('AuthProvider initialized');
+    
+    // Force reset and initialize demo accounts
+    const userAccounts = demoAccounts.map(acc => ({
+      id: acc.id,
+      username: acc.username,
+      role: acc.role,
+      fullName: acc.fullName,
+      firstName: acc.fullName.split(' ')[0],
+      lastName: acc.fullName.split(' ')[1] || '',
+      email: acc.email,
+      phone: acc.phone,
+      createdAt: acc.createdAt,
+      isActive: acc.isActive,
+      password: acc.password
+    }));
+    
+    localStorage.setItem('logigrine_users', JSON.stringify(userAccounts));
+    console.log('Demo accounts initialized:', userAccounts);
 
     // Check for saved user
     const savedUser = localStorage.getItem('logigrine_user');
@@ -80,6 +94,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const parsedUser = JSON.parse(savedUser);
         setUser(parsedUser);
         setIsAuthenticated(true);
+        console.log('Restored user session:', parsedUser);
       } catch (error) {
         console.error('Error parsing saved user:', error);
         localStorage.removeItem('logigrine_user');
@@ -88,19 +103,27 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, []);
 
   const login = async (username: string, password: string): Promise<boolean> => {
+    console.log('Login attempt:', { username, password });
+    
     const users = JSON.parse(localStorage.getItem('logigrine_users') || '[]');
+    console.log('Available users:', users);
+    
     const account = users.find(
       (acc: any) => acc.username === username && acc.password === password && acc.isActive
     );
+
+    console.log('Found account:', account);
 
     if (account) {
       const { password: _, ...userWithoutPassword } = account;
       setUser(userWithoutPassword);
       setIsAuthenticated(true);
       localStorage.setItem('logigrine_user', JSON.stringify(userWithoutPassword));
+      console.log('Login successful for user:', userWithoutPassword);
       return true;
     }
 
+    console.log('Login failed - invalid credentials');
     return false;
   };
 
@@ -125,6 +148,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setUser(null);
     setIsAuthenticated(false);
     localStorage.removeItem('logigrine_user');
+    console.log('User logged out');
   };
 
   return (
