@@ -224,7 +224,7 @@ const PlanificateurDashboard = () => {
       // Supprimer du localStorage du chauffeur
       const userDeclarations = JSON.parse(localStorage.getItem(`declarations_${declaration.chauffeurId}`) || '[]');
       const updatedUserDeclarations = userDeclarations.filter((d: Declaration) => d.id !== id);
-      localStorage.setItem(`declarations_${declaration.chauffeur Id}`, JSON.stringify(updatedUserDeclarations));
+      localStorage.setItem(`declarations_${declaration.chauffeurId}`, JSON.stringify(updatedUserDeclarations));
       
       toast.success('Déclaration supprimée');
     }
