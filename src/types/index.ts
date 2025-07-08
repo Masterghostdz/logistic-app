@@ -5,12 +5,15 @@ export interface User {
   role: 'chauffeur' | 'planificateur' | 'financier' | 'financier_unite' | 'admin';
   firstName: string;
   lastName: string;
+  fullName: string; // Added fullName property
   email?: string; // Optional for chauffeur accounts
   phone: string;
   avatar?: string;
   createdAt: string;
   isActive: boolean;
   password?: string; // For password management
+  vehicleType?: 'mini_vehicule' | 'fourgon' | 'camion_2_5t' | 'camion_3_5t' | 'camion_5t' | 'camion_7_5t' | 'camion_10t' | 'camion_15t' | 'camion_20t';
+  employeeType?: 'interne' | 'externe';
 }
 
 export interface Declaration {
@@ -36,6 +39,7 @@ export interface Chauffeur {
   id: string;
   firstName: string;
   lastName: string;
+  fullName: string; // Added fullName property
   username: string;
   password: string;
   email?: string;
