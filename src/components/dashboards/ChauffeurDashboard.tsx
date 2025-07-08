@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
@@ -19,6 +18,9 @@ const ChauffeurDashboard = () => {
   const [declarations, setDeclarations] = useState<Declaration[]>([]);
   const [showNewDeclaration, setShowNewDeclaration] = useState(false);
   const [formData, setFormData] = useState({
+    programNumber: '',
+    year: new Date().getFullYear().toString().slice(-2),
+    month: (new Date().getMonth() + 1).toString().padStart(2, '0'),
     distance: '',
     deliveryFees: '',
     notes: '',
@@ -33,13 +35,8 @@ const ChauffeurDashboard = () => {
     }
   }, [user?.id]);
 
-  const generateDeclarationNumber = () => {
-    const now = new Date();
-    const year = now.getFullYear().toString().slice(-2);
-    const month = (now.getMonth() + 1).toString().padStart(2, '0');
-    const existingDeclarations = declarations.length;
-    const number = (existingDeclarations + 1).toString().padStart(4, '0');
-    return `DCP/${year}/${month}/${number}`;
+  const generateDeclarationNumber = (programNumber: string, year: string, month: string) => {
+    return `DCP/${year}/${month}/${programNumber}`;
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -47,7 +44,10 @@ const ChauffeurDashboard = () => {
     
     const newDeclaration: Declaration = {
       id: Date.now().toString(),
-      number: generateDeclarationNumber(),
+      number: generateDeclarationNumber(formData.programNumber, formData.year, formData.month),
+      programNumber: formData.programNumber,
+      year: formData.year,
+      month: formData.month,
       chauffeurId: user?.id || '',
       chauffeurName: `${user?.firstName} ${user?.lastName}`,
       distance: formData.distance ? parseInt(formData.distance) : undefined,
@@ -64,6 +64,9 @@ const ChauffeurDashboard = () => {
     
     // Réinitialiser le formulaire
     setFormData({
+      programNumber: '',
+      year: new Date().getFullYear().toString().slice(-2),
+      month: (new Date().getMonth() + 1).toString().padStart(2, '0'),
       distance: '',
       deliveryFees: '',
       notes: '',
@@ -138,6 +141,51 @@ const ChauffeurDashboard = () => {
               <DialogTitle>{t('declarations.new')}</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <Label htmlFor="year">Année</Label>
+                  <select
+                    id="year"
+                    value={formData.year}
+                    onChange={(e) => setFormData({...formData, year: e.target.value})}
+                    className="w-full p-2 border rounded"
+                    required
+                  >
+                    <option value="24">24</option>
+                    <option value="25">25</option>
+                    <option value="26">26</option>
+                    <option value="27">27</option>
+                    <option value="28">28</option>
+                  </select>
+                </div>
+                <div>
+                  <Label htmlFor="month">Mois</Label>
+                  <select
+                    id="month"
+                    value={formData.month}
+                    onChange={(e) => setFormData({...formData, month: e.target.value})}
+                    className="w-full p-2 border rounded"
+                    required
+                  >
+                    {Array.from({ length: 12 }, (_, i) => (
+                      <option key={i + 1} value={(i + 1).toString().padStart(2, '0')}>
+                        {(i + 1).toString().padStart(2, '0')}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <Label htmlFor="programNumber">Programme</Label>
+                  <Input
+                    id="programNumber"
+                    value={formData.programNumber}
+                    onChange={(e) => setFormData({...formData, programNumber: e.target.value})}
+                    placeholder="XXXX"
+                    maxLength={4}
+                    required
+                  />
+                </div>
+              </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="distance">{t('declarations.distance')}</Label>

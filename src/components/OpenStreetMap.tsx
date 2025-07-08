@@ -77,7 +77,7 @@ const OpenStreetMap: React.FC<OpenStreetMapProps> = ({
 
     // Fit map to show all markers
     if (warehouses.length > 0) {
-      const group = new L.featureGroup(markersRef.current);
+      const group = L.featureGroup(markersRef.current);
       map.current.fitBounds(group.getBounds().pad(0.1));
     }
   }, [warehouses, onWarehouseClick]);

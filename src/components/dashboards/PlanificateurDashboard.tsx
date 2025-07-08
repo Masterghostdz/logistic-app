@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
@@ -25,14 +24,15 @@ const PlanificateurDashboard = () => {
   const [chauffeurForm, setChauffeurForm] = useState({
     firstName: '',
     lastName: '',
-    email: '',
+    username: '',
+    password: '',
     phone: '',
     vehicleType: '',
     employeeType: 'interne'
   });
   const [warehouseForm, setWarehouseForm] = useState({
     name: '',
-    company: '',
+    companyName: '',
     phone: '',
     address: '',
     lat: '',
@@ -86,7 +86,8 @@ const PlanificateurDashboard = () => {
       id: Date.now().toString(),
       firstName: chauffeurForm.firstName,
       lastName: chauffeurForm.lastName,
-      email: chauffeurForm.email,
+      username: chauffeurForm.username,
+      password: chauffeurForm.password,
       phone: chauffeurForm.phone,
       vehicleType: chauffeurForm.vehicleType as any,
       employeeType: chauffeurForm.employeeType as any,
@@ -101,7 +102,8 @@ const PlanificateurDashboard = () => {
     setChauffeurForm({
       firstName: '',
       lastName: '',
-      email: '',
+      username: '',
+      password: '',
       phone: '',
       vehicleType: '',
       employeeType: 'interne'
@@ -117,7 +119,8 @@ const PlanificateurDashboard = () => {
     const newWarehouse: Warehouse = {
       id: Date.now().toString(),
       name: warehouseForm.name,
-      company: warehouseForm.company,
+      companyId: '1',
+      companyName: warehouseForm.companyName,
       phone: warehouseForm.phone,
       address: warehouseForm.address,
       coordinates: {
@@ -133,7 +136,7 @@ const PlanificateurDashboard = () => {
     
     setWarehouseForm({
       name: '',
-      company: '',
+      companyName: '',
       phone: '',
       address: '',
       lat: '',
@@ -339,12 +342,21 @@ const PlanificateurDashboard = () => {
                       </div>
                     </div>
                     <div>
-                      <Label htmlFor="email">{t('chauffeurs.email')}</Label>
+                      <Label htmlFor="username">Nom d'utilisateur</Label>
                       <Input
-                        id="email"
-                        type="email"
-                        value={chauffeurForm.email}
-                        onChange={(e) => setChauffeurForm({...chauffeurForm, email: e.target.value})}
+                        id="username"
+                        value={chauffeurForm.username}
+                        onChange={(e) => setChauffeurForm({...chauffeurForm, username: e.target.value})}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="password">Mot de passe</Label>
+                      <Input
+                        id="password"
+                        type="password"
+                        value={chauffeurForm.password}
+                        onChange={(e) => setChauffeurForm({...chauffeurForm, password: e.target.value})}
                         required
                       />
                     </div>
@@ -408,7 +420,7 @@ const PlanificateurDashboard = () => {
                       <div className="flex items-center gap-4">
                         <div>
                           <div className="font-medium">{chauffeur.firstName} {chauffeur.lastName}</div>
-                          <div className="text-sm text-gray-500">{chauffeur.email}</div>
+                          <div className="text-sm text-gray-500">@{chauffeur.username}</div>
                         </div>
                         <div className="text-sm">
                           <Badge className="mr-2">{t(`vehicles.${chauffeur.vehicleType}`)}</Badge>
@@ -462,11 +474,11 @@ const PlanificateurDashboard = () => {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="company">{t('warehouses.company')}</Label>
+                      <Label htmlFor="companyName">{t('warehouses.company')}</Label>
                       <Input
-                        id="company"
-                        value={warehouseForm.company}
-                        onChange={(e) => setWarehouseForm({...warehouseForm, company: e.target.value})}
+                        id="companyName"
+                        value={warehouseForm.companyName}
+                        onChange={(e) => setWarehouseForm({...warehouseForm, companyName: e.target.value})}
                         required
                       />
                     </div>
@@ -537,7 +549,7 @@ const PlanificateurDashboard = () => {
                         <MapPin className="h-5 w-5 text-green-500" />
                         <div>
                           <div className="font-medium">{warehouse.name}</div>
-                          <div className="text-sm text-gray-500">{warehouse.company}</div>
+                          <div className="text-sm text-gray-500">{warehouse.companyName}</div>
                           <div className="text-sm text-gray-500">{warehouse.address}</div>
                         </div>
                       </div>

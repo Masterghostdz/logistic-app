@@ -1,8 +1,10 @@
+
 export interface User {
   id: string;
   username: string;
   role: 'chauffeur' | 'planificateur' | 'financier' | 'financier_unite' | 'admin';
-  fullName: string; // Changed from firstName/lastName to single field
+  firstName: string;
+  lastName: string;
   email?: string; // Optional for chauffeur accounts
   phone: string;
   avatar?: string;
@@ -32,9 +34,11 @@ export interface Declaration {
 
 export interface Chauffeur {
   id: string;
-  fullName: string; // Changed from firstName/lastName
+  firstName: string;
+  lastName: string;
   username: string;
   password: string;
+  email?: string;
   phone: string;
   vehicleType: 'mini_vehicule' | 'fourgon' | 'camion_2_5t' | 'camion_3_5t' | 'camion_5t' | 'camion_7_5t' | 'camion_10t' | 'camion_15t' | 'camion_20t';
   employeeType: 'interne' | 'externe';
