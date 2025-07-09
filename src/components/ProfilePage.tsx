@@ -6,7 +6,7 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Badge } from './ui/badge';
 import { useAuth } from '../contexts/AuthContext';
-import { ArrowLeft, User, Phone, Car, Eye, EyeOff } from 'lucide-react';
+import { ArrowLeft, User, Phone, Car } from 'lucide-react';
 import { toast } from 'sonner';
 import PasswordField from './PasswordField';
 
@@ -15,7 +15,7 @@ interface ProfilePageProps {
 }
 
 const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
-  const { user, updatePassword } = useAuth();
+  const { user, changePassword } = useAuth();
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: '',
@@ -37,10 +37,14 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
     }
 
     try {
-      await updatePassword(passwordForm.currentPassword, passwordForm.newPassword);
-      toast.success('Mot de passe modifié avec succès');
-      setIsChangingPassword(false);
-      setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      const success = await changePassword(passwordForm.currentPassword, passwordForm.newPassword);
+      if (success) {
+        toast.success('Mot de passe modifié avec succès');
+        setIsChangingPassword(false);
+        setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      } else {
+        toast.error('Mot de passe actuel incorrect');
+      }
     } catch (error) {
       toast.error('Erreur lors de la modification du mot de passe');
     }
@@ -82,16 +86,19 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
               <Label className="text-sm font-medium text-gray-500">Nom d'utilisateur</Label>
               <p className="text-lg">{user.username}</p>
             </div>
-            <div>
-              <Label className="text-sm font-medium text-gray-500">Mot de passe actuel</Label>
-              <PasswordField password={user.password} />
-            </div>
+            {user.password && (
+              <div>
+                <Label className="text-sm font-medium text-gray-500">Mot de passe actuel</Label>
+                <PasswordField password={user.password} showLabel={false} />
+              </div>
+            )}
             <div>
               <Label className="text-sm font-medium text-gray-500">Rôle</Label>
               <Badge variant="outline" className="mt-1">
                 {user.role === 'chauffeur' ? 'Chauffeur' : 
                  user.role === 'planificateur' ? 'Planificateur' :
-                 user.role === 'financier' ? 'Financier' : 'Administrateur'}
+                 user.role === 'financier' ? 'Financier' : 
+                 user.role === 'financier_unite' ? 'Financier Unité' : 'Administrateur'}
               </Badge>
             </div>
           </CardContent>
