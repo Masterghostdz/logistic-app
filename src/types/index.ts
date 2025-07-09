@@ -1,4 +1,3 @@
-
 export interface User {
   id: string;
   username: string;
@@ -11,6 +10,9 @@ export interface User {
   password: string;
   createdAt: string;
   isActive?: boolean;
+  avatar?: string;
+  vehicleType?: string;
+  employeeType?: 'interne' | 'externe';
 }
 
 export interface Chauffeur {
