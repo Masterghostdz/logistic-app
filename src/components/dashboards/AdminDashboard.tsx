@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { User as UserType, Company, VehicleType } from '../../types';
 import { useSharedData } from '../../contexts/SharedDataContext';
+import { demoAccountsConfig } from '../../config/demoAccounts';
 import Header from '../Header';
 import ProfilePage from '../ProfilePage';
 import PhoneNumbersField from '../PhoneNumbersField';
@@ -36,18 +37,24 @@ const AdminDashboard = () => {
     deleteVehicleType 
   } = useSharedData();
   
-  const [users, setUsers] = useState<UserType[]>([
-    {
-      id: '1',
-      username: 'admin',
-      role: 'admin',
-      firstName: 'Admin',
-      lastName: 'System',
-      fullName: 'Admin System',
-      phone: ['+213 21 00 00 00'],
-      createdAt: new Date().toISOString()
-    }
-  ]);
+  // Initialize users from demo accounts configuration
+  const [users, setUsers] = useState<UserType[]>(() => {
+    return demoAccountsConfig.map(account => ({
+      id: account.id,
+      username: account.username,
+      role: account.role,
+      firstName: account.firstName,
+      lastName: account.lastName,
+      fullName: account.fullName,
+      phone: account.phone,
+      email: account.email,
+      createdAt: account.createdAt,
+      isActive: account.isActive,
+      avatar: account.avatar,
+      vehicleType: account.vehicleType,
+      employeeType: account.employeeType
+    }));
+  });
 
   const [showCreateUser, setShowCreateUser] = useState(false);
   const [showCreateCompany, setShowCreateCompany] = useState(false);
