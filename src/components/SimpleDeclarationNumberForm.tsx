@@ -25,18 +25,18 @@ const SimpleDeclarationNumberForm = ({
 
   const years = ['24', '25', '26', '27'];
   const months = [
-    { value: '01', label: '01 - Janvier' },
-    { value: '02', label: '02 - Février' },
-    { value: '03', label: '03 - Mars' },
-    { value: '04', label: '04 - Avril' },
-    { value: '05', label: '05 - Mai' },
-    { value: '06', label: '06 - Juin' },
-    { value: '07', label: '07 - Juillet' },
-    { value: '08', label: '08 - Août' },
-    { value: '09', label: '09 - Septembre' },
-    { value: '10', label: '10 - Octobre' },
-    { value: '11', label: '11 - Novembre' },
-    { value: '12', label: '12 - Décembre' }
+    { value: '01', label: '01' },
+    { value: '02', label: '02' },
+    { value: '03', label: '03' },
+    { value: '04', label: '04' },
+    { value: '05', label: '05' },
+    { value: '06', label: '06' },
+    { value: '07', label: '07' },
+    { value: '08', label: '08' },
+    { value: '09', label: '09' },
+    { value: '10', label: '10' },
+    { value: '11', label: '11' },
+    { value: '12', label: '12' }
   ];
 
   // Update local state when initial values change
@@ -67,66 +67,44 @@ const SimpleDeclarationNumberForm = ({
 
   return (
     <div className="space-y-4">
-      <div>
-        <Label>Programme de Livraison</Label>
-        <div className="mt-2 p-3 bg-gray-50 rounded-md border">
-          <div className="flex items-center gap-1 text-sm font-mono">
-            <span className="text-gray-500">DCP/</span>
-            <span className={year ? "text-black font-medium" : "text-gray-400"}>
-              {year || "YY"}
-            </span>
-            <span className="text-gray-500">/</span>
-            <span className={month ? "text-black font-medium" : "text-gray-400"}>
-              {month || "MM"}
-            </span>
-            <span className="text-gray-500">/</span>
-            <span className={programNumber ? "text-black font-medium" : "text-gray-400"}>
-              {programNumber || "XXXX"}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-3 gap-4">
-        <div>
-          <Label htmlFor="year">Année</Label>
-          <Select value={year} onValueChange={setYear}>
-            <SelectTrigger>
-              <SelectValue placeholder="Sélectionner" />
-            </SelectTrigger>
-            <SelectContent>
-              {years.map((yr) => (
-                <SelectItem key={yr} value={yr}>20{yr}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div>
-          <Label htmlFor="month">Mois</Label>
-          <Select value={month} onValueChange={setMonth}>
-            <SelectTrigger>
-              <SelectValue placeholder="Sélectionner" />
-            </SelectTrigger>
-            <SelectContent>
-              {months.map((m) => (
-                <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div>
-          <Label htmlFor="programNumber">Numéro (4 chiffres)</Label>
-          <Input
-            id="programNumber"
-            type="text"
-            value={programNumber}
-            onChange={(e) => handleProgramNumberChange(e.target.value)}
-            placeholder="0000"
-            maxLength={4}
-          />
-        </div>
+      <Label>Programme de Livraison</Label>
+      <div className="flex items-center gap-1 p-3 bg-gray-50 rounded-md border">
+        <span className="text-gray-500 font-mono">DCP/</span>
+        
+        <Select value={year} onValueChange={setYear}>
+          <SelectTrigger className="w-16 h-8 px-2 py-1 text-sm">
+            <SelectValue placeholder="YY" />
+          </SelectTrigger>
+          <SelectContent>
+            {years.map((yr) => (
+              <SelectItem key={yr} value={yr}>{yr}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        
+        <span className="text-gray-500 font-mono">/</span>
+        
+        <Select value={month} onValueChange={setMonth}>
+          <SelectTrigger className="w-16 h-8 px-2 py-1 text-sm">
+            <SelectValue placeholder="MM" />
+          </SelectTrigger>
+          <SelectContent>
+            {months.map((m) => (
+              <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        
+        <span className="text-gray-500 font-mono">/</span>
+        
+        <Input
+          type="text"
+          value={programNumber}
+          onChange={(e) => handleProgramNumberChange(e.target.value)}
+          placeholder="XXXX"
+          className="w-16 h-8 px-2 py-1 text-center text-sm"
+          maxLength={4}
+        />
       </div>
     </div>
   );
