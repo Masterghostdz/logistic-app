@@ -464,8 +464,8 @@ const PlanificateurDashboard = () => {
                       <TableRow>
                         <TableHead className="w-[140px]">Numéro</TableHead>
                         <TableHead className="w-[130px]">Chauffeur</TableHead>
-                        <TableHead className="w-[80px]">Distance</TableHead>
-                        <TableHead className="w-[100px]">Frais (DZD)</TableHead>
+                        <TableHead className="w-[100px]">Distance (km)</TableHead>
+                        <TableHead className="w-[120px]">Frais (DZD)</TableHead>
                         <TableHead className="w-[100px]">Créé le</TableHead>
                         <TableHead className="w-[100px]">Validé le</TableHead>
                         <TableHead className="w-[80px]">État</TableHead>
@@ -482,11 +482,11 @@ const PlanificateurDashboard = () => {
                             <div className="truncate text-sm">{declaration.chauffeurName}</div>
                           </TableCell>
                           <TableCell className="text-center text-sm">
-                            {declaration.distance || '-'}
+                            {declaration.distance ? `${declaration.distance.toFixed(2)}` : '-'}
                           </TableCell>
                           <TableCell className="text-right text-sm">
                             {declaration.deliveryFees ? 
-                              `${Math.round(declaration.deliveryFees / 1000)}k` : '-'}
+                              `${declaration.deliveryFees.toFixed(2)}` : '-'}
                           </TableCell>
                           <TableCell className="text-sm">
                             {new Date(declaration.createdAt).toLocaleDateString('fr-FR', {
