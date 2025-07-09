@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
@@ -17,7 +16,8 @@ import {
   Edit, 
   Trash2, 
   Settings, 
-  ClipboardList
+  ClipboardList,
+  Key
 } from 'lucide-react';
 import { User as UserType, Company, VehicleType } from '../../types';
 import { useSharedData } from '../../contexts/SharedDataContext';
@@ -25,6 +25,8 @@ import { demoAccountsConfig } from '../../config/demoAccounts';
 import Header from '../Header';
 import ProfilePage from '../ProfilePage';
 import PhoneNumbersField from '../PhoneNumbersField';
+import PasswordField from '../PasswordField';
+import { simpleHash } from '../../utils/authUtils';
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -39,8 +41,8 @@ const AdminDashboard = () => {
     deleteVehicleType 
   } = useSharedData();
   
-  // Initialize users from demo accounts configuration
-  const [users, setUsers] = useState<UserType[]>(() => {
+  // Initialize users from demo accounts configuration with passwords
+  const [users, setUsers] = useState<(UserType & { password: string })[]>(() => {
     return demoAccountsConfig.map(account => ({
       id: account.id,
       username: account.username,
@@ -51,16 +53,19 @@ const AdminDashboard = () => {
       phone: account.phone,
       email: account.email,
       createdAt: account.createdAt,
-      isActive: account.isActive
+      isActive: account.isActive,
+      password: account.password
     }));
   });
 
   const [showCreateUser, setShowCreateUser] = useState(false);
   const [showCreateCompany, setShowCreateCompany] = useState(false);
   const [showCreateVehicleType, setShowCreateVehicleType] = useState(false);
+  const [showChangePassword, setShowChangePassword] = useState(false);
   const [editingUser, setEditingUser] = useState<UserType | null>(null);
   const [editingCompany, setEditingCompany] = useState<Company | null>(null);
   const [editingVehicleType, setEditingVehicleType] = useState<VehicleType | null>(null);
+  const [selectedUserForPassword, setSelectedUserForPassword] = useState<string | null>(null);
 
   const [newUser, setNewUser] = useState({
     username: '',
@@ -81,6 +86,11 @@ const AdminDashboard = () => {
     name: ''
   });
 
+  const [passwordData, setPasswordData] = useState({
+    newPassword: '',
+    confirmPassword: ''
+  });
+
   const handleCreateUser = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -90,21 +100,22 @@ const AdminDashboard = () => {
     }
 
     if (editingUser) {
-      const updatedUser: UserType = {
+      const updatedUser = {
         ...editingUser,
         username: newUser.username,
         role: newUser.role,
         firstName: newUser.firstName,
         lastName: newUser.lastName,
         fullName: `${newUser.firstName} ${newUser.lastName}`,
-        phone: newUser.phone
+        phone: newUser.phone,
+        password: users.find(u => u.id === editingUser.id)?.password || 'password123'
       };
 
       setUsers(prev => prev.map(u => u.id === editingUser.id ? updatedUser : u));
       setEditingUser(null);
       toast.success('Utilisateur modifié');
     } else {
-      const user: UserType = {
+      const user = {
         id: Date.now().toString(),
         username: newUser.username,
         role: newUser.role,
@@ -112,11 +123,12 @@ const AdminDashboard = () => {
         lastName: newUser.lastName,
         fullName: `${newUser.firstName} ${newUser.lastName}`,
         phone: newUser.phone,
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        password: 'password123' // Default password
       };
 
       setUsers(prev => [...prev, user]);
-      toast.success('Utilisateur créé');
+      toast.success('Utilisateur créé avec mot de passe par défaut: password123');
     }
 
     setNewUser({
@@ -206,6 +218,35 @@ const AdminDashboard = () => {
     setShowCreateVehicleType(false);
   };
 
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      toast.error('Les mots de passe ne correspondent pas');
+      return;
+    }
+
+    if (passwordData.newPassword.length < 6) {
+      toast.error('Le mot de passe doit contenir au moins 6 caractères');
+      return;
+    }
+
+    if (selectedUserForPassword) {
+      const updatedUsers = users.map(user => 
+        user.id === selectedUserForPassword 
+          ? { ...user, password: passwordData.newPassword }
+          : user
+      );
+      
+      setUsers(updatedUsers);
+      toast.success('Mot de passe modifié avec succès');
+      
+      setPasswordData({ newPassword: '', confirmPassword: '' });
+      setSelectedUserForPassword(null);
+      setShowChangePassword(false);
+    }
+  };
+
   const handleEditUser = (user: UserType) => {
     setEditingUser(user);
     setNewUser({
@@ -254,6 +295,11 @@ const AdminDashboard = () => {
 
   const handleProfileClick = () => {
     setActiveTab('profile');
+  };
+
+  const openChangePasswordDialog = (userId: string) => {
+    setSelectedUserForPassword(userId);
+    setShowChangePassword(true);
   };
 
   const getRoleBadge = (role: string) => {
@@ -453,6 +499,51 @@ const AdminDashboard = () => {
                 </Dialog>
               </div>
 
+              {/* Dialog for changing password */}
+              <Dialog open={showChangePassword} onOpenChange={setShowChangePassword}>
+                <DialogContent className="max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Changer le mot de passe</DialogTitle>
+                  </DialogHeader>
+                  <form onSubmit={handleChangePassword} className="space-y-4">
+                    <div>
+                      <Label htmlFor="newPassword">Nouveau mot de passe *</Label>
+                      <Input
+                        id="newPassword"
+                        type="password"
+                        value={passwordData.newPassword}
+                        onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                        required
+                        minLength={6}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="confirmPassword">Confirmer le mot de passe *</Label>
+                      <Input
+                        id="confirmPassword"
+                        type="password"
+                        value={passwordData.confirmPassword}
+                        onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                        required
+                        minLength={6}
+                      />
+                    </div>
+                    <div className="flex gap-2 pt-4">
+                      <Button type="submit" className="flex-1">
+                        Changer le mot de passe
+                      </Button>
+                      <Button type="button" variant="outline" onClick={() => {
+                        setShowChangePassword(false);
+                        setSelectedUserForPassword(null);
+                        setPasswordData({ newPassword: '', confirmPassword: '' });
+                      }}>
+                        Annuler
+                      </Button>
+                    </div>
+                  </form>
+                </DialogContent>
+              </Dialog>
+
               <Card>
                 <CardContent className="p-0">
                   <Table>
@@ -462,6 +553,7 @@ const AdminDashboard = () => {
                         <TableHead>Nom d'utilisateur</TableHead>
                         <TableHead>Rôle</TableHead>
                         <TableHead>Téléphone</TableHead>
+                        <TableHead>Mot de passe</TableHead>
                         <TableHead>Actions</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -481,6 +573,9 @@ const AdminDashboard = () => {
                             ) : '-'}
                           </TableCell>
                           <TableCell>
+                            <PasswordField password={user.password} showLabel={false} />
+                          </TableCell>
+                          <TableCell>
                             <div className="flex gap-2">
                               <Button 
                                 size="sm" 
@@ -488,6 +583,13 @@ const AdminDashboard = () => {
                                 onClick={() => handleEditUser(user)}
                               >
                                 <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                onClick={() => openChangePasswordDialog(user.id)}
+                              >
+                                <Key className="h-4 w-4" />
                               </Button>
                               <Button 
                                 size="sm" 
