@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
@@ -16,12 +15,12 @@ import {
   Edit, 
   Trash2, 
   Settings, 
-  User,
   ClipboardList
 } from 'lucide-react';
 import { User as UserType, Company, VehicleType } from '../../types';
 import Header from '../Header';
 import ProfilePage from '../ProfilePage';
+import PhoneNumbersField from '../PhoneNumbersField';
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -34,7 +33,7 @@ const AdminDashboard = () => {
       firstName: 'Admin',
       lastName: 'System',
       fullName: 'Admin System',
-      phone: '+213 21 00 00 00',
+      phone: ['+213 21 00 00 00'],
       createdAt: new Date().toISOString()
     }
   ]);
@@ -44,7 +43,7 @@ const AdminDashboard = () => {
       id: '1',
       name: 'Logigrine Algérie',
       address: '123 Rue des Entrepreneurs, Alger',
-      phone: '+213 21 12 34 56',
+      phone: ['+213 21 12 34 56'],
       email: 'contact@logigrine.dz',
       createdAt: new Date().toISOString()
     },
@@ -52,7 +51,7 @@ const AdminDashboard = () => {
       id: '2',
       name: 'Transport Express DZ',
       address: '456 Boulevard des Martyrs, Oran',
-      phone: '+213 41 98 76 54',
+      phone: ['+213 41 98 76 54'],
       email: 'info@transportexpress.dz',
       createdAt: new Date().toISOString()
     }
@@ -62,25 +61,21 @@ const AdminDashboard = () => {
     {
       id: '1',
       name: 'Camion 3.5T',
-      description: 'Camion léger jusqu\'à 3.5 tonnes',
       createdAt: new Date().toISOString()
     },
     {
       id: '2',
       name: 'Camionnette',
-      description: 'Véhicule utilitaire léger',
       createdAt: new Date().toISOString()
     },
     {
       id: '3',
       name: 'Utilitaire',
-      description: 'Véhicule utilitaire standard',
       createdAt: new Date().toISOString()
     },
     {
       id: '4',
       name: 'Poids Lourd',
-      description: 'Camion poids lourd + 7.5 tonnes',
       createdAt: new Date().toISOString()
     }
   ]);
@@ -98,19 +93,18 @@ const AdminDashboard = () => {
     role: 'chauffeur' as UserType['role'],
     firstName: '',
     lastName: '',
-    phone: ''
+    phone: [] as string[]
   });
 
   const [newCompany, setNewCompany] = useState({
     name: '',
     address: '',
-    phone: '',
+    phone: [] as string[],
     email: ''
   });
 
   const [newVehicleType, setNewVehicleType] = useState({
-    name: '',
-    description: ''
+    name: ''
   });
 
   const handleCreateUser = (e: React.FormEvent) => {
@@ -159,7 +153,7 @@ const AdminDashboard = () => {
       role: 'chauffeur',
       firstName: '',
       lastName: '',
-      phone: ''
+      phone: []
     });
     setShowCreateUser(false);
   };
@@ -201,7 +195,7 @@ const AdminDashboard = () => {
     setNewCompany({
       name: '',
       address: '',
-      phone: '',
+      phone: [],
       email: ''
     });
     setShowCreateCompany(false);
@@ -218,8 +212,7 @@ const AdminDashboard = () => {
     if (editingVehicleType) {
       const updatedVehicleType: VehicleType = {
         ...editingVehicleType,
-        name: newVehicleType.name,
-        description: newVehicleType.description
+        name: newVehicleType.name
       };
 
       setVehicleTypes(prev => prev.map(v => v.id === editingVehicleType.id ? updatedVehicleType : v));
@@ -229,7 +222,6 @@ const AdminDashboard = () => {
       const vehicleType: VehicleType = {
         id: Date.now().toString(),
         name: newVehicleType.name,
-        description: newVehicleType.description,
         createdAt: new Date().toISOString()
       };
 
@@ -238,8 +230,7 @@ const AdminDashboard = () => {
     }
 
     setNewVehicleType({
-      name: '',
-      description: ''
+      name: ''
     });
     setShowCreateVehicleType(false);
   };
@@ -252,7 +243,7 @@ const AdminDashboard = () => {
       role: user.role,
       firstName: user.firstName,
       lastName: user.lastName,
-      phone: user.phone || ''
+      phone: user.phone || []
     });
     setShowCreateUser(true);
   };
@@ -262,7 +253,7 @@ const AdminDashboard = () => {
     setNewCompany({
       name: company.name,
       address: company.address || '',
-      phone: company.phone || '',
+      phone: company.phone || [],
       email: company.email || ''
     });
     setShowCreateCompany(true);
@@ -271,8 +262,7 @@ const AdminDashboard = () => {
   const handleEditVehicleType = (vehicleType: VehicleType) => {
     setEditingVehicleType(vehicleType);
     setNewVehicleType({
-      name: vehicleType.name,
-      description: vehicleType.description || ''
+      name: vehicleType.name
     });
     setShowCreateVehicleType(true);
   };
@@ -475,14 +465,11 @@ const AdminDashboard = () => {
                           <option value="admin">Administrateur</option>
                         </select>
                       </div>
-                      <div>
-                        <Label htmlFor="phone">Téléphone</Label>
-                        <Input
-                          id="phone"
-                          value={newUser.phone}
-                          onChange={(e) => setNewUser({ ...newUser, phone: e.target.value })}
-                        />
-                      </div>
+                      <PhoneNumbersField
+                        label="Numéros de téléphone"
+                        phones={newUser.phone}
+                        onChange={(phones) => setNewUser({ ...newUser, phone: phones })}
+                      />
                       <div className="flex gap-2 pt-4">
                         <Button type="submit" className="flex-1">
                           {editingUser ? 'Modifier' : 'Créer'}
@@ -496,7 +483,7 @@ const AdminDashboard = () => {
                             role: 'chauffeur',
                             firstName: '',
                             lastName: '',
-                            phone: ''
+                            phone: []
                           });
                         }}>
                           Annuler
@@ -525,7 +512,15 @@ const AdminDashboard = () => {
                           <TableCell className="font-medium">{user.fullName}</TableCell>
                           <TableCell>{user.username}</TableCell>
                           <TableCell>{getRoleBadge(user.role)}</TableCell>
-                          <TableCell>{user.phone || '-'}</TableCell>
+                          <TableCell>
+                            {user.phone && user.phone.length > 0 ? (
+                              <div className="space-y-1">
+                                {user.phone.map((phone, index) => (
+                                  <div key={index} className="text-sm">{phone}</div>
+                                ))}
+                              </div>
+                            ) : '-'}
+                          </TableCell>
                           <TableCell>
                             <div className="flex gap-2">
                               <Button 
@@ -596,14 +591,11 @@ const AdminDashboard = () => {
                               onChange={(e) => setNewCompany({ ...newCompany, address: e.target.value })}
                             />
                           </div>
-                          <div>
-                            <Label htmlFor="companyPhone">Téléphone</Label>
-                            <Input
-                              id="companyPhone"
-                              value={newCompany.phone}
-                              onChange={(e) => setNewCompany({ ...newCompany, phone: e.target.value })}
-                            />
-                          </div>
+                          <PhoneNumbersField
+                            label="Numéros de téléphone"
+                            phones={newCompany.phone}
+                            onChange={(phones) => setNewCompany({ ...newCompany, phone: phones })}
+                          />
                           <div>
                             <Label htmlFor="companyEmail">Email</Label>
                             <Input
@@ -620,7 +612,7 @@ const AdminDashboard = () => {
                             <Button type="button" variant="outline" onClick={() => {
                               setShowCreateCompany(false);
                               setEditingCompany(null);
-                              setNewCompany({ name: '', address: '', phone: '', email: '' });
+                              setNewCompany({ name: '', address: '', phone: [], email: '' });
                             }}>
                               Annuler
                             </Button>
@@ -646,7 +638,15 @@ const AdminDashboard = () => {
                         <TableRow key={company.id}>
                           <TableCell className="font-medium">{company.name}</TableCell>
                           <TableCell>{company.address || '-'}</TableCell>
-                          <TableCell>{company.phone || '-'}</TableCell>
+                          <TableCell>
+                            {company.phone && company.phone.length > 0 ? (
+                              <div className="space-y-1">
+                                {company.phone.map((phone, index) => (
+                                  <div key={index} className="text-sm">{phone}</div>
+                                ))}
+                              </div>
+                            ) : '-'}
+                          </TableCell>
                           <TableCell>{company.email || '-'}</TableCell>
                           <TableCell>
                             <div className="flex gap-2">
@@ -704,14 +704,6 @@ const AdminDashboard = () => {
                               required
                             />
                           </div>
-                          <div>
-                            <Label htmlFor="vehicleTypeDescription">Description</Label>
-                            <Input
-                              id="vehicleTypeDescription"
-                              value={newVehicleType.description}
-                              onChange={(e) => setNewVehicleType({ ...newVehicleType, description: e.target.value })}
-                            />
-                          </div>
                           <div className="flex gap-2 pt-4">
                             <Button type="submit" className="flex-1">
                               {editingVehicleType ? 'Modifier' : 'Créer'}
@@ -719,7 +711,7 @@ const AdminDashboard = () => {
                             <Button type="button" variant="outline" onClick={() => {
                               setShowCreateVehicleType(false);
                               setEditingVehicleType(null);
-                              setNewVehicleType({ name: '', description: '' });
+                              setNewVehicleType({ name: '' });
                             }}>
                               Annuler
                             </Button>
@@ -734,7 +726,6 @@ const AdminDashboard = () => {
                     <TableHeader>
                       <TableRow>
                         <TableHead>Nom</TableHead>
-                        <TableHead>Description</TableHead>
                         <TableHead>Actions</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -742,7 +733,6 @@ const AdminDashboard = () => {
                       {vehicleTypes.map((vehicleType) => (
                         <TableRow key={vehicleType.id}>
                           <TableCell className="font-medium">{vehicleType.name}</TableCell>
-                          <TableCell>{vehicleType.description || '-'}</TableCell>
                           <TableCell>
                             <div className="flex gap-2">
                               <Button 

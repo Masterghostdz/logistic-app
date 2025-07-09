@@ -41,7 +41,7 @@ const ChauffeurDashboard = () => {
       name: 'Entrepôt Principal Alger',
       companyId: '1',
       companyName: 'Logigrine Algérie',
-      phone: '+213 21 12 34 56',
+      phone: ['+213 21 12 34 56'],
       address: '123 Rue des Entrepreneurs, Alger',
       coordinates: { lat: 36.7538, lng: 3.0588 },
       createdAt: new Date().toISOString()
@@ -51,7 +51,7 @@ const ChauffeurDashboard = () => {
       name: 'Entrepôt Oran',
       companyId: '1',
       companyName: 'Logigrine Algérie',
-      phone: '+213 41 98 76 54',
+      phone: ['+213 41 98 76 54'],
       address: '456 Boulevard Commercial, Oran',
       coordinates: { lat: 35.6969, lng: -0.6331 },
       createdAt: new Date().toISOString()

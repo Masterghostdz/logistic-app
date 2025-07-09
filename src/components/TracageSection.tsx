@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { MapPin, Truck, Plus, Building2 } from 'lucide-react';
 import OpenStreetMap from './OpenStreetMap';
 import { Warehouse, Chauffeur } from '../types';
+import PhoneNumbersField from './PhoneNumbersField';
 
 const TracageSection = () => {
   const [warehouses, setWarehouses] = useState<Warehouse[]>([
@@ -18,7 +19,7 @@ const TracageSection = () => {
       name: 'Entrepôt Principal Alger',
       companyId: '1',
       companyName: 'Logigrine Algérie',
-      phone: '+213 21 12 34 56',
+      phone: ['+213 21 12 34 56'],
       address: '123 Rue des Entrepreneurs, Alger',
       coordinates: { lat: 36.7538, lng: 3.0588 },
       createdAt: new Date().toISOString()
@@ -28,7 +29,7 @@ const TracageSection = () => {
       name: 'Entrepôt Oran',
       companyId: '1',
       companyName: 'Logigrine Algérie',
-      phone: '+213 41 98 76 54',
+      phone: ['+213 41 98 76 54'],
       address: '456 Boulevard Commercial, Oran',
       coordinates: { lat: 35.6969, lng: -0.6331 },
       createdAt: new Date().toISOString()
@@ -43,7 +44,7 @@ const TracageSection = () => {
       fullName: 'Ahmed Benali',
       username: 'abenali',
       password: 'demo123',
-      phone: '+213 55 12 34 56',
+      phone: ['+213 55 12 34 56'],
       vehicleType: 'Camion 3.5T',
       employeeType: 'interne',
       isActive: true,
@@ -57,7 +58,7 @@ const TracageSection = () => {
       fullName: 'Mohamed Khedira',
       username: 'mkhedira',
       password: 'demo123',
-      phone: '+213 66 98 76 54',
+      phone: ['+213 66 98 76 54'],
       vehicleType: 'Camionnette',
       employeeType: 'externe',
       isActive: true,
@@ -70,7 +71,7 @@ const TracageSection = () => {
   const [newWarehouse, setNewWarehouse] = useState({
     name: '',
     companyName: '',
-    phone: '',
+    phone: [] as string[],
     address: '',
     lat: '',
     lng: ''
@@ -99,7 +100,7 @@ const TracageSection = () => {
     };
 
     setWarehouses([...warehouses, warehouse]);
-    setNewWarehouse({ name: '', companyName: '', phone: '', address: '', lat: '', lng: '' });
+    setNewWarehouse({ name: '', companyName: '', phone: [], address: '', lat: '', lng: '' });
     setShowCreateWarehouse(false);
     toast.success('Entrepôt créé avec succès');
   };
@@ -157,12 +158,11 @@ const TracageSection = () => {
                         required
                       />
                     </div>
-                    <div>
-                      <Label htmlFor="phone">Téléphone</Label>
-                      <Input
-                        id="phone"
-                        value={newWarehouse.phone}
-                        onChange={(e) => setNewWarehouse({ ...newWarehouse, phone: e.target.value })}
+                    <div className="md:col-span-2">
+                      <PhoneNumbersField
+                        label="Numéros de téléphone"
+                        phones={newWarehouse.phone}
+                        onChange={(phones) => setNewWarehouse({ ...newWarehouse, phone: phones })}
                       />
                     </div>
                     <div>
@@ -219,7 +219,11 @@ const TracageSection = () => {
                         <h5 className="font-semibold">{warehouse.name}</h5>
                         <p className="text-sm text-gray-600">{warehouse.companyName}</p>
                         <p className="text-sm text-gray-500">{warehouse.address}</p>
-                        <p className="text-sm text-gray-500">{warehouse.phone}</p>
+                        <div className="text-sm text-gray-500">
+                          {warehouse.phone.map((phone, index) => (
+                            <div key={index}>{phone}</div>
+                          ))}
+                        </div>
                       </div>
                       <Badge variant="outline" className="bg-green-50 text-green-700">
                         <MapPin className="h-3 w-3 mr-1" />
