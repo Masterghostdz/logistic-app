@@ -38,7 +38,16 @@ export const translations = {
       pendingValidations: "Validations en attente",
       totalChauffeurs: "Total chauffeurs",
       totalWarehouses: "Total entrepôts",
-      monthlyStats: "Statistiques mensuelles"
+      monthlyStats: "Statistiques mensuelles",
+      chauffeurTitle: "Tableau de bord - Chauffeur",
+      newDeclaration: "Nouvelle Déclaration",
+      createNewDeclaration: "Créer une nouvelle déclaration",
+      myDeclarationsSummary: "Résumé de mes Déclarations",
+      myDeclarations: "Mes Déclarations",
+      warehouseMap: "Carte des Entrepôts",
+      pending: "En Attente",
+      validated: "Validées",
+      refused: "Refusées"
     },
     // Declarations
     declarations: {
@@ -47,7 +56,7 @@ export const translations = {
       number: "Numéro",
       date: "Date",
       distance: "Distance (km)",
-      deliveryFees: "Frais de livraison (FCFA)",
+      deliveryFees: "Frais de livraison (DZD)",
       notes: "Notes",
       photos: "Photos justificatives",
       status: "Statut",
@@ -58,7 +67,15 @@ export const translations = {
       refuse: "Refuser",
       pending: "En cours",
       validated: "Validé",
-      refused: "Refusé"
+      refused: "Refusé",
+      createdDate: "Date création",
+      searchPlaceholder: "Rechercher par numéro, notes...",
+      filterPlaceholder: "Filtrer par statut",
+      noDeclarations: "Aucune déclaration trouvée",
+      noDeclarationsWithFilters: "Aucune déclaration trouvée avec ces critères",
+      confirmDelete: "Êtes-vous sûr de vouloir supprimer cette déclaration ?",
+      programNumberRequired: "Le numéro de programme doit contenir 4 chiffres",
+      distanceOrFeesRequired: "Veuillez renseigner soit la distance soit les frais de livraison"
     },
     // Chauffeurs
     chauffeurs: {
@@ -96,7 +113,7 @@ export const translations = {
       reglement: "Règlement",
       programNumber: "Numéro de programme",
       destinationUnit: "Unité de destination",
-      amount: "Montant (FCFA)",
+      amount: "Montant (DZD)",
       description: "Description",
       pending: "En attente",
       processed: "Traité",
@@ -180,7 +197,16 @@ export const translations = {
       pendingValidations: "Pending Validations",
       totalChauffeurs: "Total Drivers",
       totalWarehouses: "Total Warehouses",
-      monthlyStats: "Monthly Statistics"
+      monthlyStats: "Monthly Statistics",
+      chauffeurTitle: "Driver Dashboard",
+      newDeclaration: "New Declaration",
+      createNewDeclaration: "Create a new declaration",
+      myDeclarationsSummary: "My Declarations Summary",
+      myDeclarations: "My Declarations",
+      warehouseMap: "Warehouse Map",
+      pending: "Pending",
+      validated: "Validated",
+      refused: "Refused"
     },
     // Declarations
     declarations: {
@@ -189,7 +215,7 @@ export const translations = {
       number: "Number",
       date: "Date",
       distance: "Distance (km)",
-      deliveryFees: "Delivery Fees (FCFA)",
+      deliveryFees: "Delivery Fees (DZD)",
       notes: "Notes",
       photos: "Supporting Photos",
       status: "Status",
@@ -200,7 +226,15 @@ export const translations = {
       refuse: "Refuse",
       pending: "Pending",
       validated: "Validated",
-      refused: "Refused"
+      refused: "Refused",
+      createdDate: "Created Date",
+      searchPlaceholder: "Search by number, notes...",
+      filterPlaceholder: "Filter by status",
+      noDeclarations: "No declarations found",
+      noDeclarationsWithFilters: "No declarations found with these criteria",
+      confirmDelete: "Are you sure you want to delete this declaration?",
+      programNumberRequired: "Program number must contain 4 digits",
+      distanceOrFeesRequired: "Please enter either distance or delivery fees"
     },
     // Chauffeurs
     chauffeurs: {
@@ -238,7 +272,7 @@ export const translations = {
       reglement: "Settlement",
       programNumber: "Program Number",
       destinationUnit: "Destination Unit",
-      amount: "Amount (FCFA)",
+      amount: "Amount (DZD)",
       description: "Description",
       pending: "Pending",
       processed: "Processed",
@@ -322,7 +356,16 @@ export const translations = {
       pendingValidations: "التحقق المعلق",
       totalChauffeurs: "إجمالي السائقين",
       totalWarehouses: "إجمالي المستودعات",
-      monthlyStats: "الإحصائيات الشهرية"
+      monthlyStats: "الإحصائيات الشهرية",
+      chauffeurTitle: "لوحة تحكم السائق",
+      newDeclaration: "تصريح جديد",
+      createNewDeclaration: "إنشاء تصريح جديد",
+      myDeclarationsSummary: "ملخص تصريحاتي",
+      myDeclarations: "تصريحاتي",
+      warehouseMap: "خريطة المستودعات",
+      pending: "معلق",
+      validated: "مؤكد",
+      refused: "مرفوض"
     },
     // Declarations
     declarations: {
@@ -331,7 +374,7 @@ export const translations = {
       number: "الرقم",
       date: "التاريخ",
       distance: "المسافة (كم)",
-      deliveryFees: "رسوم التسليم (فرنك أفريقي)",
+      deliveryFees: "رسوم التسليم (دج)",
       notes: "ملاحظات",
       photos: "الصور المبررة",
       status: "الحالة",
@@ -342,7 +385,15 @@ export const translations = {
       refuse: "رفض",
       pending: "معلق",
       validated: "مؤكد",
-      refused: "مرفوض"
+      refused: "مرفوض",
+      createdDate: "تاريخ الإنشاء",
+      searchPlaceholder: "البحث بالرقم أو الملاحظات...",
+      filterPlaceholder: "تصفية حسب الحالة",
+      noDeclarations: "لا توجد تصريحات",
+      noDeclarationsWithFilters: "لا توجد تصريحات بهذه المعايير",
+      confirmDelete: "هل أنت متأكد من حذف هذا التصريح؟",
+      programNumberRequired: "رقم البرنامج يجب أن يحتوي على 4 أرقام",
+      distanceOrFeesRequired: "يرجى إدخال المسافة أو رسوم التسليم"
     },
     // Chauffeurs
     chauffeurs: {
@@ -380,7 +431,7 @@ export const translations = {
       reglement: "تسوية",
       programNumber: "رقم البرنامج",
       destinationUnit: "وحدة الوجهة",
-      amount: "المبلغ (فرنك أفريقي)",
+      amount: "المبلغ (دج)",
       description: "الوصف",
       pending: "معلق",
       processed: "معالج",

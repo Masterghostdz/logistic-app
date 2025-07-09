@@ -25,15 +25,15 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle, showMenuButton = false, o
   const getRoleBadgeColor = (role: string) => {
     switch (role) {
       case 'admin':
-        return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
+        return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-300 border-red-200 dark:border-red-800';
       case 'planificateur':
-        return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
+        return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300 border-blue-200 dark:border-blue-800';
       case 'financier':
-        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+        return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300 border-green-200 dark:border-green-800';
       case 'chauffeur':
-        return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200';
+        return 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-300 border-purple-200 dark:border-purple-800';
       default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200';
+        return 'bg-muted text-muted-foreground border-border';
     }
   };
 
@@ -56,7 +56,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle, showMenuButton = false, o
 
   return (
     <>
-      <header className="border-b bg-white dark:bg-gray-900 shadow-sm">
+      <header className="border-b border-border bg-card shadow-sm">
         <div className="flex h-16 items-center justify-between px-4 lg:px-6">
           <div className="flex items-center gap-4">
             {showMenuButton && (
@@ -64,7 +64,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle, showMenuButton = false, o
                 variant="ghost"
                 size="icon"
                 onClick={onMenuToggle}
-                className="lg:hidden"
+                className="lg:hidden text-foreground hover:bg-accent"
               >
                 <Menu className="h-5 w-5" />
               </Button>
@@ -80,43 +80,43 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle, showMenuButton = false, o
 
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-600 dark:text-gray-400">
+              <span className="text-sm text-muted-foreground">
                 {t('header.welcome')}, {user?.firstName}
               </span>
-              <Badge className={getRoleBadgeColor(user?.role || '')}>
+              <Badge className={`border ${getRoleBadgeColor(user?.role || '')}`}>
                 {user?.role}
               </Badge>
             </div>
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                <Button variant="ghost" className="relative h-8 w-8 rounded-full hover:bg-accent">
                   <Avatar className="h-8 w-8">
                     <AvatarImage src={user?.avatar} alt={user?.firstName} />
-                    <AvatarFallback>
+                    <AvatarFallback className="bg-muted text-muted-foreground">
                       {getInitials(user?.firstName || '', user?.lastName || '')}
                     </AvatarFallback>
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56" align="end" forceMount>
+              <DropdownMenuContent className="w-56 bg-popover border-border" align="end" forceMount>
                 <div className="flex items-center justify-start gap-2 p-2">
                   <div className="flex flex-col space-y-1 leading-none">
-                    <p className="text-sm font-medium">{user?.firstName} {user?.lastName}</p>
+                    <p className="text-sm font-medium text-popover-foreground">{user?.firstName} {user?.lastName}</p>
                     <p className="text-xs text-muted-foreground">{user?.phone}</p>
                   </div>
                 </div>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleProfileClick}>
+                <DropdownMenuSeparator className="bg-border" />
+                <DropdownMenuItem onClick={handleProfileClick} className="text-popover-foreground hover:bg-accent">
                   <User className="mr-2 h-4 w-4" />
-                  <span>Profil</span>
+                  <span>{t('header.profile')}</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setShowSettings(true)}>
+                <DropdownMenuItem onClick={() => setShowSettings(true)} className="text-popover-foreground hover:bg-accent">
                   <Settings className="mr-2 h-4 w-4" />
                   <span>{t('header.settings')}</span>
                 </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={logout}>
+                <DropdownMenuSeparator className="bg-border" />
+                <DropdownMenuItem onClick={logout} className="text-popover-foreground hover:bg-accent">
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>{t('header.logout')}</span>
                 </DropdownMenuItem>
