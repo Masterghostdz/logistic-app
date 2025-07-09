@@ -191,13 +191,13 @@ const PlanificateurDashboard = () => {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'en_cours':
-        return <Badge className="bg-yellow-100 text-yellow-800 text-xs">En Attente</Badge>;
+        return <Badge className="bg-yellow-100 text-yellow-800 text-xs whitespace-nowrap">En Attente</Badge>;
       case 'valide':
-        return <Badge className="bg-green-100 text-green-800 text-xs">Validé</Badge>;
+        return <Badge className="bg-green-100 text-green-800 text-xs whitespace-nowrap">Validé</Badge>;
       case 'refuse':
-        return <Badge className="bg-red-100 text-red-800 text-xs">Refusé</Badge>;
+        return <Badge className="bg-red-100 text-red-800 text-xs whitespace-nowrap">Refusé</Badge>;
       default:
-        return <Badge variant="outline" className="text-xs">{status}</Badge>;
+        return <Badge variant="outline" className="text-xs whitespace-nowrap">{status}</Badge>;
     }
   };
 
@@ -466,9 +466,9 @@ const PlanificateurDashboard = () => {
                         <TableHead className="w-[130px]">Chauffeur</TableHead>
                         <TableHead className="w-[100px]">Distance (km)</TableHead>
                         <TableHead className="w-[120px]">Frais (DZD)</TableHead>
-                        <TableHead className="w-[100px]">Créé le</TableHead>
-                        <TableHead className="w-[100px]">Validé le</TableHead>
-                        <TableHead className="w-[80px]">État</TableHead>
+                        <TableHead className="w-[120px]">Créé le</TableHead>
+                        <TableHead className="w-[120px]">Validé le</TableHead>
+                        <TableHead className="w-[100px]">État</TableHead>
                         <TableHead className="w-[120px]">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -486,19 +486,21 @@ const PlanificateurDashboard = () => {
                           </TableCell>
                           <TableCell className="text-right text-sm">
                             {declaration.deliveryFees ? 
-                              `${declaration.deliveryFees.toFixed(2)}` : '-'}
+                              `${declaration.deliveryFees.toFixed(2)} DZD` : '-'}
                           </TableCell>
                           <TableCell className="text-sm">
                             {new Date(declaration.createdAt).toLocaleDateString('fr-FR', {
                               day: '2-digit',
-                              month: '2-digit'
+                              month: '2-digit',
+                              year: 'numeric'
                             })}
                           </TableCell>
                           <TableCell className="text-sm">
                             {declaration.validatedAt 
                               ? new Date(declaration.validatedAt).toLocaleDateString('fr-FR', {
                                   day: '2-digit',
-                                  month: '2-digit'
+                                  month: '2-digit',
+                                  year: 'numeric'
                                 })
                               : '-'
                             }
@@ -671,21 +673,21 @@ const PlanificateurDashboard = () => {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="w-[160px]">Nom complet</TableHead>
-                        <TableHead className="w-[120px]">Utilisateur</TableHead>
-                        <TableHead className="w-[100px]">Mot de passe</TableHead>
-                        <TableHead className="w-[140px]">Téléphone</TableHead>
-                        <TableHead className="w-[110px]">Véhicule</TableHead>
-                        <TableHead className="w-[80px]">Type</TableHead>
-                        <TableHead className="w-[80px]">Statut</TableHead>
-                        <TableHead className="w-[100px]">Actions</TableHead>
+                        <TableHead className="w-[140px]">Nom complet</TableHead>
+                        <TableHead className="w-[100px]">Utilisateur</TableHead>
+                        <TableHead className="w-[90px]">Mot de passe</TableHead>
+                        <TableHead className="w-[120px]">Téléphone</TableHead>
+                        <TableHead className="w-[100px]">Véhicule</TableHead>
+                        <TableHead className="w-[60px]">Type</TableHead>
+                        <TableHead className="w-[60px]">Statut</TableHead>
+                        <TableHead className="w-[80px]">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {chauffeurs.map((chauffeur) => (
                         <TableRow key={chauffeur.id}>
                           <TableCell className="font-medium">
-                            <div className="truncate">
+                            <div className="truncate text-sm">
                               {chauffeur.employeeType === 'externe' ? 'TP - ' : ''}{chauffeur.firstName} {chauffeur.lastName}
                             </div>
                           </TableCell>
@@ -726,7 +728,7 @@ const PlanificateurDashboard = () => {
                               <Button 
                                 size="sm" 
                                 variant="outline"
-                                className="h-8 w-8 p-0"
+                                className="h-7 w-7 p-0"
                                 onClick={() => handleEditChauffeur(chauffeur)}
                               >
                                 <Edit className="h-3 w-3" />
@@ -734,7 +736,7 @@ const PlanificateurDashboard = () => {
                               <Button 
                                 size="sm" 
                                 variant="outline"
-                                className="h-8 w-8 p-0"
+                                className="h-7 w-7 p-0"
                                 onClick={() => handleDeleteChauffeur(chauffeur.id)}
                               >
                                 <Trash2 className="h-3 w-3" />
