@@ -191,13 +191,13 @@ const PlanificateurDashboard = () => {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'en_cours':
-        return <Badge className="bg-yellow-100 text-yellow-800">En Attente</Badge>;
+        return <Badge className="bg-yellow-100 text-yellow-800 text-xs">En Attente</Badge>;
       case 'valide':
-        return <Badge className="bg-green-100 text-green-800">Validé</Badge>;
+        return <Badge className="bg-green-100 text-green-800 text-xs">Validé</Badge>;
       case 'refuse':
-        return <Badge className="bg-red-100 text-red-800">Refusé</Badge>;
+        return <Badge className="bg-red-100 text-red-800 text-xs">Refusé</Badge>;
       default:
-        return <Badge variant="outline">{status}</Badge>;
+        return <Badge variant="outline" className="text-xs">{status}</Badge>;
     }
   };
 
@@ -459,80 +459,95 @@ const PlanificateurDashboard = () => {
 
               <Card>
                 <CardContent className="p-0">
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="min-w-[180px]">Numéro du Programme</TableHead>
-                          <TableHead className="min-w-[150px]">Chauffeur</TableHead>
-                          <TableHead className="min-w-[120px]">Distance (km)</TableHead>
-                          <TableHead className="min-w-[160px]">Frais de Livraison (DZD)</TableHead>
-                          <TableHead className="min-w-[140px]">Date de Déclaration</TableHead>
-                          <TableHead className="min-w-[140px]">Date de Validation</TableHead>
-                          <TableHead className="min-w-[100px]">État</TableHead>
-                          <TableHead className="min-w-[150px]">Actions</TableHead>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-[140px]">Numéro</TableHead>
+                        <TableHead className="w-[130px]">Chauffeur</TableHead>
+                        <TableHead className="w-[80px]">Distance</TableHead>
+                        <TableHead className="w-[100px]">Frais (DZD)</TableHead>
+                        <TableHead className="w-[100px]">Créé le</TableHead>
+                        <TableHead className="w-[100px]">Validé le</TableHead>
+                        <TableHead className="w-[80px]">État</TableHead>
+                        <TableHead className="w-[120px]">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredDeclarations.map((declaration) => (
+                        <TableRow key={declaration.id}>
+                          <TableCell className="font-medium">
+                            <div className="truncate text-sm">{declaration.number}</div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="truncate text-sm">{declaration.chauffeurName}</div>
+                          </TableCell>
+                          <TableCell className="text-center text-sm">
+                            {declaration.distance || '-'}
+                          </TableCell>
+                          <TableCell className="text-right text-sm">
+                            {declaration.deliveryFees ? 
+                              `${Math.round(declaration.deliveryFees / 1000)}k` : '-'}
+                          </TableCell>
+                          <TableCell className="text-sm">
+                            {new Date(declaration.createdAt).toLocaleDateString('fr-FR', {
+                              day: '2-digit',
+                              month: '2-digit'
+                            })}
+                          </TableCell>
+                          <TableCell className="text-sm">
+                            {declaration.validatedAt 
+                              ? new Date(declaration.validatedAt).toLocaleDateString('fr-FR', {
+                                  day: '2-digit',
+                                  month: '2-digit'
+                                })
+                              : '-'
+                            }
+                          </TableCell>
+                          <TableCell>{getStatusBadge(declaration.status)}</TableCell>
+                          <TableCell>
+                            <div className="flex gap-1">
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                className="h-7 w-7 p-0"
+                                onClick={() => handleEditDeclaration(declaration)}
+                              >
+                                <Edit className="h-3 w-3" />
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                className="h-7 w-7 p-0"
+                                onClick={() => handleDeleteDeclaration(declaration.id)}
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                              {declaration.status === 'en_cours' && (
+                                <>
+                                  <Button 
+                                    size="sm" 
+                                    variant="outline" 
+                                    className="h-7 w-7 p-0 text-green-600 hover:text-green-700"
+                                    onClick={() => handleValidateDeclaration(declaration.id)}
+                                  >
+                                    <Check className="h-3 w-3" />
+                                  </Button>
+                                  <Button 
+                                    size="sm" 
+                                    variant="outline" 
+                                    className="h-7 w-7 p-0 text-red-600 hover:text-red-700"
+                                    onClick={() => handleRejectDeclaration(declaration.id)}
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </Button>
+                                </>
+                              )}
+                            </div>
+                          </TableCell>
                         </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {filteredDeclarations.map((declaration) => (
-                          <TableRow key={declaration.id}>
-                            <TableCell className="font-medium whitespace-nowrap">{declaration.number}</TableCell>
-                            <TableCell className="whitespace-nowrap">{declaration.chauffeurName}</TableCell>
-                            <TableCell className="text-center">{declaration.distance || '-'}</TableCell>
-                            <TableCell className="text-right">{declaration.deliveryFees?.toLocaleString() || '-'}</TableCell>
-                            <TableCell className="whitespace-nowrap">{new Date(declaration.createdAt).toLocaleDateString()}</TableCell>
-                            <TableCell className="whitespace-nowrap">
-                              {declaration.validatedAt 
-                                ? new Date(declaration.validatedAt).toLocaleDateString() 
-                                : '-'
-                              }
-                            </TableCell>
-                            <TableCell>{getStatusBadge(declaration.status)}</TableCell>
-                            <TableCell>
-                              <div className="flex gap-1 flex-wrap">
-                                <Button 
-                                  size="sm" 
-                                  variant="outline"
-                                  className="h-8 w-8 p-0"
-                                  onClick={() => handleEditDeclaration(declaration)}
-                                >
-                                  <Edit className="h-4 w-4" />
-                                </Button>
-                                <Button 
-                                  size="sm" 
-                                  variant="outline"
-                                  className="h-8 w-8 p-0"
-                                  onClick={() => handleDeleteDeclaration(declaration.id)}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                                {declaration.status === 'en_cours' && (
-                                  <>
-                                    <Button 
-                                      size="sm" 
-                                      variant="outline" 
-                                      className="h-8 w-8 p-0 text-green-600 hover:text-green-700"
-                                      onClick={() => handleValidateDeclaration(declaration.id)}
-                                    >
-                                      <Check className="h-4 w-4" />
-                                    </Button>
-                                    <Button 
-                                      size="sm" 
-                                      variant="outline" 
-                                      className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
-                                      onClick={() => handleRejectDeclaration(declaration.id)}
-                                    >
-                                      <X className="h-4 w-4" />
-                                    </Button>
-                                  </>
-                                )}
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
+                      ))}
+                    </TableBody>
+                  </Table>
                 </CardContent>
               </Card>
             </div>
