@@ -6,13 +6,17 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Badge } from './ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { toast } from 'sonner';
 import { MapPin, Truck, Plus, Building2 } from 'lucide-react';
 import OpenStreetMap from './OpenStreetMap';
 import { Warehouse, Chauffeur } from '../types';
+import { useSharedData } from '../contexts/SharedDataContext';
 import PhoneNumbersField from './PhoneNumbersField';
 
 const TracageSection = () => {
+  const { companies } = useSharedData();
+  
   const [warehouses, setWarehouses] = useState<Warehouse[]>([
     {
       id: '1',
@@ -70,6 +74,7 @@ const TracageSection = () => {
   const [showCreateWarehouse, setShowCreateWarehouse] = useState(false);
   const [newWarehouse, setNewWarehouse] = useState({
     name: '',
+    companyId: '',
     companyName: '',
     phone: [] as string[],
     address: '',
@@ -80,16 +85,22 @@ const TracageSection = () => {
   const handleCreateWarehouse = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!newWarehouse.name || !newWarehouse.companyName || !newWarehouse.address || !newWarehouse.lat || !newWarehouse.lng) {
+    if (!newWarehouse.name || !newWarehouse.companyId || !newWarehouse.address || !newWarehouse.lat || !newWarehouse.lng) {
       toast.error('Veuillez remplir tous les champs');
+      return;
+    }
+
+    const selectedCompany = companies.find(c => c.id === newWarehouse.companyId);
+    if (!selectedCompany) {
+      toast.error('Veuillez sélectionner une société');
       return;
     }
 
     const warehouse: Warehouse = {
       id: Date.now().toString(),
       name: newWarehouse.name,
-      companyId: '1',
-      companyName: newWarehouse.companyName,
+      companyId: newWarehouse.companyId,
+      companyName: selectedCompany.name,
       phone: newWarehouse.phone,
       address: newWarehouse.address,
       coordinates: {
@@ -100,9 +111,18 @@ const TracageSection = () => {
     };
 
     setWarehouses([...warehouses, warehouse]);
-    setNewWarehouse({ name: '', companyName: '', phone: [], address: '', lat: '', lng: '' });
+    setNewWarehouse({ name: '', companyId: '', companyName: '', phone: [], address: '', lat: '', lng: '' });
     setShowCreateWarehouse(false);
     toast.success('Entrepôt créé avec succès');
+  };
+
+  const handleCompanyChange = (companyId: string) => {
+    const selectedCompany = companies.find(c => c.id === companyId);
+    setNewWarehouse({
+      ...newWarehouse,
+      companyId,
+      companyName: selectedCompany?.name || ''
+    });
   };
 
   return (
@@ -150,13 +170,19 @@ const TracageSection = () => {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="companyName">Nom de la société</Label>
-                      <Input
-                        id="companyName"
-                        value={newWarehouse.companyName}
-                        onChange={(e) => setNewWarehouse({ ...newWarehouse, companyName: e.target.value })}
-                        required
-                      />
+                      <Label htmlFor="company">Société</Label>
+                      <Select value={newWarehouse.companyId} onValueChange={handleCompanyChange} required>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Sélectionner une société" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {companies.map((company) => (
+                            <SelectItem key={company.id} value={company.id}>
+                              {company.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div className="md:col-span-2">
                       <PhoneNumbersField
