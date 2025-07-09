@@ -40,7 +40,6 @@ const AdminDashboard = () => {
     {
       id: '1',
       username: 'admin',
-      password: 'admin123',
       role: 'admin',
       firstName: 'Admin',
       lastName: 'System',
@@ -59,7 +58,6 @@ const AdminDashboard = () => {
 
   const [newUser, setNewUser] = useState({
     username: '',
-    password: '',
     role: 'chauffeur' as UserType['role'],
     firstName: '',
     lastName: '',
@@ -80,7 +78,7 @@ const AdminDashboard = () => {
   const handleCreateUser = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!newUser.username || !newUser.password || !newUser.firstName || !newUser.lastName) {
+    if (!newUser.username || !newUser.firstName || !newUser.lastName) {
       toast.error('Veuillez remplir tous les champs obligatoires');
       return;
     }
@@ -89,7 +87,6 @@ const AdminDashboard = () => {
       const updatedUser: UserType = {
         ...editingUser,
         username: newUser.username,
-        password: newUser.password,
         role: newUser.role,
         firstName: newUser.firstName,
         lastName: newUser.lastName,
@@ -104,7 +101,6 @@ const AdminDashboard = () => {
       const user: UserType = {
         id: Date.now().toString(),
         username: newUser.username,
-        password: newUser.password,
         role: newUser.role,
         firstName: newUser.firstName,
         lastName: newUser.lastName,
@@ -119,7 +115,6 @@ const AdminDashboard = () => {
 
     setNewUser({
       username: '',
-      password: '',
       role: 'chauffeur',
       firstName: '',
       lastName: '',
@@ -209,7 +204,6 @@ const AdminDashboard = () => {
     setEditingUser(user);
     setNewUser({
       username: user.username,
-      password: user.password,
       role: user.role,
       firstName: user.firstName,
       lastName: user.lastName,
@@ -411,16 +405,6 @@ const AdminDashboard = () => {
                         />
                       </div>
                       <div>
-                        <Label htmlFor="password">Mot de passe *</Label>
-                        <Input
-                          id="password"
-                          type="password"
-                          value={newUser.password}
-                          onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
-                          required
-                        />
-                      </div>
-                      <div>
                         <Label htmlFor="role">Rôle</Label>
                         <select
                           id="role"
@@ -449,7 +433,6 @@ const AdminDashboard = () => {
                           setEditingUser(null);
                           setNewUser({
                             username: '',
-                            password: '',
                             role: 'chauffeur',
                             firstName: '',
                             lastName: '',
