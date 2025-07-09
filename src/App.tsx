@@ -5,6 +5,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { SettingsProvider } from './contexts/SettingsContext';
+import { SharedDataProvider } from './contexts/SharedDataContext';
 import LoginForm from './components/LoginForm';
 import Header from './components/Header';
 import ChauffeurDashboard from './components/dashboards/ChauffeurDashboard';
@@ -35,9 +36,11 @@ const AppContent = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {renderDashboard()}
-    </div>
+    <SharedDataProvider>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        {renderDashboard()}
+      </div>
+    </SharedDataProvider>
   );
 };
 
