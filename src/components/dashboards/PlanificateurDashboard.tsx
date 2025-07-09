@@ -4,6 +4,7 @@ import { Button } from '../ui/button';
 import { toast } from 'sonner';
 import { Plus } from 'lucide-react';
 import { Declaration, Chauffeur } from '../../types';
+import { useSharedData } from '../../contexts/SharedDataContext';
 import SearchAndFilter from '../SearchAndFilter';
 import ProfilePage from '../ProfilePage';
 import TracageSection from '../TracageSection';
@@ -16,77 +17,8 @@ import ChauffeursTable from './ChauffeursTable';
 import CreateChauffeurDialog from './CreateChauffeurDialog';
 
 const PlanificateurDashboard = () => {
+  const { declarations, updateDeclaration, deleteDeclaration } = useSharedData();
   const [activeTab, setActiveTab] = useState('dashboard');
-  
-  const [declarations, setDeclarations] = useState<Declaration[]>([
-    {
-      id: '1',
-      number: 'DCP/24/01/0001',
-      programNumber: '0001',
-      year: '24',
-      month: '01',
-      chauffeurId: '1',
-      chauffeurName: 'Ahmed Benali',
-      distance: 1250,
-      deliveryFees: 75000,
-      notes: 'Livraison dans les délais',
-      photos: [],
-      status: 'en_cours',
-      createdAt: '2024-01-15T10:30:00Z'
-    },
-    {
-      id: '2',
-      number: 'DCP/24/02/0002',
-      programNumber: '0002',
-      year: '24',
-      month: '02',
-      chauffeurId: '2',
-      chauffeurName: 'TP - Fatima Said',
-      distance: 800,
-      deliveryFees: 48000,
-      notes: 'Retard dû à la circulation',
-      photos: [],
-      status: 'valide',
-      createdAt: '2024-02-20T09:15:00Z',
-      validatedAt: '2024-02-22T14:00:00Z',
-      validatedBy: 'Planificateur'
-    },
-    {
-      id: '3',
-      number: 'DCP/24/01/0003',
-      programNumber: '0003',
-      year: '24',
-      month: '01',
-      chauffeurId: '3',
-      chauffeurName: 'Ali Hassan',
-      distance: 2000,
-      deliveryFees: 120000,
-      notes: 'Livraison urgente',
-      photos: [],
-      status: 'valide',
-      createdAt: '2024-01-28T16:45:00Z',
-      validatedAt: '2024-01-30T11:30:00Z',
-      validatedBy: 'Planificateur'
-    },
-    {
-      id: '4',
-      number: 'DCP/24/03/0004',
-      programNumber: '0004',
-      year: '24',
-      month: '03',
-      chauffeurId: '1',
-      chauffeurName: 'Ahmed Benali',
-      distance: 600,
-      deliveryFees: 36000,
-      notes: 'Problème technique avec le véhicule',
-      photos: [],
-      status: 'refuse',
-      createdAt: '2024-03-05T14:00:00Z',
-      validatedAt: '2024-03-07T10:00:00Z',
-      validatedBy: 'Planificateur',
-      refusalReason: 'Photos manquantes'
-    }
-  ]);
 
   const [chauffeurs, setChauffeurs] = useState<Chauffeur[]>([
     {
@@ -244,21 +176,31 @@ const PlanificateurDashboard = () => {
   };
 
   const handleValidateDeclaration = (id: string) => {
-    setDeclarations(prev => prev.map(d => 
-      d.id === id 
-        ? { ...d, status: 'valide', validatedAt: new Date().toISOString(), validatedBy: 'Planificateur' }
-        : d
-    ));
-    toast.success('Déclaration validée');
+    const declaration = declarations.find(d => d.id === id);
+    if (declaration) {
+      const updatedDeclaration = {
+        ...declaration,
+        status: 'valide' as const,
+        validatedAt: new Date().toISOString(),
+        validatedBy: 'Planificateur'
+      };
+      updateDeclaration(id, updatedDeclaration);
+      toast.success('Déclaration validée');
+    }
   };
 
   const handleRejectDeclaration = (id: string) => {
-    setDeclarations(prev => prev.map(d => 
-      d.id === id 
-        ? { ...d, status: 'refuse', validatedAt: new Date().toISOString(), validatedBy: 'Planificateur' }
-        : d
-    ));
-    toast.success('Déclaration refusée');
+    const declaration = declarations.find(d => d.id === id);
+    if (declaration) {
+      const updatedDeclaration = {
+        ...declaration,
+        status: 'refuse' as const,
+        validatedAt: new Date().toISOString(),
+        validatedBy: 'Planificateur'
+      };
+      updateDeclaration(id, updatedDeclaration);
+      toast.success('Déclaration refusée');
+    }
   };
 
   const handleEnAttenteClick = () => {
@@ -275,15 +217,13 @@ const PlanificateurDashboard = () => {
   };
 
   const handleUpdateDeclaration = (updatedDeclaration: Declaration) => {
-    setDeclarations(prev => prev.map(d => 
-      d.id === updatedDeclaration.id ? updatedDeclaration : d
-    ));
+    updateDeclaration(updatedDeclaration.id, updatedDeclaration);
     setEditingDeclaration(null);
     toast.success('Déclaration mise à jour');
   };
 
   const handleDeleteDeclaration = (id: string) => {
-    setDeclarations(prev => prev.filter(d => d.id !== id));
+    deleteDeclaration(id);
     toast.success('Déclaration supprimée');
   };
 
