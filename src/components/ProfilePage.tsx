@@ -6,9 +6,8 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Badge } from './ui/badge';
 import { useAuth } from '../contexts/AuthContext';
-import { ArrowLeft, User, Phone, Car } from 'lucide-react';
+import { ArrowLeft, User, Phone, Car, Shield } from 'lucide-react';
 import { toast } from 'sonner';
-import PasswordField from './PasswordField';
 
 interface ProfilePageProps {
   onBack: () => void;
@@ -86,12 +85,6 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
               <Label className="text-sm font-medium text-gray-500">Nom d'utilisateur</Label>
               <p className="text-lg">{user.username}</p>
             </div>
-            {user.password && (
-              <div>
-                <Label className="text-sm font-medium text-gray-500">Mot de passe actuel</Label>
-                <PasswordField password={user.password} showLabel={false} />
-              </div>
-            )}
             <div>
               <Label className="text-sm font-medium text-gray-500">Rôle</Label>
               <Badge variant="outline" className="mt-1">
@@ -119,6 +112,12 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
                 <p className="text-lg">{user.phone}</p>
               </div>
             )}
+            {user.email && (
+              <div>
+                <Label className="text-sm font-medium text-gray-500">Email</Label>
+                <p className="text-lg">{user.email}</p>
+              </div>
+            )}
             {user.vehicleType && (
               <div>
                 <Label className="text-sm font-medium text-gray-500">Type de véhicule</Label>
@@ -143,7 +142,10 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
       {/* Changement de mot de passe */}
       <Card>
         <CardHeader>
-          <CardTitle>Sécurité</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <Shield className="h-5 w-5" />
+            Sécurité
+          </CardTitle>
           <CardDescription>
             Modifiez votre mot de passe pour sécuriser votre compte
           </CardDescription>
@@ -173,6 +175,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
                   value={passwordForm.newPassword}
                   onChange={(e) => setPasswordForm({...passwordForm, newPassword: e.target.value})}
                   required
+                  minLength={6}
                 />
               </div>
               <div>
@@ -183,6 +186,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
                   value={passwordForm.confirmPassword}
                   onChange={(e) => setPasswordForm({...passwordForm, confirmPassword: e.target.value})}
                   required
+                  minLength={6}
                 />
               </div>
               <div className="flex gap-2">

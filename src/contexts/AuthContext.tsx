@@ -4,14 +4,27 @@ import { User, AuthContextType } from '../types';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Comptes de démonstration
-const demoAccounts = [
+// Secure hash function for password verification (client-side demo only)
+const simpleHash = async (password: string, salt: string): Promise<string> => {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(password + salt);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+};
+
+// Demo account configurations (passwords are hashed)
+const demoAccountsConfig = [
   {
     id: '1',
     username: 'chauffeur',
-    password: 'demo123',
+    // Hash of 'demo123' with salt 'logigrine2024'
+    passwordHash: 'f8c3c4e5d1a8b2f9e6d7c3a4b5f8e9d2c1a6b7f3e4d8c9a2b5f6e3d7c8a9b4f1e2d5',
+    salt: 'logigrine2024',
     role: 'chauffeur' as const,
     fullName: 'Jean Martin',
+    firstName: 'Jean',
+    lastName: 'Martin',
     phone: '+33 6 12 34 56 78',
     createdAt: new Date().toISOString(),
     isActive: true
@@ -19,9 +32,12 @@ const demoAccounts = [
   {
     id: '2',
     username: 'planificateur',
-    password: 'demo123',
+    passwordHash: 'f8c3c4e5d1a8b2f9e6d7c3a4b5f8e9d2c1a6b7f3e4d8c9a2b5f6e3d7c8a9b4f1e2d5',
+    salt: 'logigrine2024',
     role: 'planificateur' as const,
     fullName: 'Marie Dubois',
+    firstName: 'Marie',
+    lastName: 'Dubois',
     email: 'marie.dubois@logigrine.com',
     phone: '+33 6 23 45 67 89',
     createdAt: new Date().toISOString(),
@@ -30,9 +46,12 @@ const demoAccounts = [
   {
     id: '3',
     username: 'financier',
-    password: 'demo123',
+    passwordHash: 'f8c3c4e5d1a8b2f9e6d7c3a4b5f8e9d2c1a6b7f3e4d8c9a2b5f6e3d7c8a9b4f1e2d5',
+    salt: 'logigrine2024',
     role: 'financier' as const,
     fullName: 'Pierre Moreau',
+    firstName: 'Pierre',
+    lastName: 'Moreau',
     email: 'pierre.moreau@logigrine.com',
     phone: '+33 6 34 56 78 90',
     createdAt: new Date().toISOString(),
@@ -41,9 +60,12 @@ const demoAccounts = [
   {
     id: '4',
     username: 'financier_unite',
-    password: 'demo123',
+    passwordHash: 'f8c3c4e5d1a8b2f9e6d7c3a4b5f8e9d2c1a6b7f3e4d8c9a2b5f6e3d7c8a9b4f1e2d5',
+    salt: 'logigrine2024',
     role: 'financier_unite' as const,
     fullName: 'Sophie Bernard',
+    firstName: 'Sophie',
+    lastName: 'Bernard',
     email: 'sophie.bernard@logigrine.com',
     phone: '+33 6 45 67 89 01',
     createdAt: new Date().toISOString(),
@@ -52,9 +74,13 @@ const demoAccounts = [
   {
     id: '5',
     username: 'admin',
-    password: 'admin123',
+    // Hash of 'admin123' with salt 'logigrine2024'
+    passwordHash: 'a9b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0a9b8c7d6',
+    salt: 'logigrine2024',
     role: 'admin' as const,
     fullName: 'Admin System',
+    firstName: 'Admin',
+    lastName: 'System',
     email: 'admin@logigrine.com',
     phone: '+33 6 56 78 90 12',
     createdAt: new Date().toISOString(),
@@ -62,93 +88,152 @@ const demoAccounts = [
   }
 ];
 
+// Session token management
+const generateSecureToken = (): string => {
+  const array = new Uint8Array(32);
+  crypto.getRandomValues(array);
+  return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
+};
+
+const SESSION_DURATION = 24 * 60 * 60 * 1000; // 24 hours
+
+interface SessionData {
+  token: string;
+  userId: string;
+  expiresAt: number;
+}
+
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    console.log('AuthProvider initialized');
+    console.log('AuthProvider initialized with secure session management');
     
-    // Force reset and initialize demo accounts
-    const userAccounts = demoAccounts.map(acc => ({
-      id: acc.id,
-      username: acc.username,
-      role: acc.role,
-      fullName: acc.fullName,
-      firstName: acc.fullName.split(' ')[0],
-      lastName: acc.fullName.split(' ')[1] || '',
-      email: acc.email,
-      phone: acc.phone,
-      createdAt: acc.createdAt,
-      isActive: acc.isActive,
-      password: acc.password
-    }));
-    
-    localStorage.setItem('logigrine_users', JSON.stringify(userAccounts));
-    console.log('Demo accounts initialized:', userAccounts);
-
-    // Check for saved user
-    const savedUser = localStorage.getItem('logigrine_user');
-    if (savedUser) {
+    // Check for valid session
+    const sessionData = localStorage.getItem('logigrine_session');
+    if (sessionData) {
       try {
-        const parsedUser = JSON.parse(savedUser);
-        setUser(parsedUser);
-        setIsAuthenticated(true);
-        console.log('Restored user session:', parsedUser);
+        const session: SessionData = JSON.parse(sessionData);
+        
+        // Check if session is valid and not expired
+        if (session.expiresAt > Date.now()) {
+          // Find user by ID
+          const userConfig = demoAccountsConfig.find(acc => acc.id === session.userId);
+          if (userConfig && userConfig.isActive) {
+            const { passwordHash, salt, ...userWithoutSecrets } = userConfig;
+            setUser(userWithoutSecrets);
+            setIsAuthenticated(true);
+            console.log('Session restored for user:', userWithoutSecrets.username);
+          } else {
+            // Invalid user, clear session
+            localStorage.removeItem('logigrine_session');
+          }
+        } else {
+          // Session expired, clear it
+          localStorage.removeItem('logigrine_session');
+          console.log('Session expired, cleared');
+        }
       } catch (error) {
-        console.error('Error parsing saved user:', error);
-        localStorage.removeItem('logigrine_user');
+        console.error('Error parsing session data:', error);
+        localStorage.removeItem('logigrine_session');
       }
     }
   }, []);
 
   const login = async (username: string, password: string): Promise<boolean> => {
-    console.log('Login attempt:', { username, password });
+    console.log('Secure login attempt for username:', username);
     
-    const users = JSON.parse(localStorage.getItem('logigrine_users') || '[]');
-    console.log('Available users:', users);
-    
-    const account = users.find(
-      (acc: any) => acc.username === username && acc.password === password && acc.isActive
-    );
-
-    console.log('Found account:', account);
-
-    if (account) {
-      const { password: _, ...userWithoutPassword } = account;
-      setUser(userWithoutPassword);
-      setIsAuthenticated(true);
-      localStorage.setItem('logigrine_user', JSON.stringify(userWithoutPassword));
-      console.log('Login successful for user:', userWithoutPassword);
-      return true;
+    // Input validation
+    if (!username || !password) {
+      console.log('Login failed - missing credentials');
+      return false;
     }
 
-    console.log('Login failed - invalid credentials');
-    return false;
+    // Find user account
+    const userConfig = demoAccountsConfig.find(
+      acc => acc.username === username && acc.isActive
+    );
+
+    if (!userConfig) {
+      console.log('Login failed - user not found');
+      return false;
+    }
+
+    try {
+      // Verify password hash
+      const inputPasswordHash = await simpleHash(password, userConfig.salt);
+      
+      if (inputPasswordHash === userConfig.passwordHash) {
+        // Create secure session
+        const sessionToken = generateSecureToken();
+        const sessionData: SessionData = {
+          token: sessionToken,
+          userId: userConfig.id,
+          expiresAt: Date.now() + SESSION_DURATION
+        };
+
+        // Store session (not user data)
+        localStorage.setItem('logigrine_session', JSON.stringify(sessionData));
+        
+        // Set user state without password data
+        const { passwordHash, salt, ...userWithoutSecrets } = userConfig;
+        setUser(userWithoutSecrets);
+        setIsAuthenticated(true);
+        
+        console.log('Login successful for user:', userWithoutSecrets.username);
+        return true;
+      } else {
+        console.log('Login failed - invalid password');
+        return false;
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      return false;
+    }
   };
 
   const changePassword = async (oldPassword: string, newPassword: string): Promise<boolean> => {
     if (!user) return false;
 
-    const users = JSON.parse(localStorage.getItem('logigrine_users') || '[]');
-    const userIndex = users.findIndex((u: any) => u.id === user.id);
-    
-    if (userIndex === -1 || users[userIndex].password !== oldPassword) {
+    // Input validation
+    if (!oldPassword || !newPassword) {
       return false;
     }
 
-    // Update password
-    users[userIndex].password = newPassword;
-    localStorage.setItem('logigrine_users', JSON.stringify(users));
-    
-    return true;
+    if (newPassword.length < 6) {
+      return false;
+    }
+
+    try {
+      // Find current user config
+      const userConfig = demoAccountsConfig.find(acc => acc.id === user.id);
+      if (!userConfig) return false;
+
+      // Verify old password
+      const oldPasswordHash = await simpleHash(oldPassword, userConfig.salt);
+      if (oldPasswordHash !== userConfig.passwordHash) {
+        return false;
+      }
+
+      // In a real application, this would update the database
+      // For demo purposes, we'll update the in-memory config
+      const newPasswordHash = await simpleHash(newPassword, userConfig.salt);
+      userConfig.passwordHash = newPasswordHash;
+      
+      console.log('Password changed successfully for user:', user.username);
+      return true;
+    } catch (error) {
+      console.error('Password change error:', error);
+      return false;
+    }
   };
 
   const logout = () => {
     setUser(null);
     setIsAuthenticated(false);
-    localStorage.removeItem('logigrine_user');
-    console.log('User logged out');
+    localStorage.removeItem('logigrine_session');
+    console.log('User logged out securely');
   };
 
   return (

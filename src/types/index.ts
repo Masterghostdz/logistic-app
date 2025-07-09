@@ -1,4 +1,3 @@
-
 export interface User {
   id: string;
   username: string;
@@ -8,7 +7,6 @@ export interface User {
   fullName: string;
   phone?: string[];
   email?: string;
-  password: string;
   createdAt: string;
   isActive?: boolean;
   avatar?: string;

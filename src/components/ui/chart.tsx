@@ -65,6 +65,7 @@ const ChartContainer = React.forwardRef<
 })
 ChartContainer.displayName = "Chart"
 
+// Secure CSS style injection using CSS custom properties
 const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
   const colorConfig = Object.entries(config).filter(
     ([_, config]) => config.theme || config.color
@@ -74,28 +75,60 @@ const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
     return null
   }
 
-  return (
-    <style
-      dangerouslySetInnerHTML={{
-        __html: Object.entries(THEMES)
-          .map(
-            ([theme, prefix]) => `
-${prefix} [data-chart=${id}] {
-${colorConfig
-  .map(([key, itemConfig]) => {
-    const color =
-      itemConfig.theme?.[theme as keyof typeof itemConfig.theme] ||
-      itemConfig.color
-    return color ? `  --color-${key}: ${color};` : null
-  })
-  .join("\n")}
-}
-`
-          )
-          .join("\n"),
-      }}
-    />
-  )
+  // Create CSS custom properties object safely
+  const cssProperties = React.useMemo(() => {
+    const properties: Record<string, Record<string, string>> = {}
+    
+    Object.entries(THEMES).forEach(([theme, prefix]) => {
+      properties[theme] = {}
+      colorConfig.forEach(([key, itemConfig]) => {
+        const color = itemConfig.theme?.[theme as keyof typeof itemConfig.theme] || itemConfig.color
+        if (color && typeof color === 'string') {
+          // Sanitize color value to prevent CSS injection
+          const sanitizedColor = color.replace(/[<>"'`]/g, '').trim()
+          if (sanitizedColor && /^(#[0-9a-fA-F]{3,8}|rgb|hsl|var\(|[a-zA-Z]+)/.test(sanitizedColor)) {
+            properties[theme][`--color-${key}`] = sanitizedColor
+          }
+        }
+      })
+    })
+    
+    return properties
+  }, [colorConfig])
+
+  // Apply styles using React's style prop instead of dangerouslySetInnerHTML
+  React.useEffect(() => {
+    const chartElement = document.querySelector(`[data-chart="${id}"]`) as HTMLElement
+    if (!chartElement) return
+
+    // Apply CSS custom properties directly to the element
+    Object.entries(cssProperties).forEach(([theme, props]) => {
+      const selector = theme === 'light' ? chartElement : chartElement.closest('.dark')
+      const targetElement = selector || chartElement
+      
+      if (targetElement instanceof HTMLElement) {
+        Object.entries(props).forEach(([property, value]) => {
+          targetElement.style.setProperty(property, value)
+        })
+      }
+    })
+
+    // Cleanup function
+    return () => {
+      Object.entries(cssProperties).forEach(([theme, props]) => {
+        const selector = theme === 'light' ? chartElement : chartElement.closest('.dark')
+        const targetElement = selector || chartElement
+        
+        if (targetElement instanceof HTMLElement) {
+          Object.keys(props).forEach((property) => {
+            targetElement.style.removeProperty(property)
+          })
+        }
+      })
+    }
+  }, [id, cssProperties])
+
+  return null
 }
 
 const ChartTooltip = RechartsPrimitive.Tooltip
