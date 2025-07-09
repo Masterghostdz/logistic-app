@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 import { Button } from './ui/button';
-import { Input } from './ui/input';
+import { Input } from './ui/input';  
 import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
 import { Declaration } from '../types';
@@ -47,6 +47,18 @@ const EditDeclarationDialog: React.FC<EditDeclarationDialogProps> = ({
 
   const handleSave = () => {
     if (!declaration) return;
+
+    // Vérifier que le numéro de programme est complètement rempli (4 chiffres)
+    if (!formData.programNumber || formData.programNumber.length !== 4) {
+      alert('Le numéro de programme doit contenir 4 chiffres');
+      return;
+    }
+
+    // Vérifier qu'au moins la distance ou les frais de livraison sont renseignés
+    if (!formData.distance && !formData.deliveryFees) {
+      alert('Veuillez renseigner soit la distance soit les frais de livraison');
+      return;
+    }
 
     const updatedDeclaration: Declaration = {
       ...declaration,
