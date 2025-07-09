@@ -6,10 +6,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 
 interface DeclarationNumberFormProps {
   onNumberChange: (number: string) => void;
+  onComponentsChange?: (year: string, month: string, programNumber: string) => void;
   initialNumber?: string;
 }
 
-const DeclarationNumberForm: React.FC<DeclarationNumberFormProps> = ({ onNumberChange, initialNumber }) => {
+const DeclarationNumberForm: React.FC<DeclarationNumberFormProps> = ({ 
+  onNumberChange, 
+  onComponentsChange,
+  initialNumber 
+}) => {
   const [year, setYear] = useState('');
   const [month, setMonth] = useState('');
   const [programNumber, setProgramNumber] = useState('');
@@ -40,7 +45,7 @@ const DeclarationNumberForm: React.FC<DeclarationNumberFormProps> = ({ onNumberC
       setYear(currentYear);
       setMonth(currentMonth);
     } else {
-      // Parse existing number DCP/AA/MM/XXXX
+      // Parse existing number DCP/YY/MM/XXXX
       const parts = initialNumber.replace('DCP/', '').split('/');
       if (parts.length === 3) {
         setYear(parts[0]);
@@ -54,24 +59,25 @@ const DeclarationNumberForm: React.FC<DeclarationNumberFormProps> = ({ onNumberC
     if (year && month && programNumber) {
       const fullNumber = `DCP/${year}/${month}/${programNumber}`;
       onNumberChange(fullNumber);
+      onComponentsChange?.(year, month, programNumber);
     }
-  }, [year, month, programNumber, onNumberChange]);
+  }, [year, month, programNumber, onNumberChange, onComponentsChange]);
 
   return (
     <div className="space-y-4">
       <div>
-        <Label>Numéro de déclaration (Format: DCP/AA/MM/XXXX)</Label>
+        <Label>Numéro de déclaration (Format: DCP/YY/MM/XXXX)</Label>
         <div className="text-sm text-gray-500 mb-2">
-          AA = Année, MM = Mois, XXXX = Numéro de programme
+          YY = Année, MM = Mois, XXXX = Numéro de programme
         </div>
       </div>
       
       <div className="grid grid-cols-3 gap-4">
         <div>
-          <Label htmlFor="year">Année (AA)</Label>
+          <Label htmlFor="year">Année (YY)</Label>
           <Select value={year} onValueChange={setYear}>
             <SelectTrigger>
-              <SelectValue placeholder="AA" />
+              <SelectValue placeholder="YY" />
             </SelectTrigger>
             <SelectContent>
               {years.map(y => (

@@ -32,10 +32,10 @@ const PlanificateurDashboard = () => {
   const [declarations, setDeclarations] = useState<Declaration[]>([
     {
       id: '1',
-      number: 'DECL-2024-001',
-      programNumber: 'PROG-001',
-      year: '2024',
-      month: 'Janvier',
+      number: 'DCP/24/01/0001',
+      programNumber: '0001',
+      year: '24',
+      month: '01',
       chauffeurId: '1',
       chauffeurName: 'Ahmed Benali',
       distance: 1250,
@@ -47,10 +47,10 @@ const PlanificateurDashboard = () => {
     },
     {
       id: '2',
-      number: 'DECL-2024-002',
-      programNumber: 'PROG-002',
-      year: '2024',
-      month: 'Février',
+      number: 'DCP/24/02/0002',
+      programNumber: '0002',
+      year: '24',
+      month: '02',
       chauffeurId: '2',
       chauffeurName: 'Fatima Said',
       distance: 800,
@@ -64,10 +64,10 @@ const PlanificateurDashboard = () => {
     },
     {
       id: '3',
-      number: 'DECL-2024-003',
-      programNumber: 'PROG-001',
-      year: '2024',
-      month: 'Janvier',
+      number: 'DCP/24/01/0003',
+      programNumber: '0003',
+      year: '24',
+      month: '01',
       chauffeurId: '3',
       chauffeurName: 'Ali Hassan',
       distance: 2000,
@@ -81,10 +81,10 @@ const PlanificateurDashboard = () => {
     },
     {
       id: '4',
-      number: 'DECL-2024-004',
-      programNumber: 'PROG-003',
-      year: '2024',
-      month: 'Mars',
+      number: 'DCP/24/03/0004',
+      programNumber: '0004',
+      year: '24',
+      month: '03',
       chauffeurId: '1',
       chauffeurName: 'Ahmed Benali',
       distance: 600,
@@ -96,23 +96,6 @@ const PlanificateurDashboard = () => {
       validatedAt: '2024-03-07T10:00:00Z',
       validatedBy: 'Planificateur',
       refusalReason: 'Photos manquantes'
-    },
-    {
-      id: '5',
-      number: 'DECL-2024-005',
-      programNumber: 'PROG-002',
-      year: '2024',
-      month: 'Février',
-      chauffeurId: '2',
-      chauffeurName: 'Fatima Said',
-      distance: 1500,
-      deliveryFees: 90000,
-      notes: 'Livraison effectuée sans incident',
-      photos: [],
-      status: 'valide',
-      createdAt: '2024-02-10T12:00:00Z',
-      validatedAt: '2024-02-12T15:45:00Z',
-      validatedBy: 'Planificateur'
     }
   ]);
 
@@ -171,7 +154,6 @@ const PlanificateurDashboard = () => {
     employeeType: 'interne' as 'interne' | 'externe'
   });
 
-  // Statistiques
   const stats = useMemo(() => {
     const enAttente = declarations.filter(d => d.status === 'en_cours').length;
     
@@ -180,10 +162,8 @@ const PlanificateurDashboard = () => {
     };
   }, [declarations]);
 
-  // Filtrage des déclarations
   const filteredDeclarations = useMemo(() => {
     return declarations.filter(declaration => {
-      // Filter by search
       if (searchValue) {
         const searchLower = searchValue.toLowerCase();
         if (!declaration.number.toLowerCase().includes(searchLower) &&
@@ -192,7 +172,6 @@ const PlanificateurDashboard = () => {
         }
       }
       
-      // Filter by status
       if (filterStatus && filterStatus !== 'all' && declaration.status !== filterStatus) {
         return false;
       }
@@ -280,7 +259,9 @@ const PlanificateurDashboard = () => {
     return (
       <div>
         <Header onProfileClick={handleProfileClick} />
-        <ProfilePage onBack={() => setActiveTab('dashboard')} />
+        <div className="p-6">
+          <ProfilePage onBack={() => setActiveTab('dashboard')} />
+        </div>
       </div>
     );
   }
@@ -305,7 +286,6 @@ const PlanificateurDashboard = () => {
     <div>
       <Header onProfileClick={handleProfileClick} />
       <div className="flex h-[calc(100vh-4rem)]">
-        {/* Sidebar */}
         <div className="w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 p-4">
           <nav className="space-y-2">
             <Button
@@ -343,7 +323,6 @@ const PlanificateurDashboard = () => {
           </nav>
         </div>
 
-        {/* Main Content */}
         <div className="flex-1 p-6 overflow-auto">
           {activeTab === 'dashboard' && (
             <div className="space-y-6">
@@ -351,7 +330,6 @@ const PlanificateurDashboard = () => {
                 <h1 className="text-3xl font-bold">Tableau de bord - Planificateur</h1>
               </div>
 
-              {/* Statistiques */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <Card 
                   className="cursor-pointer hover:shadow-md transition-shadow"
@@ -368,7 +346,6 @@ const PlanificateurDashboard = () => {
                 </Card>
               </div>
 
-              {/* Déclarations récentes */}
               <Card>
                 <CardHeader>
                   <CardTitle>Déclarations récentes</CardTitle>
@@ -380,7 +357,7 @@ const PlanificateurDashboard = () => {
                         <div>
                           <div className="font-medium">{declaration.number}</div>
                           <div className="text-sm text-gray-500">
-                            {declaration.chauffeurName} - {declaration.month} {declaration.year}
+                            {declaration.chauffeurName} - {declaration.month}/{declaration.year}
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
@@ -422,12 +399,13 @@ const PlanificateurDashboard = () => {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Numéro</TableHead>
+                        <TableHead>Numéro du Programme</TableHead>
                         <TableHead>Chauffeur</TableHead>
-                        <TableHead>Période</TableHead>
-                        <TableHead>Distance</TableHead>
-                        <TableHead>Frais</TableHead>
-                        <TableHead>Statut</TableHead>
+                        <TableHead>Distance (km)</TableHead>
+                        <TableHead>Frais de Livraison (DZD)</TableHead>
+                        <TableHead>Date de Déclaration</TableHead>
+                        <TableHead>Date de Validation</TableHead>
+                        <TableHead>État</TableHead>
                         <TableHead>Actions</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -436,9 +414,15 @@ const PlanificateurDashboard = () => {
                         <TableRow key={declaration.id}>
                           <TableCell className="font-medium">{declaration.number}</TableCell>
                           <TableCell>{declaration.chauffeurName}</TableCell>
-                          <TableCell>{declaration.month} {declaration.year}</TableCell>
-                          <TableCell>{declaration.distance} km</TableCell>
-                          <TableCell>{declaration.deliveryFees?.toLocaleString()} DA</TableCell>
+                          <TableCell>{declaration.distance || '-'}</TableCell>
+                          <TableCell>{declaration.deliveryFees?.toLocaleString() || '-'}</TableCell>
+                          <TableCell>{new Date(declaration.createdAt).toLocaleDateString()}</TableCell>
+                          <TableCell>
+                            {declaration.validatedAt 
+                              ? new Date(declaration.validatedAt).toLocaleDateString() 
+                              : '-'
+                            }
+                          </TableCell>
                           <TableCell>{getStatusBadge(declaration.status)}</TableCell>
                           <TableCell>
                             <div className="flex gap-2">
