@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
@@ -6,6 +7,7 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { toast } from 'sonner';
 import { 
   Users, 
@@ -410,18 +412,18 @@ const AdminDashboard = () => {
                       </div>
                       <div>
                         <Label htmlFor="role">Rôle</Label>
-                        <select
-                          id="role"
-                          value={newUser.role}
-                          onChange={(e) => setNewUser({ ...newUser, role: e.target.value as UserType['role'] })}
-                          className="w-full px-3 py-2 border border-input rounded-md"
-                        >
-                          <option value="chauffeur">Chauffeur</option>
-                          <option value="planificateur">Planificateur</option>
-                          <option value="financier">Financier</option>
-                          <option value="financier_unite">Financier Unité</option>
-                          <option value="admin">Administrateur</option>
-                        </select>
+                        <Select value={newUser.role} onValueChange={(value) => setNewUser({ ...newUser, role: value as UserType['role'] })}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Sélectionner un rôle" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="chauffeur">Chauffeur</SelectItem>
+                            <SelectItem value="planificateur">Planificateur</SelectItem>
+                            <SelectItem value="financier">Financier</SelectItem>
+                            <SelectItem value="financier_unite">Financier Unité</SelectItem>
+                            <SelectItem value="admin">Administrateur</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
                       <PhoneNumbersField
                         label="Numéros de téléphone"
