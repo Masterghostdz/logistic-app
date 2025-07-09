@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useSharedData } from '../../contexts/SharedDataContext';
@@ -9,15 +8,18 @@ import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
 import { Badge } from '../ui/badge';
 import { Separator } from '../ui/separator';
-import { MapPin, Plus, Clock } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
+import { MapPin, Plus, Clock, Search, Edit, Trash2 } from 'lucide-react';
 import { Declaration, Warehouse } from '../../types';
 import SimpleDeclarationNumberForm from '../SimpleDeclarationNumberForm';
 import OpenStreetMap from '../OpenStreetMap';
+import SearchAndFilter from '../SearchAndFilter';
+import EditDeclarationDialog from '../EditDeclarationDialog';
 import Header from '../Header';
 
 const ChauffeurDashboard = () => {
   const { user } = useAuth();
-  const { declarations, addDeclaration } = useSharedData();
+  const { declarations, addDeclaration, updateDeclaration, deleteDeclaration } = useSharedData();
   
   const [isCreating, setIsCreating] = useState(false);
   const [formData, setFormData] = useState({
@@ -29,6 +31,12 @@ const ChauffeurDashboard = () => {
     month: '',
     programNumber: ''
   });
+
+  // Search and filter states
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [editingDeclaration, setEditingDeclaration] = useState<Declaration | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   // Entrepôts pour la carte
   const [warehouses] = useState<Warehouse[]>([
@@ -60,31 +68,26 @@ const ChauffeurDashboard = () => {
     }
   }, [user]);
 
-  const [showAllDeclarations, setShowAllDeclarations] = useState(false);
-
-  const toggleDeclarationsView = () => {
-    setShowAllDeclarations(!showAllDeclarations);
-  };
-
-  const allDeclarations = declarations.filter(
-    declaration => declaration.chauffeurId === user?.id
-  );
-
-  const pendingDeclarations = allDeclarations.filter(
-    declaration => declaration.status === 'en_cours'
-  );
-
-  const validatedDeclarations = allDeclarations.filter(
-    declaration => declaration.status === 'valide'
-  );
-
-  const rejectedDeclarations = allDeclarations.filter(
-    declaration => declaration.status === 'refuse'
-  );
-
   const chauffeurDeclarations = declarations.filter(
     declaration => declaration.chauffeurId === user?.id
   );
+
+  // Filter and search declarations
+  const filteredDeclarations = chauffeurDeclarations.filter(declaration => {
+    const matchesSearch = declaration.number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         declaration.notes?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         declaration.chauffeurName.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesStatus = statusFilter === 'all' || declaration.status === statusFilter;
+    
+    return matchesSearch && matchesStatus;
+  });
+
+  const filterOptions = [
+    { value: 'en_cours', label: 'En Attente' },
+    { value: 'valide', label: 'Validé' },
+    { value: 'refuse', label: 'Refusé' }
+  ];
 
   const handleCreateDeclaration = () => {
     // Vérifier que le numéro de programme est complètement rempli (4 chiffres)
@@ -140,6 +143,23 @@ const ChauffeurDashboard = () => {
       month, 
       programNumber 
     }));
+  };
+
+  const handleEditDeclaration = (declaration: Declaration) => {
+    setEditingDeclaration(declaration);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleSaveDeclaration = (updatedDeclaration: Declaration) => {
+    updateDeclaration(updatedDeclaration.id, updatedDeclaration);
+    setIsEditDialogOpen(false);
+    setEditingDeclaration(null);
+  };
+
+  const handleDeleteDeclaration = (id: string) => {
+    if (confirm('Êtes-vous sûr de vouloir supprimer cette déclaration ?')) {
+      deleteDeclaration(id);
+    }
   };
 
   const getStatusBadge = (status: string) => {
@@ -246,50 +266,129 @@ const ChauffeurDashboard = () => {
             </CardContent>
           </Card>
 
-          {/* My Declarations */}
+          {/* My Declarations Summary */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Clock className="h-5 w-5" />
-                Mes Déclarations ({chauffeurDeclarations.length})
+                Résumé de mes Déclarations
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                {chauffeurDeclarations.length === 0 ? (
-                  <p className="text-gray-500 text-center py-4">
-                    Aucune déclaration trouvée
-                  </p>
-                ) : (
-                  chauffeurDeclarations.map((declaration) => (
-                    <div key={declaration.id} className="border rounded-lg p-4 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="font-medium text-sm">
-                          {declaration.number}
-                        </span>
-                        {getStatusBadge(declaration.status)}
-                      </div>
-                      <div className="text-sm text-gray-600 space-y-1">
-                        {declaration.distance && (
-                          <div>Distance: {declaration.distance} km</div>
-                        )}
-                        {declaration.deliveryFees && (
-                          <div>Frais: {declaration.deliveryFees} DZD</div>
-                        )}
-                        {declaration.notes && (
-                          <div>Notes: {declaration.notes}</div>
-                        )}
-                        <div>
-                          Créé le: {new Date(declaration.createdAt).toLocaleDateString('fr-FR')}
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                )}
+              <div className="grid grid-cols-3 gap-4 text-center">
+                <div className="p-4 bg-yellow-50 rounded-lg">
+                  <div className="text-2xl font-bold text-yellow-700">
+                    {chauffeurDeclarations.filter(d => d.status === 'en_cours').length}
+                  </div>
+                  <div className="text-sm text-yellow-600">En Attente</div>
+                </div>
+                <div className="p-4 bg-green-50 rounded-lg">
+                  <div className="text-2xl font-bold text-green-700">
+                    {chauffeurDeclarations.filter(d => d.status === 'valide').length}
+                  </div>
+                  <div className="text-sm text-green-600">Validées</div>
+                </div>
+                <div className="p-4 bg-red-50 rounded-lg">
+                  <div className="text-2xl font-bold text-red-700">
+                    {chauffeurDeclarations.filter(d => d.status === 'refuse').length}
+                  </div>
+                  <div className="text-sm text-red-600">Refusées</div>
+                </div>
               </div>
             </CardContent>
           </Card>
         </div>
+
+        <Separator />
+
+        {/* Declarations List */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Search className="h-5 w-5" />
+              Mes Déclarations ({chauffeurDeclarations.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <SearchAndFilter
+                searchValue={searchTerm}
+                onSearchChange={setSearchTerm}
+                filterValue={statusFilter}
+                onFilterChange={setStatusFilter}
+                filterOptions={filterOptions}
+                searchPlaceholder="Rechercher par numéro, notes..."
+                filterPlaceholder="Filtrer par statut"
+              />
+
+              {filteredDeclarations.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  {searchTerm || statusFilter !== 'all' 
+                    ? 'Aucune déclaration trouvée avec ces critères'
+                    : 'Aucune déclaration trouvée'
+                  }
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Numéro</TableHead>
+                      <TableHead>Distance</TableHead>
+                      <TableHead>Frais</TableHead>
+                      <TableHead>Statut</TableHead>
+                      <TableHead>Date création</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredDeclarations.map((declaration) => (
+                      <TableRow key={declaration.id}>
+                        <TableCell className="font-medium">
+                          {declaration.number}
+                        </TableCell>
+                        <TableCell>
+                          {declaration.distance ? `${declaration.distance} km` : '-'}
+                        </TableCell>
+                        <TableCell>
+                          {declaration.deliveryFees ? `${declaration.deliveryFees} DZD` : '-'}
+                        </TableCell>
+                        <TableCell>
+                          {getStatusBadge(declaration.status)}
+                        </TableCell>
+                        <TableCell>
+                          {new Date(declaration.createdAt).toLocaleDateString('fr-FR')}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-2">
+                            {declaration.status === 'en_cours' && (
+                              <>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleEditDeclaration(declaration)}
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleDeleteDeclaration(declaration.id)}
+                                  className="text-red-600 hover:text-red-800"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </div>
+          </CardContent>
+        </Card>
 
         <Separator />
 
@@ -308,6 +407,17 @@ const ChauffeurDashboard = () => {
             />
           </CardContent>
         </Card>
+
+        {/* Edit Declaration Dialog */}
+        <EditDeclarationDialog
+          declaration={editingDeclaration}
+          isOpen={isEditDialogOpen}
+          onClose={() => {
+            setIsEditDialogOpen(false);
+            setEditingDeclaration(null);
+          }}
+          onSave={handleSaveDeclaration}
+        />
       </div>
     </div>
   );
