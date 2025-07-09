@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
@@ -41,7 +42,7 @@ const AdminDashboard = () => {
     deleteVehicleType 
   } = useSharedData();
   
-  // Initialize users from demo accounts configuration with passwords
+  // Initialize users from demo accounts configuration with default passwords
   const [users, setUsers] = useState<(UserType & { password: string })[]>(() => {
     return demoAccountsConfig.map(account => ({
       id: account.id,
@@ -54,7 +55,7 @@ const AdminDashboard = () => {
       email: account.email,
       createdAt: account.createdAt,
       isActive: account.isActive,
-      password: account.password
+      password: account.username === 'admin' ? 'admin123' : 'demo123' // Default passwords based on role
     }));
   });
 
