@@ -47,21 +47,21 @@ const SimpleDeclarationNumberForm = ({
   }, [initialYear, initialMonth, initialProgramNumber]);
 
   useEffect(() => {
-    if (year && month && programNumber) {
+    if (year && month && programNumber && programNumber.length === 4) {
       const fullNumber = `DCP/${year}/${month}/${programNumber}`;
       onNumberChange(fullNumber);
       onComponentsChange(year, month, programNumber);
     } else {
       onNumberChange('');
-      onComponentsChange('', '', '');
+      onComponentsChange(year || '', month || '', programNumber || '');
     }
   }, [year, month, programNumber, onNumberChange, onComponentsChange]);
 
   const handleProgramNumberChange = (value: string) => {
-    // S'assurer que c'est un nombre de 4 chiffres
+    // Permet seulement les chiffres et limite à 4 caractères
     const numericValue = value.replace(/\D/g, '');
     if (numericValue.length <= 4) {
-      setProgramNumber(numericValue.padStart(4, '0'));
+      setProgramNumber(numericValue);
     }
   };
 
