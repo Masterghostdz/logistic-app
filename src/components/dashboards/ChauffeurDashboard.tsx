@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useSharedData } from '../../contexts/SharedDataContext';
@@ -17,6 +16,7 @@ import OpenStreetMap from '../OpenStreetMap';
 import SearchAndFilter from '../SearchAndFilter';
 import EditDeclarationDialog from '../EditDeclarationDialog';
 import Header from '../Header';
+import ProfilePage from '../ProfilePage';
 
 const ChauffeurDashboard = () => {
   const { user } = useAuth();
@@ -38,6 +38,7 @@ const ChauffeurDashboard = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [editingDeclaration, setEditingDeclaration] = useState<Declaration | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
 
   // Entrepôts pour la carte
   const [warehouses] = useState<Warehouse[]>([
@@ -176,9 +177,21 @@ const ChauffeurDashboard = () => {
     }
   };
 
+  // Si on affiche le profil, on rend seulement ProfilePage sans le header du tableau de bord
+  if (showProfile) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Header onProfileClick={() => setShowProfile(false)} />
+        <div className="container mx-auto p-6">
+          <ProfilePage onBack={() => setShowProfile(false)} />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
+      <Header onProfileClick={() => setShowProfile(true)} />
       <div className="container mx-auto p-6 space-y-6">
         <div className="flex items-center gap-4">
           <h1 className="text-3xl font-bold text-gray-900">
