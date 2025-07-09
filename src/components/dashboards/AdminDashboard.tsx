@@ -49,10 +49,7 @@ const AdminDashboard = () => {
       phone: account.phone,
       email: account.email,
       createdAt: account.createdAt,
-      isActive: account.isActive,
-      avatar: account.avatar,
-      vehicleType: account.vehicleType,
-      employeeType: account.employeeType
+      isActive: account.isActive
     }));
   });
 
