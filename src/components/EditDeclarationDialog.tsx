@@ -25,7 +25,10 @@ const EditDeclarationDialog: React.FC<EditDeclarationDialogProps> = ({
     distance: '',
     deliveryFees: '',
     notes: '',
-    number: ''
+    number: '',
+    year: '',
+    month: '',
+    programNumber: ''
   });
 
   useEffect(() => {
@@ -34,7 +37,10 @@ const EditDeclarationDialog: React.FC<EditDeclarationDialogProps> = ({
         distance: declaration.distance?.toString() || '',
         deliveryFees: declaration.deliveryFees?.toString() || '',
         notes: declaration.notes || '',
-        number: declaration.number || ''
+        number: declaration.number || '',
+        year: declaration.year || '',
+        month: declaration.month || '',
+        programNumber: declaration.programNumber || ''
       });
     }
   }, [declaration]);
@@ -47,7 +53,10 @@ const EditDeclarationDialog: React.FC<EditDeclarationDialogProps> = ({
       distance: formData.distance ? parseInt(formData.distance) : undefined,
       deliveryFees: formData.deliveryFees ? parseInt(formData.deliveryFees) : undefined,
       notes: formData.notes,
-      number: formData.number
+      number: formData.number,
+      year: formData.year,
+      month: formData.month,
+      programNumber: formData.programNumber
     };
 
     onSave(updatedDeclaration);
@@ -58,7 +67,12 @@ const EditDeclarationDialog: React.FC<EditDeclarationDialogProps> = ({
   };
 
   const handleComponentsChange = (year: string, month: string, programNumber: string) => {
-    // Update the declaration parts if needed
+    setFormData(prev => ({ 
+      ...prev, 
+      year, 
+      month, 
+      programNumber 
+    }));
   };
 
   if (!declaration) return null;
