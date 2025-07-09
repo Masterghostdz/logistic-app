@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Company, VehicleType } from '../types';
 
 interface SharedDataContextType {
@@ -29,48 +29,86 @@ interface SharedDataProviderProps {
   children: ReactNode;
 }
 
-export const SharedDataProvider: React.FC<SharedDataProviderProps> = ({ children }) => {
-  const [companies, setCompaniesState] = useState<Company[]>([
-    {
-      id: '1',
-      name: 'TechCorp Solutions',
-      address: '123 Avenue Principale, Alger',
-      phone: ['+213 21 12 34 56', '+213 21 12 34 57'],
-      email: 'contact@techcorp.dz',
-      createdAt: new Date().toISOString()
-    },
-    {
-      id: '2',
-      name: 'Industries Maghreb',
-      address: '456 Rue Commerce, Oran',
-      phone: ['+213 41 98 76 54'],
-      email: 'info@maghreb-ind.dz',
-      createdAt: new Date().toISOString()
-    }
-  ]);
+// Données par défaut
+const defaultCompanies: Company[] = [
+  {
+    id: '1',
+    name: 'TechCorp Solutions',
+    address: '123 Avenue Principale, Alger',
+    phone: ['+213 21 12 34 56', '+213 21 12 34 57'],
+    email: 'contact@techcorp.dz',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: '2',
+    name: 'Industries Maghreb',
+    address: '456 Rue Commerce, Oran',
+    phone: ['+213 41 98 76 54'],
+    email: 'info@maghreb-ind.dz',
+    createdAt: new Date().toISOString()
+  }
+];
 
-  const [vehicleTypes, setVehicleTypesState] = useState<VehicleType[]>([
-    {
-      id: '1',
-      name: 'Camion 3.5T',
-      createdAt: new Date().toISOString()
-    },
-    {
-      id: '2',
-      name: 'Camionnette',
-      createdAt: new Date().toISOString()
-    },
-    {
-      id: '3',
-      name: 'Utilitaire',
-      createdAt: new Date().toISOString()
-    },
-    {
-      id: '4',
-      name: 'Poids Lourd',
-      createdAt: new Date().toISOString()
+const defaultVehicleTypes: VehicleType[] = [
+  {
+    id: '1',
+    name: 'Camion 3.5T',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: '2',
+    name: 'Camionnette',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: '3',
+    name: 'Utilitaire',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: '4',
+    name: 'Poids Lourd',
+    createdAt: new Date().toISOString()
+  }
+];
+
+export const SharedDataProvider: React.FC<SharedDataProviderProps> = ({ children }) => {
+  // Fonction pour charger les données depuis localStorage
+  const loadFromStorage = <T,>(key: string, defaultData: T): T => {
+    try {
+      const stored = localStorage.getItem(key);
+      return stored ? JSON.parse(stored) : defaultData;
+    } catch (error) {
+      console.error(`Error loading ${key} from localStorage:`, error);
+      return defaultData;
     }
-  ]);
+  };
+
+  // Fonction pour sauvegarder dans localStorage
+  const saveToStorage = <T,>(key: string, data: T) => {
+    try {
+      localStorage.setItem(key, JSON.stringify(data));
+    } catch (error) {
+      console.error(`Error saving ${key} to localStorage:`, error);
+    }
+  };
+
+  const [companies, setCompaniesState] = useState<Company[]>(() => 
+    loadFromStorage('companies', defaultCompanies)
+  );
+
+  const [vehicleTypes, setVehicleTypesState] = useState<VehicleType[]>(() => 
+    loadFromStorage('vehicleTypes', defaultVehicleTypes)
+  );
+
+  // Sauvegarder automatiquement quand les données changent
+  useEffect(() => {
+    saveToStorage('companies', companies);
+  }, [companies]);
+
+  useEffect(() => {
+    saveToStorage('vehicleTypes', vehicleTypes);
+  }, [vehicleTypes]);
 
   const setCompanies = (newCompanies: Company[]) => {
     setCompaniesState(newCompanies);
