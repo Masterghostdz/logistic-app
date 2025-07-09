@@ -1,18 +1,22 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Company, VehicleType } from '../types';
+import { Company, VehicleType, Declaration } from '../types';
 
 interface SharedDataContextType {
   companies: Company[];
   vehicleTypes: VehicleType[];
+  declarations: Declaration[];
   setCompanies: (companies: Company[]) => void;
   setVehicleTypes: (vehicleTypes: VehicleType[]) => void;
+  setDeclarations: (declarations: Declaration[]) => void;
   addCompany: (company: Company) => void;
   addVehicleType: (vehicleType: VehicleType) => void;
+  addDeclaration: (declaration: Declaration) => void;
   updateCompany: (id: string, company: Company) => void;
   updateVehicleType: (id: string, vehicleType: VehicleType) => void;
+  updateDeclaration: (id: string, declaration: Declaration) => void;
   deleteCompany: (id: string) => void;
   deleteVehicleType: (id: string) => void;
+  deleteDeclaration: (id: string) => void;
 }
 
 const SharedDataContext = createContext<SharedDataContextType | undefined>(undefined);
@@ -72,6 +76,8 @@ const defaultVehicleTypes: VehicleType[] = [
   }
 ];
 
+const defaultDeclarations: Declaration[] = [];
+
 export const SharedDataProvider: React.FC<SharedDataProviderProps> = ({ children }) => {
   // Fonction pour charger les données depuis localStorage
   const loadFromStorage = <T,>(key: string, defaultData: T): T => {
@@ -101,6 +107,10 @@ export const SharedDataProvider: React.FC<SharedDataProviderProps> = ({ children
     loadFromStorage('vehicleTypes', defaultVehicleTypes)
   );
 
+  const [declarations, setDeclarationsState] = useState<Declaration[]>(() => 
+    loadFromStorage('declarations', defaultDeclarations)
+  );
+
   // Sauvegarder automatiquement quand les données changent
   useEffect(() => {
     saveToStorage('companies', companies);
@@ -110,12 +120,20 @@ export const SharedDataProvider: React.FC<SharedDataProviderProps> = ({ children
     saveToStorage('vehicleTypes', vehicleTypes);
   }, [vehicleTypes]);
 
+  useEffect(() => {
+    saveToStorage('declarations', declarations);
+  }, [declarations]);
+
   const setCompanies = (newCompanies: Company[]) => {
     setCompaniesState(newCompanies);
   };
 
   const setVehicleTypes = (newVehicleTypes: VehicleType[]) => {
     setVehicleTypesState(newVehicleTypes);
+  };
+
+  const setDeclarations = (newDeclarations: Declaration[]) => {
+    setDeclarationsState(newDeclarations);
   };
 
   const addCompany = (company: Company) => {
@@ -126,12 +144,20 @@ export const SharedDataProvider: React.FC<SharedDataProviderProps> = ({ children
     setVehicleTypesState(prev => [...prev, vehicleType]);
   };
 
+  const addDeclaration = (declaration: Declaration) => {
+    setDeclarationsState(prev => [...prev, declaration]);
+  };
+
   const updateCompany = (id: string, updatedCompany: Company) => {
     setCompaniesState(prev => prev.map(c => c.id === id ? updatedCompany : c));
   };
 
   const updateVehicleType = (id: string, updatedVehicleType: VehicleType) => {
     setVehicleTypesState(prev => prev.map(vt => vt.id === id ? updatedVehicleType : vt));
+  };
+
+  const updateDeclaration = (id: string, updatedDeclaration: Declaration) => {
+    setDeclarationsState(prev => prev.map(d => d.id === id ? updatedDeclaration : d));
   };
 
   const deleteCompany = (id: string) => {
@@ -142,17 +168,26 @@ export const SharedDataProvider: React.FC<SharedDataProviderProps> = ({ children
     setVehicleTypesState(prev => prev.filter(vt => vt.id !== id));
   };
 
+  const deleteDeclaration = (id: string) => {
+    setDeclarationsState(prev => prev.filter(d => d.id !== id));
+  };
+
   const value = {
     companies,
     vehicleTypes,
+    declarations,
     setCompanies,
     setVehicleTypes,
+    setDeclarations,
     addCompany,
     addVehicleType,
+    addDeclaration,
     updateCompany,
     updateVehicleType,
+    updateDeclaration,
     deleteCompany,
-    deleteVehicleType
+    deleteVehicleType,
+    deleteDeclaration
   };
 
   return (
