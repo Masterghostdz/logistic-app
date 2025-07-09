@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User, AuthContextType } from '../types';
 
@@ -14,14 +13,14 @@ const simpleHash = async (password: string, salt: string): Promise<string> => {
 };
 
 // Demo account configurations (passwords are hashed)
-// Password "demo123" with salt "logigrine2025" = 3a5f8c2e9d1b4a7c6f8e2d5b9c3a6f1e4d7b0c5a8f2e9d6b3c7f0a4e8d1b5c9f2a6
-// Password "admin123" with salt "logigrine2025" = 7b2e8f1c4d9a6c3f0e5b8d2a7c4f9e1b6d3c8f5a2e9d6c3b7f0a5e8d1c4b9f2a6e
+// Password "demo123" with salt "logigrine2025" = 583ef6136b8e990013e35202d9e7e9577b0cb637bed69f7723e009cde0b774ca
+// Password "admin123" with salt "logigrine2025" = 52a51b5cfd788a6d81c881ab9002deece4e1c114f514a2079d86a3c19b7ecdca
 const demoAccountsConfig = [
   {
     id: '1',
     username: 'chauffeur',
     // Hash of 'demo123' with salt 'logigrine2025'
-    passwordHash: '3a5f8c2e9d1b4a7c6f8e2d5b9c3a6f1e4d7b0c5a8f2e9d6b3c7f0a4e8d1b5c9f2a6',
+    passwordHash: '583ef6136b8e990013e35202d9e7e9577b0cb637bed69f7723e009cde0b774ca',
     salt: 'logigrine2025',
     role: 'chauffeur' as const,
     fullName: 'Jean Martin',
@@ -34,7 +33,7 @@ const demoAccountsConfig = [
   {
     id: '2',
     username: 'planificateur',
-    passwordHash: '3a5f8c2e9d1b4a7c6f8e2d5b9c3a6f1e4d7b0c5a8f2e9d6b3c7f0a4e8d1b5c9f2a6',
+    passwordHash: '583ef6136b8e990013e35202d9e7e9577b0cb637bed69f7723e009cde0b774ca',
     salt: 'logigrine2025',
     role: 'planificateur' as const,
     fullName: 'Marie Dubois',
@@ -48,7 +47,7 @@ const demoAccountsConfig = [
   {
     id: '3',
     username: 'financier',
-    passwordHash: '3a5f8c2e9d1b4a7c6f8e2d5b9c3a6f1e4d7b0c5a8f2e9d6b3c7f0a4e8d1b5c9f2a6',
+    passwordHash: '583ef6136b8e990013e35202d9e7e9577b0cb637bed69f7723e009cde0b774ca',
     salt: 'logigrine2025',
     role: 'financier' as const,
     fullName: 'Pierre Moreau',
@@ -62,7 +61,7 @@ const demoAccountsConfig = [
   {
     id: '4',
     username: 'financier_unite',
-    passwordHash: '3a5f8c2e9d1b4a7c6f8e2d5b9c3a6f1e4d7b0c5a8f2e9d6b3c7f0a4e8d1b5c9f2a6',
+    passwordHash: '583ef6136b8e990013e35202d9e7e9577b0cb637bed69f7723e009cde0b774ca',
     salt: 'logigrine2025',
     role: 'financier_unite' as const,
     fullName: 'Sophie Bernard',
@@ -77,7 +76,7 @@ const demoAccountsConfig = [
     id: '5',
     username: 'admin',
     // Hash of 'admin123' with salt 'logigrine2025'
-    passwordHash: '7b2e8f1c4d9a6c3f0e5b8d2a7c4f9e1b6d3c8f5a2e9d6c3b7f0a5e8d1c4b9f2a6e',
+    passwordHash: '52a51b5cfd788a6d81c881ab9002deece4e1c114f514a2079d86a3c19b7ecdca',
     salt: 'logigrine2025',
     role: 'admin' as const,
     fullName: 'Admin System',
