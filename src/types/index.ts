@@ -1,3 +1,4 @@
+
 export interface User {
   id: string;
   username: string;
@@ -6,8 +7,10 @@ export interface User {
   lastName: string;
   fullName: string;
   phone?: string;
+  email?: string;
   password: string;
   createdAt: string;
+  isActive?: boolean;
 }
 
 export interface Chauffeur {
@@ -22,6 +25,10 @@ export interface Chauffeur {
   employeeType: 'interne' | 'externe';
   isActive: boolean;
   createdAt: string;
+  coordinates?: {
+    lat: number;
+    lng: number;
+  };
 }
 
 export interface Declaration {
@@ -71,4 +78,32 @@ export interface VehicleType {
   name: string;
   description?: string;
   createdAt: string;
+}
+
+export interface FinancialRecord {
+  id: string;
+  number: string;
+  type: 'remboursement' | 'reglement';
+  programNumber: string;
+  destinationUnit: 'cph_nord' | 'cph_sud' | 'cph_est' | 'cph_ouest' | 'cph_centre';
+  amount: number;
+  description?: string;
+  photos?: string[];
+  status: 'en_attente' | 'traite';
+  createdAt: string;
+  processedAt?: string;
+  processedBy?: string;
+}
+
+export interface AuthContextType {
+  user: User | null;
+  login: (username: string, password: string) => Promise<boolean>;
+  logout: () => void;
+  changePassword: (oldPassword: string, newPassword: string) => Promise<boolean>;
+  isAuthenticated: boolean;
+}
+
+export interface Settings {
+  language: 'fr' | 'en' | 'ar';
+  theme: 'light' | 'dark';
 }
