@@ -1,3 +1,4 @@
+
 export interface User {
   id: string;
   username: string;
@@ -5,7 +6,7 @@ export interface User {
   firstName: string;
   lastName: string;
   fullName: string;
-  phone?: string;
+  phone?: string[];
   email?: string;
   password: string;
   createdAt: string;
@@ -22,7 +23,7 @@ export interface Chauffeur {
   fullName: string;
   username: string;
   password: string;
-  phone: string;
+  phone: string[];
   vehicleType: string;
   employeeType: 'interne' | 'externe';
   isActive: boolean;
@@ -57,7 +58,7 @@ export interface Warehouse {
   name: string;
   companyId: string;
   companyName: string;
-  phone: string;
+  phone: string[];
   address: string;
   coordinates: {
     lat: number;
@@ -70,7 +71,7 @@ export interface Company {
   id: string;
   name: string;
   address?: string;
-  phone?: string;
+  phone?: string[];
   email?: string;
   createdAt: string;
 }
@@ -78,7 +79,6 @@ export interface Company {
 export interface VehicleType {
   id: string;
   name: string;
-  description?: string;
   createdAt: string;
 }
 

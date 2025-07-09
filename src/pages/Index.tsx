@@ -1,12 +1,12 @@
 
 import React from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { SharedDataProvider } from '../contexts/SharedDataContext';
 import LoginForm from '../components/LoginForm';
 import ChauffeurDashboard from '../components/dashboards/ChauffeurDashboard';
 import PlanificateurDashboard from '../components/dashboards/PlanificateurDashboard';
 import FinancierDashboard from '../components/dashboards/FinancierDashboard';
 import AdminDashboard from '../components/dashboards/AdminDashboard';
-import Header from '../components/Header';
 
 const Index = () => {
   const { user, isAuthenticated } = useAuth();
@@ -31,12 +31,13 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <Header />
-      <main className="flex-1">
-        {renderDashboard()}
-      </main>
-    </div>
+    <SharedDataProvider>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <main className="flex-1">
+          {renderDashboard()}
+        </main>
+      </div>
+    </SharedDataProvider>
   );
 };
 
