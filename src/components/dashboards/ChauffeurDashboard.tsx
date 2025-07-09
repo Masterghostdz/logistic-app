@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
@@ -13,7 +12,7 @@ import { useTranslation } from '../../hooks/useTranslation';
 import { Declaration, Warehouse } from '../../types';
 import { Plus, FileText, MapPin, Camera, Edit, Trash2, Clock, CheckCircle, XCircle, User } from 'lucide-react';
 import { toast } from 'sonner';
-import DeclarationNumberForm from '../DeclarationNumberForm';
+import SimpleDeclarationNumberForm from '../SimpleDeclarationNumberForm';
 import OpenStreetMap from '../OpenStreetMap';
 import ProfilePage from '../ProfilePage';
 import Header from '../Header';
@@ -195,7 +194,7 @@ const ChauffeurDashboard = () => {
                 <DialogTitle>{t('declarations.new')}</DialogTitle>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
-                <DeclarationNumberForm
+                <SimpleDeclarationNumberForm
                   onNumberChange={(number) => setFormData({...formData, declarationNumber: number})}
                   onComponentsChange={(year, month, programNumber) => 
                     setFormData({...formData, year, month, programNumber})

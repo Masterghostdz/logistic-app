@@ -19,13 +19,16 @@ import {
   User, 
   MapPin,
   Settings,
-  ClipboardList
+  ClipboardList,
+  Edit,
+  Trash2
 } from 'lucide-react';
 import { Declaration, Chauffeur } from '../../types';
 import SearchAndFilter from '../SearchAndFilter';
 import ProfilePage from '../ProfilePage';
 import TracageSection from '../TracageSection';
 import Header from '../Header';
+import PasswordField from '../PasswordField';
 
 const PlanificateurDashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -52,7 +55,7 @@ const PlanificateurDashboard = () => {
       year: '24',
       month: '02',
       chauffeurId: '2',
-      chauffeurName: 'Fatima Said',
+      chauffeurName: 'TP - Fatima Said',
       distance: 800,
       deliveryFees: 48000,
       notes: 'Retard dû à la circulation',
@@ -117,7 +120,7 @@ const PlanificateurDashboard = () => {
       id: '2',
       firstName: 'Fatima',
       lastName: 'Said',
-      fullName: 'Fatima Said',
+      fullName: 'TP - Fatima Said',
       username: 'fsaid',
       password: 'demo123',
       phone: '+213 66 98 76 54',
@@ -144,6 +147,7 @@ const PlanificateurDashboard = () => {
   const [searchValue, setSearchValue] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [showCreateChauffeur, setShowCreateChauffeur] = useState(false);
+  const [editingDeclaration, setEditingDeclaration] = useState<Declaration | null>(null);
   const [newChauffeur, setNewChauffeur] = useState({
     firstName: '',
     lastName: '',
@@ -253,6 +257,28 @@ const PlanificateurDashboard = () => {
 
   const handleProfileClick = () => {
     setActiveTab('profile');
+  };
+
+  const handleEditDeclaration = (declaration: Declaration) => {
+    setEditingDeclaration(declaration);
+  };
+
+  const handleUpdateDeclaration = (updatedDeclaration: Declaration) => {
+    setDeclarations(prev => prev.map(d => 
+      d.id === updatedDeclaration.id ? updatedDeclaration : d
+    ));
+    setEditingDeclaration(null);
+    toast.success('Déclaration mise à jour');
+  };
+
+  const handleDeleteDeclaration = (id: string) => {
+    setDeclarations(prev => prev.filter(d => d.id !== id));
+    toast.success('Déclaration supprimée');
+  };
+
+  const handleDeleteChauffeur = (id: string) => {
+    setChauffeurs(prev => prev.filter(c => c.id !== id));
+    toast.success('Chauffeur supprimé');
   };
 
   if (activeTab === 'profile') {
@@ -429,6 +455,20 @@ const PlanificateurDashboard = () => {
                               <Button size="sm" variant="outline">
                                 <Eye className="h-4 w-4" />
                               </Button>
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                onClick={() => handleEditDeclaration(declaration)}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                onClick={() => handleDeleteDeclaration(declaration.id)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
                               {declaration.status === 'en_cours' && (
                                 <>
                                   <Button 
@@ -565,6 +605,8 @@ const PlanificateurDashboard = () => {
                     <TableHeader>
                       <TableRow>
                         <TableHead>Nom complet</TableHead>
+                        <TableHead>Nom d'utilisateur</TableHead>
+                        <TableHead>Mot de passe</TableHead>
                         <TableHead>Téléphone</TableHead>
                         <TableHead>Type de véhicule</TableHead>
                         <TableHead>Type</TableHead>
@@ -575,7 +617,13 @@ const PlanificateurDashboard = () => {
                     <TableBody>
                       {chauffeurs.map((chauffeur) => (
                         <TableRow key={chauffeur.id}>
-                          <TableCell className="font-medium">{chauffeur.fullName}</TableCell>
+                          <TableCell className="font-medium">
+                            {chauffeur.employeeType === 'externe' ? 'TP - ' : ''}{chauffeur.firstName} {chauffeur.lastName}
+                          </TableCell>
+                          <TableCell>{chauffeur.username}</TableCell>
+                          <TableCell>
+                            <PasswordField password={chauffeur.password} showLabel={false} />
+                          </TableCell>
                           <TableCell>{chauffeur.phone}</TableCell>
                           <TableCell>{chauffeur.vehicleType}</TableCell>
                           <TableCell>
@@ -589,9 +637,18 @@ const PlanificateurDashboard = () => {
                             </Badge>
                           </TableCell>
                           <TableCell>
-                            <Button size="sm" variant="outline">
-                              <Eye className="h-4 w-4" />
-                            </Button>
+                            <div className="flex gap-2">
+                              <Button size="sm" variant="outline">
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                onClick={() => handleDeleteChauffeur(chauffeur.id)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))}
