@@ -23,6 +23,7 @@ const ChauffeurDashboard = () => {
   const [activeView, setActiveView] = useState('dashboard');
   const [declarations, setDeclarations] = useState<Declaration[]>([]);
   const [showNewDeclaration, setShowNewDeclaration] = useState(false);
+  const [editingDeclaration, setEditingDeclaration] = useState<Declaration | null>(null);
   const [formData, setFormData] = useState({
     declarationNumber: '',
     year: '',
@@ -73,25 +74,49 @@ const ChauffeurDashboard = () => {
       return;
     }
 
-    const newDeclaration: Declaration = {
-      id: Date.now().toString(),
-      number: formData.declarationNumber,
-      programNumber: formData.programNumber,
-      year: formData.year,
-      month: formData.month,
-      chauffeurId: user?.id || '',
-      chauffeurName: `${user?.firstName} ${user?.lastName}`,
-      distance: formData.distance ? parseInt(formData.distance) : undefined,
-      deliveryFees: formData.deliveryFees ? parseInt(formData.deliveryFees) : undefined,
-      notes: formData.notes,
-      photos: formData.photos,
-      status: 'en_cours',
-      createdAt: new Date().toISOString()
-    };
+    if (editingDeclaration) {
+      // Modification d'une déclaration existante
+      const updatedDeclaration: Declaration = {
+        ...editingDeclaration,
+        programNumber: formData.programNumber,
+        year: formData.year,
+        month: formData.month,
+        distance: formData.distance ? parseInt(formData.distance) : undefined,
+        deliveryFees: formData.deliveryFees ? parseInt(formData.deliveryFees) : undefined,
+        notes: formData.notes,
+        photos: formData.photos
+      };
 
-    const updatedDeclarations = [...declarations, newDeclaration];
-    setDeclarations(updatedDeclarations);
-    localStorage.setItem(`declarations_${user?.id}`, JSON.stringify(updatedDeclarations));
+      const updatedDeclarations = declarations.map(d => 
+        d.id === editingDeclaration.id ? updatedDeclaration : d
+      );
+      setDeclarations(updatedDeclarations);
+      localStorage.setItem(`declarations_${user?.id}`, JSON.stringify(updatedDeclarations));
+      setEditingDeclaration(null);
+      toast.success('Déclaration mise à jour');
+    } else {
+      // Création d'une nouvelle déclaration
+      const newDeclaration: Declaration = {
+        id: Date.now().toString(),
+        number: formData.declarationNumber,
+        programNumber: formData.programNumber,
+        year: formData.year,
+        month: formData.month,
+        chauffeurId: user?.id || '',
+        chauffeurName: `${user?.firstName} ${user?.lastName}`,
+        distance: formData.distance ? parseInt(formData.distance) : undefined,
+        deliveryFees: formData.deliveryFees ? parseInt(formData.deliveryFees) : undefined,
+        notes: formData.notes,
+        photos: formData.photos,
+        status: 'en_cours',
+        createdAt: new Date().toISOString()
+      };
+
+      const updatedDeclarations = [...declarations, newDeclaration];
+      setDeclarations(updatedDeclarations);
+      localStorage.setItem(`declarations_${user?.id}`, JSON.stringify(updatedDeclarations));
+      toast.success(t('forms.success'));
+    }
     
     // Réinitialiser le formulaire
     setFormData({
@@ -106,10 +131,35 @@ const ChauffeurDashboard = () => {
     });
     
     setShowNewDeclaration(false);
-    toast.success(t('forms.success'));
+  };
+
+  const handleEdit = (declaration: Declaration) => {
+    if (declaration.status !== 'en_cours') {
+      toast.error('Seules les déclarations en cours peuvent être modifiées');
+      return;
+    }
+
+    setEditingDeclaration(declaration);
+    setFormData({
+      declarationNumber: declaration.number,
+      year: declaration.year,
+      month: declaration.month,
+      programNumber: declaration.programNumber,
+      distance: declaration.distance?.toString() || '',
+      deliveryFees: declaration.deliveryFees?.toString() || '',
+      notes: declaration.notes || '',
+      photos: declaration.photos || []
+    });
+    setShowNewDeclaration(true);
   };
 
   const handleDelete = (id: string) => {
+    const declaration = declarations.find(d => d.id === id);
+    if (declaration?.status !== 'en_cours') {
+      toast.error('Seules les déclarations en cours peuvent être supprimées');
+      return;
+    }
+
     const updatedDeclarations = declarations.filter(d => d.id !== id);
     setDeclarations(updatedDeclarations);
     localStorage.setItem(`declarations_${user?.id}`, JSON.stringify(updatedDeclarations));
@@ -186,12 +236,14 @@ const ChauffeurDashboard = () => {
             <DialogTrigger asChild>
               <Button className="flex items-center gap-2">
                 <Plus className="h-4 w-4" />
-                {t('declarations.new')}
+                {editingDeclaration ? 'Modifier la déclaration' : t('declarations.new')}
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[500px]">
               <DialogHeader>
-                <DialogTitle>{t('declarations.new')}</DialogTitle>
+                <DialogTitle>
+                  {editingDeclaration ? 'Modifier la déclaration' : t('declarations.new')}
+                </DialogTitle>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <SimpleDeclarationNumberForm
@@ -199,6 +251,9 @@ const ChauffeurDashboard = () => {
                   onComponentsChange={(year, month, programNumber) => 
                     setFormData({...formData, year, month, programNumber})
                   }
+                  initialYear={formData.year}
+                  initialMonth={formData.month}
+                  initialProgramNumber={formData.programNumber}
                 />
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -233,11 +288,24 @@ const ChauffeurDashboard = () => {
                   />
                 </div>
                 <div className="flex justify-end space-x-2">
-                  <Button type="button" variant="outline" onClick={() => setShowNewDeclaration(false)}>
+                  <Button type="button" variant="outline" onClick={() => {
+                    setShowNewDeclaration(false);
+                    setEditingDeclaration(null);
+                    setFormData({
+                      declarationNumber: '',
+                      year: '',
+                      month: '',
+                      programNumber: '',
+                      distance: '',
+                      deliveryFees: '',
+                      notes: '',
+                      photos: []
+                    });
+                  }}>
                     {t('forms.cancel')}
                   </Button>
                   <Button type="submit">
-                    {t('forms.save')}
+                    {editingDeclaration ? 'Modifier' : t('forms.save')}
                   </Button>
                 </div>
               </form>
@@ -334,15 +402,26 @@ const ChauffeurDashboard = () => {
                       </TableCell>
                       <TableCell>{getStatusBadge(declaration.status)}</TableCell>
                       <TableCell>
-                        {declaration.status === 'en_cours' && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleDelete(declaration.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        )}
+                        <div className="flex gap-2">
+                          {declaration.status === 'en_cours' && (
+                            <>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleEdit(declaration)}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleDelete(declaration.id)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}

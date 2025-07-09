@@ -1,4 +1,3 @@
-
 export interface User {
   id: string;
   username: string;
@@ -6,32 +5,9 @@ export interface User {
   firstName: string;
   lastName: string;
   fullName: string;
-  phone: string;
-  avatar?: string;
+  phone?: string;
+  password: string;
   createdAt: string;
-  isActive: boolean;
-  password?: string;
-  vehicleType?: string;
-  employeeType?: 'interne' | 'externe';
-}
-
-export interface Declaration {
-  id: string;
-  number: string;
-  programNumber: string;
-  year: string;
-  month: string;
-  chauffeurId: string;
-  chauffeurName: string;
-  distance?: number;
-  deliveryFees?: number;
-  notes: string;
-  photos: string[];
-  status: 'en_cours' | 'valide' | 'refuse';
-  createdAt: string;
-  validatedAt?: string;
-  validatedBy?: string;
-  refusalReason?: string;
 }
 
 export interface Chauffeur {
@@ -46,16 +22,25 @@ export interface Chauffeur {
   employeeType: 'interne' | 'externe';
   isActive: boolean;
   createdAt: string;
-  coordinates?: {
-    lat: number;
-    lng: number;
-  };
 }
 
-export interface Company {
+export interface Declaration {
   id: string;
-  name: string;
+  number: string;
+  programNumber: string;
+  year: string;
+  month: string;
+  chauffeurId: string;
+  chauffeurName: string;
+  distance?: number;
+  deliveryFees?: number;
+  notes?: string;
+  photos?: string[];
+  status: 'en_cours' | 'valide' | 'refuse';
   createdAt: string;
+  validatedAt?: string;
+  validatedBy?: string;
+  refusalReason?: string;
 }
 
 export interface Warehouse {
@@ -72,39 +57,18 @@ export interface Warehouse {
   createdAt: string;
 }
 
+export interface Company {
+  id: string;
+  name: string;
+  address?: string;
+  phone?: string;
+  email?: string;
+  createdAt: string;
+}
+
 export interface VehicleType {
   id: string;
   name: string;
+  description?: string;
   createdAt: string;
 }
-
-export interface FinancialRecord {
-  id: string;
-  number: string;
-  type: 'remboursement' | 'reglement';
-  programNumber: string;
-  destinationUnit: 'cph_nord' | 'cph_sud' | 'cph_est' | 'cph_ouest' | 'cph_centre';
-  amount: number; // en FCFA
-  description: string;
-  photos: string[];
-  status: 'en_attente' | 'traite';
-  createdAt: string;
-  processedAt?: string;
-  processedBy?: string;
-}
-
-export interface AuthContextType {
-  user: User | null;
-  login: (username: string, password: string) => Promise<boolean>;
-  logout: () => void;
-  changePassword: (oldPassword: string, newPassword: string) => Promise<boolean>;
-  isAuthenticated: boolean;
-}
-
-export interface Settings {
-  language: 'fr' | 'en' | 'ar';
-  theme: 'light' | 'dark';
-}
-
-export type TranslationKey = string;
-export type Translations = Record<string, Record<string, string>>;

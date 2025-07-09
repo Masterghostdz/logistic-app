@@ -148,6 +148,7 @@ const PlanificateurDashboard = () => {
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [showCreateChauffeur, setShowCreateChauffeur] = useState(false);
   const [editingDeclaration, setEditingDeclaration] = useState<Declaration | null>(null);
+  const [editingChauffeur, setEditingChauffeur] = useState<Chauffeur | null>(null);
   const [newChauffeur, setNewChauffeur] = useState({
     firstName: '',
     lastName: '',
@@ -157,6 +158,9 @@ const PlanificateurDashboard = () => {
     vehicleType: '',
     employeeType: 'interne' as 'interne' | 'externe'
   });
+
+  // Types de véhicules disponibles (normalement récupérés depuis l'admin)
+  const vehicleTypes = ['Camion 3.5T', 'Camionnette', 'Utilitaire', 'Poids Lourd'];
 
   const stats = useMemo(() => {
     const enAttente = declarations.filter(d => d.status === 'en_cours').length;
@@ -204,21 +208,43 @@ const PlanificateurDashboard = () => {
       return;
     }
 
-    const chauffeur: Chauffeur = {
-      id: Date.now().toString(),
-      firstName: newChauffeur.firstName,
-      lastName: newChauffeur.lastName,
-      fullName: `${newChauffeur.firstName} ${newChauffeur.lastName}`,
-      username: newChauffeur.username,
-      password: newChauffeur.password,
-      phone: newChauffeur.phone,
-      vehicleType: newChauffeur.vehicleType,
-      employeeType: newChauffeur.employeeType,
-      isActive: true,
-      createdAt: new Date().toISOString()
-    };
+    if (editingChauffeur) {
+      // Modification d'un chauffeur existant
+      const updatedChauffeur: Chauffeur = {
+        ...editingChauffeur,
+        firstName: newChauffeur.firstName,
+        lastName: newChauffeur.lastName,
+        fullName: `${newChauffeur.employeeType === 'externe' ? 'TP - ' : ''}${newChauffeur.firstName} ${newChauffeur.lastName}`,
+        username: newChauffeur.username,
+        password: newChauffeur.password,
+        phone: newChauffeur.phone,
+        vehicleType: newChauffeur.vehicleType,
+        employeeType: newChauffeur.employeeType
+      };
 
-    setChauffeurs(prev => [...prev, chauffeur]);
+      setChauffeurs(prev => prev.map(c => c.id === editingChauffeur.id ? updatedChauffeur : c));
+      setEditingChauffeur(null);
+      toast.success('Chauffeur modifié avec succès');
+    } else {
+      // Création d'un nouveau chauffeur
+      const chauffeur: Chauffeur = {
+        id: Date.now().toString(),
+        firstName: newChauffeur.firstName,
+        lastName: newChauffeur.lastName,
+        fullName: `${newChauffeur.employeeType === 'externe' ? 'TP - ' : ''}${newChauffeur.firstName} ${newChauffeur.lastName}`,
+        username: newChauffeur.username,
+        password: newChauffeur.password,
+        phone: newChauffeur.phone,
+        vehicleType: newChauffeur.vehicleType,
+        employeeType: newChauffeur.employeeType,
+        isActive: true,
+        createdAt: new Date().toISOString()
+      };
+
+      setChauffeurs(prev => [...prev, chauffeur]);
+      toast.success('Chauffeur créé avec succès');
+    }
+
     setNewChauffeur({
       firstName: '',
       lastName: '',
@@ -229,7 +255,20 @@ const PlanificateurDashboard = () => {
       employeeType: 'interne'
     });
     setShowCreateChauffeur(false);
-    toast.success('Chauffeur créé avec succès');
+  };
+
+  const handleEditChauffeur = (chauffeur: Chauffeur) => {
+    setEditingChauffeur(chauffeur);
+    setNewChauffeur({
+      firstName: chauffeur.firstName,
+      lastName: chauffeur.lastName,
+      username: chauffeur.username,
+      password: chauffeur.password,
+      phone: chauffeur.phone,
+      vehicleType: chauffeur.vehicleType,
+      employeeType: chauffeur.employeeType
+    });
+    setShowCreateChauffeur(true);
   };
 
   const handleValidateDeclaration = (id: string) => {
@@ -422,79 +461,83 @@ const PlanificateurDashboard = () => {
 
               <Card>
                 <CardContent className="p-0">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Numéro du Programme</TableHead>
-                        <TableHead>Chauffeur</TableHead>
-                        <TableHead>Distance (km)</TableHead>
-                        <TableHead>Frais de Livraison (DZD)</TableHead>
-                        <TableHead>Date de Déclaration</TableHead>
-                        <TableHead>Date de Validation</TableHead>
-                        <TableHead>État</TableHead>
-                        <TableHead>Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredDeclarations.map((declaration) => (
-                        <TableRow key={declaration.id}>
-                          <TableCell className="font-medium">{declaration.number}</TableCell>
-                          <TableCell>{declaration.chauffeurName}</TableCell>
-                          <TableCell>{declaration.distance || '-'}</TableCell>
-                          <TableCell>{declaration.deliveryFees?.toLocaleString() || '-'}</TableCell>
-                          <TableCell>{new Date(declaration.createdAt).toLocaleDateString()}</TableCell>
-                          <TableCell>
-                            {declaration.validatedAt 
-                              ? new Date(declaration.validatedAt).toLocaleDateString() 
-                              : '-'
-                            }
-                          </TableCell>
-                          <TableCell>{getStatusBadge(declaration.status)}</TableCell>
-                          <TableCell>
-                            <div className="flex gap-2">
-                              <Button size="sm" variant="outline">
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                              <Button 
-                                size="sm" 
-                                variant="outline"
-                                onClick={() => handleEditDeclaration(declaration)}
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button 
-                                size="sm" 
-                                variant="outline"
-                                onClick={() => handleDeleteDeclaration(declaration.id)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                              {declaration.status === 'en_cours' && (
-                                <>
-                                  <Button 
-                                    size="sm" 
-                                    variant="outline" 
-                                    className="text-green-600 hover:text-green-700"
-                                    onClick={() => handleValidateDeclaration(declaration.id)}
-                                  >
-                                    <Check className="h-4 w-4" />
-                                  </Button>
-                                  <Button 
-                                    size="sm" 
-                                    variant="outline" 
-                                    className="text-red-600 hover:text-red-700"
-                                    onClick={() => handleRejectDeclaration(declaration.id)}
-                                  >
-                                    <X className="h-4 w-4" />
-                                  </Button>
-                                </>
-                              )}
-                            </div>
-                          </TableCell>
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="min-w-[180px]">Numéro du Programme</TableHead>
+                          <TableHead className="min-w-[150px]">Chauffeur</TableHead>
+                          <TableHead className="min-w-[120px]">Distance (km)</TableHead>
+                          <TableHead className="min-w-[160px]">Frais de Livraison (DZD)</TableHead>
+                          <TableHead className="min-w-[140px]">Date de Déclaration</TableHead>
+                          <TableHead className="min-w-[140px]">Date de Validation</TableHead>
+                          <TableHead className="min-w-[100px]">État</TableHead>
+                          <TableHead className="min-w-[200px]">Actions</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredDeclarations.map((declaration) => (
+                          <TableRow key={declaration.id}>
+                            <TableCell className="font-medium whitespace-nowrap">{declaration.number}</TableCell>
+                            <TableCell className="whitespace-nowrap">{declaration.chauffeurName}</TableCell>
+                            <TableCell className="text-center">{declaration.distance || '-'}</TableCell>
+                            <TableCell className="text-right">{declaration.deliveryFees?.toLocaleString() || '-'}</TableCell>
+                            <TableCell className="whitespace-nowrap">{new Date(declaration.createdAt).toLocaleDateString()}</TableCell>
+                            <TableCell className="whitespace-nowrap">
+                              {declaration.validatedAt 
+                                ? new Date(declaration.validatedAt).toLocaleDateString() 
+                                : '-'
+                              }
+                            </TableCell>
+                            <TableCell>{getStatusBadge(declaration.status)}</TableCell>
+                            <TableCell>
+                              <div className="flex gap-1 flex-wrap">
+                                <Button size="sm" variant="outline" className="h-8 w-8 p-0">
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  className="h-8 w-8 p-0"
+                                  onClick={() => handleEditDeclaration(declaration)}
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  className="h-8 w-8 p-0"
+                                  onClick={() => handleDeleteDeclaration(declaration.id)}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                                {declaration.status === 'en_cours' && (
+                                  <>
+                                    <Button 
+                                      size="sm" 
+                                      variant="outline" 
+                                      className="h-8 w-8 p-0 text-green-600 hover:text-green-700"
+                                      onClick={() => handleValidateDeclaration(declaration.id)}
+                                    >
+                                      <Check className="h-4 w-4" />
+                                    </Button>
+                                    <Button 
+                                      size="sm" 
+                                      variant="outline" 
+                                      className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                                      onClick={() => handleRejectDeclaration(declaration.id)}
+                                    >
+                                      <X className="h-4 w-4" />
+                                    </Button>
+                                  </>
+                                )}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
                 </CardContent>
               </Card>
             </div>
@@ -513,7 +556,9 @@ const PlanificateurDashboard = () => {
                   </DialogTrigger>
                   <DialogContent className="max-w-md">
                     <DialogHeader>
-                      <DialogTitle>Créer un nouveau chauffeur</DialogTitle>
+                      <DialogTitle>
+                        {editingChauffeur ? 'Modifier le chauffeur' : 'Créer un nouveau chauffeur'}
+                      </DialogTitle>
                     </DialogHeader>
                     <form onSubmit={handleCreateChauffeur} className="space-y-4">
                       <div className="grid grid-cols-2 gap-4">
@@ -570,9 +615,9 @@ const PlanificateurDashboard = () => {
                             <SelectValue placeholder="Sélectionner un type" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="Camion 3.5T">Camion 3.5T</SelectItem>
-                            <SelectItem value="Camionnette">Camionnette</SelectItem>
-                            <SelectItem value="Utilitaire">Utilitaire</SelectItem>
+                            {vehicleTypes.map((type) => (
+                              <SelectItem key={type} value={type}>{type}</SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       </div>
@@ -589,8 +634,22 @@ const PlanificateurDashboard = () => {
                         </Select>
                       </div>
                       <div className="flex gap-2 pt-4">
-                        <Button type="submit" className="flex-1">Créer</Button>
-                        <Button type="button" variant="outline" onClick={() => setShowCreateChauffeur(false)}>
+                        <Button type="submit" className="flex-1">
+                          {editingChauffeur ? 'Modifier' : 'Créer'}
+                        </Button>
+                        <Button type="button" variant="outline" onClick={() => {
+                          setShowCreateChauffeur(false);
+                          setEditingChauffeur(null);
+                          setNewChauffeur({
+                            firstName: '',
+                            lastName: '',
+                            username: '',
+                            password: '',
+                            phone: '',
+                            vehicleType: '',
+                            employeeType: 'interne'
+                          });
+                        }}>
                           Annuler
                         </Button>
                       </div>
@@ -601,59 +660,70 @@ const PlanificateurDashboard = () => {
 
               <Card>
                 <CardContent className="p-0">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Nom complet</TableHead>
-                        <TableHead>Nom d'utilisateur</TableHead>
-                        <TableHead>Mot de passe</TableHead>
-                        <TableHead>Téléphone</TableHead>
-                        <TableHead>Type de véhicule</TableHead>
-                        <TableHead>Type</TableHead>
-                        <TableHead>Statut</TableHead>
-                        <TableHead>Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {chauffeurs.map((chauffeur) => (
-                        <TableRow key={chauffeur.id}>
-                          <TableCell className="font-medium">
-                            {chauffeur.employeeType === 'externe' ? 'TP - ' : ''}{chauffeur.firstName} {chauffeur.lastName}
-                          </TableCell>
-                          <TableCell>{chauffeur.username}</TableCell>
-                          <TableCell>
-                            <PasswordField password={chauffeur.password} showLabel={false} />
-                          </TableCell>
-                          <TableCell>{chauffeur.phone}</TableCell>
-                          <TableCell>{chauffeur.vehicleType}</TableCell>
-                          <TableCell>
-                            <Badge variant={chauffeur.employeeType === 'interne' ? 'default' : 'secondary'}>
-                              {chauffeur.employeeType === 'interne' ? 'Interne' : 'Externe'}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant={chauffeur.isActive ? 'default' : 'secondary'}>
-                              {chauffeur.isActive ? 'Actif' : 'Inactif'}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex gap-2">
-                              <Button size="sm" variant="outline">
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                              <Button 
-                                size="sm" 
-                                variant="outline"
-                                onClick={() => handleDeleteChauffeur(chauffeur.id)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="min-w-[200px]">Nom complet</TableHead>
+                          <TableHead className="min-w-[150px]">Nom d'utilisateur</TableHead>
+                          <TableHead className="min-w-[120px]">Mot de passe</TableHead>
+                          <TableHead className="min-w-[140px]">Téléphone</TableHead>
+                          <TableHead className="min-w-[140px]">Type de véhicule</TableHead>
+                          <TableHead className="min-w-[100px]">Type</TableHead>
+                          <TableHead className="min-w-[100px]">Statut</TableHead>
+                          <TableHead className="min-w-[120px]">Actions</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                      </TableHeader>
+                      <TableBody>
+                        {chauffeurs.map((chauffeur) => (
+                          <TableRow key={chauffeur.id}>
+                            <TableCell className="font-medium whitespace-nowrap">
+                              {chauffeur.employeeType === 'externe' ? 'TP - ' : ''}{chauffeur.firstName} {chauffeur.lastName}
+                            </TableCell>
+                            <TableCell className="whitespace-nowrap">{chauffeur.username}</TableCell>
+                            <TableCell>
+                              <PasswordField password={chauffeur.password} showLabel={false} />
+                            </TableCell>
+                            <TableCell className="whitespace-nowrap">{chauffeur.phone}</TableCell>
+                            <TableCell className="whitespace-nowrap">{chauffeur.vehicleType}</TableCell>
+                            <TableCell>
+                              <Badge variant={chauffeur.employeeType === 'interne' ? 'default' : 'secondary'}>
+                                {chauffeur.employeeType === 'interne' ? 'Interne' : 'Externe'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant={chauffeur.isActive ? 'default' : 'secondary'}>
+                                {chauffeur.isActive ? 'Actif' : 'Inactif'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex gap-1">
+                                <Button size="sm" variant="outline" className="h-8 w-8 p-0">
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  className="h-8 w-8 p-0"
+                                  onClick={() => handleEditChauffeur(chauffeur)}
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  className="h-8 w-8 p-0"
+                                  onClick={() => handleDeleteChauffeur(chauffeur.id)}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
                 </CardContent>
               </Card>
             </div>
