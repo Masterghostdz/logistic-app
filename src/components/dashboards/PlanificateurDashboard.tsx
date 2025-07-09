@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
@@ -36,6 +35,7 @@ import EditDeclarationDialog from '../EditDeclarationDialog';
 const PlanificateurDashboard = () => {
   const { vehicleTypes } = useSharedData();
   const [activeTab, setActiveTab] = useState('dashboard');
+  
   const [declarations, setDeclarations] = useState<Declaration[]>([
     {
       id: '1',
@@ -653,71 +653,83 @@ const PlanificateurDashboard = () => {
 
               <Card>
                 <CardContent className="p-0">
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="min-w-[200px]">Nom complet</TableHead>
-                          <TableHead className="min-w-[150px]">Nom d'utilisateur</TableHead>
-                          <TableHead className="min-w-[120px]">Mot de passe</TableHead>
-                          <TableHead className="min-w-[180px]">Téléphone</TableHead>
-                          <TableHead className="min-w-[140px]">Type de véhicule</TableHead>
-                          <TableHead className="min-w-[100px]">Type</TableHead>
-                          <TableHead className="min-w-[100px]">Statut</TableHead>
-                          <TableHead className="min-w-[120px]">Actions</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {chauffeurs.map((chauffeur) => (
-                          <TableRow key={chauffeur.id}>
-                            <TableCell className="font-medium whitespace-nowrap">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-[160px]">Nom complet</TableHead>
+                        <TableHead className="w-[120px]">Utilisateur</TableHead>
+                        <TableHead className="w-[100px]">Mot de passe</TableHead>
+                        <TableHead className="w-[140px]">Téléphone</TableHead>
+                        <TableHead className="w-[110px]">Véhicule</TableHead>
+                        <TableHead className="w-[80px]">Type</TableHead>
+                        <TableHead className="w-[80px]">Statut</TableHead>
+                        <TableHead className="w-[100px]">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {chauffeurs.map((chauffeur) => (
+                        <TableRow key={chauffeur.id}>
+                          <TableCell className="font-medium">
+                            <div className="truncate">
                               {chauffeur.employeeType === 'externe' ? 'TP - ' : ''}{chauffeur.firstName} {chauffeur.lastName}
-                            </TableCell>
-                            <TableCell className="whitespace-nowrap">{chauffeur.username}</TableCell>
-                            <TableCell>
-                              <PasswordField password={chauffeur.password} showLabel={false} />
-                            </TableCell>
-                            <TableCell className="whitespace-nowrap">
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="truncate text-sm">{chauffeur.username}</div>
+                          </TableCell>
+                          <TableCell>
+                            <PasswordField password={chauffeur.password} showLabel={false} />
+                          </TableCell>
+                          <TableCell>
+                            <div className="space-y-1">
                               {chauffeur.phone.map((p, index) => (
-                                <div key={index} className="text-sm">{p}</div>
+                                <div key={index} className="text-sm truncate">{p}</div>
                               ))}
-                            </TableCell>
-                            <TableCell className="whitespace-nowrap">{chauffeur.vehicleType || '-'}</TableCell>
-                            <TableCell>
-                              <Badge variant={chauffeur.employeeType === 'interne' ? 'default' : 'secondary'}>
-                                {chauffeur.employeeType === 'interne' ? 'Interne' : 'Externe'}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant={chauffeur.isActive ? 'default' : 'secondary'}>
-                                {chauffeur.isActive ? 'Actif' : 'Inactif'}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex gap-1">
-                                <Button 
-                                  size="sm" 
-                                  variant="outline"
-                                  className="h-8 w-8 p-0"
-                                  onClick={() => handleEditChauffeur(chauffeur)}
-                                >
-                                  <Edit className="h-4 w-4" />
-                                </Button>
-                                <Button 
-                                  size="sm" 
-                                  variant="outline"
-                                  className="h-8 w-8 p-0"
-                                  onClick={() => handleDeleteChauffeur(chauffeur.id)}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="text-sm truncate">{chauffeur.vehicleType || '-'}</div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge 
+                              variant={chauffeur.employeeType === 'interne' ? 'default' : 'secondary'}
+                              className="text-xs"
+                            >
+                              {chauffeur.employeeType === 'interne' ? 'Int.' : 'Ext.'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge 
+                              variant={chauffeur.isActive ? 'default' : 'secondary'}
+                              className="text-xs"
+                            >
+                              {chauffeur.isActive ? 'Actif' : 'Inactif'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex gap-1">
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                className="h-8 w-8 p-0"
+                                onClick={() => handleEditChauffeur(chauffeur)}
+                              >
+                                <Edit className="h-3 w-3" />
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                className="h-8 w-8 p-0"
+                                onClick={() => handleDeleteChauffeur(chauffeur.id)}
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
                 </CardContent>
               </Card>
             </div>
