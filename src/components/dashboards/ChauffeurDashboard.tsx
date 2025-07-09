@@ -9,12 +9,13 @@ import { Textarea } from '../ui/textarea';
 import { Badge } from '../ui/badge';
 import { Separator } from '../ui/separator';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
-import { MapPin, Plus, Clock, Search, Edit, Trash2 } from 'lucide-react';
+import { MapPin, Plus, Clock, Search, Edit, Trash2, User } from 'lucide-react';
 import { Declaration, Warehouse } from '../../types';
 import SimpleDeclarationNumberForm from '../SimpleDeclarationNumberForm';
 import OpenStreetMap from '../OpenStreetMap';
 import SearchAndFilter from '../SearchAndFilter';
 import EditDeclarationDialog from '../EditDeclarationDialog';
+import ProfilePage from '../ProfilePage';
 import Header from '../Header';
 
 const ChauffeurDashboard = () => {
@@ -22,6 +23,7 @@ const ChauffeurDashboard = () => {
   const { declarations, addDeclaration, updateDeclaration, deleteDeclaration } = useSharedData();
   
   const [isCreating, setIsCreating] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
   const [formData, setFormData] = useState({
     distance: '',
     deliveryFees: '',
@@ -67,6 +69,11 @@ const ChauffeurDashboard = () => {
       // Fetch declarations or perform other initialization logic here
     }
   }, [user]);
+
+  // Si on affiche le profil, on rend ProfilePage
+  if (showProfile) {
+    return <ProfilePage onBack={() => setShowProfile(false)} />;
+  }
 
   const chauffeurDeclarations = declarations.filter(
     declaration => declaration.chauffeurId === user?.id
@@ -179,13 +186,23 @@ const ChauffeurDashboard = () => {
     <div className="min-h-screen bg-gray-50">
       <Header />
       <div className="container mx-auto p-6 space-y-6">
-        <div className="flex items-center gap-4">
-          <h1 className="text-3xl font-bold text-gray-900">
-            Tableau de bord - Chauffeur
-          </h1>
-          <Badge variant="secondary" className="text-sm">
-            {user?.fullName}
-          </Badge>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <h1 className="text-3xl font-bold text-gray-900">
+              Tableau de bord - Chauffeur
+            </h1>
+            <Badge variant="secondary" className="text-sm">
+              {user?.fullName}
+            </Badge>
+          </div>
+          <Button
+            variant="outline"
+            onClick={() => setShowProfile(true)}
+            className="flex items-center gap-2"
+          >
+            <User className="h-4 w-4" />
+            Mon Profil
+          </Button>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
