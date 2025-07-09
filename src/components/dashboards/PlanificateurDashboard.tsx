@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
@@ -15,7 +16,6 @@ import {
   Check, 
   X, 
   Plus, 
-  Eye, 
   User, 
   MapPin,
   Settings,
@@ -24,13 +24,17 @@ import {
   Trash2
 } from 'lucide-react';
 import { Declaration, Chauffeur } from '../../types';
+import { useSharedData } from '../../contexts/SharedDataContext';
 import SearchAndFilter from '../SearchAndFilter';
 import ProfilePage from '../ProfilePage';
 import TracageSection from '../TracageSection';
 import Header from '../Header';
 import PasswordField from '../PasswordField';
+import PhoneNumbersField from '../PhoneNumbersField';
+import EditDeclarationDialog from '../EditDeclarationDialog';
 
 const PlanificateurDashboard = () => {
+  const { vehicleTypes } = useSharedData();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [declarations, setDeclarations] = useState<Declaration[]>([
     {
@@ -110,7 +114,7 @@ const PlanificateurDashboard = () => {
       fullName: 'Ahmed Benali',
       username: 'abenali',
       password: 'demo123',
-      phone: '+213 55 12 34 56',
+      phone: ['+213 55 12 34 56'],
       vehicleType: 'Camion 3.5T',
       employeeType: 'interne',
       isActive: true,
@@ -123,7 +127,7 @@ const PlanificateurDashboard = () => {
       fullName: 'TP - Fatima Said',
       username: 'fsaid',
       password: 'demo123',
-      phone: '+213 66 98 76 54',
+      phone: ['+213 66 98 76 54'],
       vehicleType: 'Camionnette',
       employeeType: 'externe',
       isActive: true,
@@ -136,7 +140,7 @@ const PlanificateurDashboard = () => {
       fullName: 'Ali Hassan',
       username: 'ahassan',
       password: 'demo123',
-      phone: '+213 77 55 44 33',
+      phone: ['+213 77 55 44 33'],
       vehicleType: 'Utilitaire',
       employeeType: 'interne',
       isActive: false,
@@ -154,13 +158,10 @@ const PlanificateurDashboard = () => {
     lastName: '',
     username: '',
     password: '',
-    phone: '',
+    phone: [''],
     vehicleType: '',
     employeeType: 'interne' as 'interne' | 'externe'
   });
-
-  // Types de véhicules disponibles (normalement récupérés depuis l'admin)
-  const vehicleTypes = ['Camion 3.5T', 'Camionnette', 'Utilitaire', 'Poids Lourd'];
 
   const stats = useMemo(() => {
     const enAttente = declarations.filter(d => d.status === 'en_cours').length;
@@ -250,7 +251,7 @@ const PlanificateurDashboard = () => {
       lastName: '',
       username: '',
       password: '',
-      phone: '',
+      phone: [''],
       vehicleType: '',
       employeeType: 'interne'
     });
@@ -427,9 +428,6 @@ const PlanificateurDashboard = () => {
                         </div>
                         <div className="flex items-center gap-2">
                           {getStatusBadge(declaration.status)}
-                          <Button size="sm" variant="outline">
-                            <Eye className="h-4 w-4" />
-                          </Button>
                         </div>
                       </div>
                     ))}
@@ -472,7 +470,7 @@ const PlanificateurDashboard = () => {
                           <TableHead className="min-w-[140px]">Date de Déclaration</TableHead>
                           <TableHead className="min-w-[140px]">Date de Validation</TableHead>
                           <TableHead className="min-w-[100px]">État</TableHead>
-                          <TableHead className="min-w-[200px]">Actions</TableHead>
+                          <TableHead className="min-w-[150px]">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -492,9 +490,6 @@ const PlanificateurDashboard = () => {
                             <TableCell>{getStatusBadge(declaration.status)}</TableCell>
                             <TableCell>
                               <div className="flex gap-1 flex-wrap">
-                                <Button size="sm" variant="outline" className="h-8 w-8 p-0">
-                                  <Eye className="h-4 w-4" />
-                                </Button>
                                 <Button 
                                   size="sm" 
                                   variant="outline"
@@ -601,11 +596,9 @@ const PlanificateurDashboard = () => {
                         />
                       </div>
                       <div>
-                        <Label htmlFor="phone">Téléphone</Label>
-                        <Input
-                          id="phone"
-                          value={newChauffeur.phone}
-                          onChange={(e) => setNewChauffeur({ ...newChauffeur, phone: e.target.value })}
+                        <PhoneNumbersField
+                          phones={newChauffeur.phone}
+                          onChange={(phones) => setNewChauffeur({ ...newChauffeur, phone: phones })}
                         />
                       </div>
                       <div>
@@ -616,7 +609,7 @@ const PlanificateurDashboard = () => {
                           </SelectTrigger>
                           <SelectContent>
                             {vehicleTypes.map((type) => (
-                              <SelectItem key={type} value={type}>{type}</SelectItem>
+                              <SelectItem key={type.id} value={type.name}>{type.name}</SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
@@ -645,7 +638,7 @@ const PlanificateurDashboard = () => {
                             lastName: '',
                             username: '',
                             password: '',
-                            phone: '',
+                            phone: [''],
                             vehicleType: '',
                             employeeType: 'interne'
                           });
@@ -667,7 +660,7 @@ const PlanificateurDashboard = () => {
                           <TableHead className="min-w-[200px]">Nom complet</TableHead>
                           <TableHead className="min-w-[150px]">Nom d'utilisateur</TableHead>
                           <TableHead className="min-w-[120px]">Mot de passe</TableHead>
-                          <TableHead className="min-w-[140px]">Téléphone</TableHead>
+                          <TableHead className="min-w-[180px]">Téléphone</TableHead>
                           <TableHead className="min-w-[140px]">Type de véhicule</TableHead>
                           <TableHead className="min-w-[100px]">Type</TableHead>
                           <TableHead className="min-w-[100px]">Statut</TableHead>
@@ -684,8 +677,12 @@ const PlanificateurDashboard = () => {
                             <TableCell>
                               <PasswordField password={chauffeur.password} showLabel={false} />
                             </TableCell>
-                            <TableCell className="whitespace-nowrap">{chauffeur.phone}</TableCell>
-                            <TableCell className="whitespace-nowrap">{chauffeur.vehicleType}</TableCell>
+                            <TableCell className="whitespace-nowrap">
+                              {chauffeur.phone.map((p, index) => (
+                                <div key={index} className="text-sm">{p}</div>
+                              ))}
+                            </TableCell>
+                            <TableCell className="whitespace-nowrap">{chauffeur.vehicleType || '-'}</TableCell>
                             <TableCell>
                               <Badge variant={chauffeur.employeeType === 'interne' ? 'default' : 'secondary'}>
                                 {chauffeur.employeeType === 'interne' ? 'Interne' : 'Externe'}
@@ -698,9 +695,6 @@ const PlanificateurDashboard = () => {
                             </TableCell>
                             <TableCell>
                               <div className="flex gap-1">
-                                <Button size="sm" variant="outline" className="h-8 w-8 p-0">
-                                  <Eye className="h-4 w-4" />
-                                </Button>
                                 <Button 
                                   size="sm" 
                                   variant="outline"
@@ -730,6 +724,13 @@ const PlanificateurDashboard = () => {
           )}
         </div>
       </div>
+
+      <EditDeclarationDialog
+        declaration={editingDeclaration}
+        isOpen={!!editingDeclaration}
+        onClose={() => setEditingDeclaration(null)}
+        onSave={handleUpdateDeclaration}
+      />
     </div>
   );
 };

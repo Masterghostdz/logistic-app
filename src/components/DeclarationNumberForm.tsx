@@ -63,64 +63,77 @@ const DeclarationNumberForm: React.FC<DeclarationNumberFormProps> = ({
     }
   }, [year, month, programNumber, onNumberChange, onComponentsChange]);
 
+  const handleProgramNumberChange = (value: string) => {
+    // S'assurer que c'est un nombre de 4 chiffres
+    const numericValue = value.replace(/\D/g, '');
+    if (numericValue.length <= 4) {
+      setProgramNumber(numericValue.padStart(4, '0'));
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div>
-        <Label>Numéro de déclaration (Format: DCP/YY/MM/XXXX)</Label>
-        <div className="text-sm text-gray-500 mb-2">
-          YY = Année, MM = Mois, XXXX = Numéro de programme
+        <Label>Programme de Livraison</Label>
+        <div className="mt-2 p-3 bg-gray-50 rounded-md border">
+          <div className="flex items-center gap-1 text-sm font-mono">
+            <span className="text-gray-500">DCP/</span>
+            <span className={year ? "text-black font-medium" : "text-gray-400"}>
+              {year || "YY"}
+            </span>
+            <span className="text-gray-500">/</span>
+            <span className={month ? "text-black font-medium" : "text-gray-400"}>
+              {month || "MM"}
+            </span>
+            <span className="text-gray-500">/</span>
+            <span className={programNumber ? "text-black font-medium" : "text-gray-400"}>
+              {programNumber || "XXXX"}
+            </span>
+          </div>
         </div>
       </div>
-      
+
       <div className="grid grid-cols-3 gap-4">
         <div>
-          <Label htmlFor="year">Année (YY)</Label>
+          <Label htmlFor="year">Année</Label>
           <Select value={year} onValueChange={setYear}>
             <SelectTrigger>
-              <SelectValue placeholder="YY" />
+              <SelectValue placeholder="Sélectionner" />
             </SelectTrigger>
             <SelectContent>
-              {years.map(y => (
-                <SelectItem key={y} value={y}>20{y}</SelectItem>
+              {years.map((yr) => (
+                <SelectItem key={yr} value={yr}>20{yr}</SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
-        
+
         <div>
-          <Label htmlFor="month">Mois (MM)</Label>
+          <Label htmlFor="month">Mois</Label>
           <Select value={month} onValueChange={setMonth}>
             <SelectTrigger>
-              <SelectValue placeholder="MM" />
+              <SelectValue placeholder="Sélectionner" />
             </SelectTrigger>
             <SelectContent>
-              {months.map(m => (
+              {months.map((m) => (
                 <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
-        
+
         <div>
-          <Label htmlFor="programNumber">N° Programme (XXXX)</Label>
+          <Label htmlFor="programNumber">Numéro (4 chiffres)</Label>
           <Input
             id="programNumber"
+            type="text"
             value={programNumber}
-            onChange={(e) => setProgramNumber(e.target.value)}
-            placeholder="XXXX"
+            onChange={(e) => handleProgramNumberChange(e.target.value)}
+            placeholder="0000"
             maxLength={4}
-            required
           />
         </div>
       </div>
-      
-      {year && month && programNumber && (
-        <div className="p-3 bg-blue-50 rounded-lg">
-          <div className="text-sm text-blue-700">
-            Numéro généré: <span className="font-medium">DCP/{year}/{month}/{programNumber}</span>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
