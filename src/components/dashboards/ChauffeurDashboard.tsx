@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useSharedData } from '../../contexts/SharedDataContext';
@@ -8,11 +9,10 @@ import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
 import { Badge } from '../ui/badge';
 import { Separator } from '../ui/separator';
-import { MapPin, Plus, Clock, CheckCircle, XCircle } from 'lucide-react';
-import { Declaration } from '../../types';
+import { MapPin, Plus, Clock } from 'lucide-react';
+import { Declaration, Warehouse } from '../../types';
 import SimpleDeclarationNumberForm from '../SimpleDeclarationNumberForm';
 import OpenStreetMap from '../OpenStreetMap';
-import TracageSection from '../TracageSection';
 import Header from '../Header';
 
 const ChauffeurDashboard = () => {
@@ -29,6 +29,30 @@ const ChauffeurDashboard = () => {
     month: '',
     programNumber: ''
   });
+
+  // Entrepôts pour la carte
+  const [warehouses] = useState<Warehouse[]>([
+    {
+      id: '1',
+      name: 'Entrepôt Principal Alger',
+      companyId: '1',
+      companyName: 'Logigrine Algérie',
+      phone: ['+213 21 12 34 56'],
+      address: '123 Rue des Entrepreneurs, Alger',
+      coordinates: { lat: 36.7538, lng: 3.0588 },
+      createdAt: new Date().toISOString()
+    },
+    {
+      id: '2',
+      name: 'Entrepôt Oran',
+      companyId: '1',
+      companyName: 'Logigrine Algérie',
+      phone: ['+213 41 98 76 54'],
+      address: '456 Boulevard Commercial, Oran',
+      coordinates: { lat: 35.6969, lng: -0.6331 },
+      createdAt: new Date().toISOString()
+    }
+  ]);
 
   useEffect(() => {
     if (user) {
@@ -269,22 +293,21 @@ const ChauffeurDashboard = () => {
 
         <Separator />
 
-        {/* Map and Tracking sections */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <MapPin className="h-5 w-5" />
-                Carte Interactive
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <OpenStreetMap />
-            </CardContent>
-          </Card>
-
-          <TracageSection />
-        </div>
+        {/* Interactive Map section */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <MapPin className="h-5 w-5" />
+              Carte des Entrepôts
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <OpenStreetMap 
+              warehouses={warehouses}
+              height="500px"
+            />
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
