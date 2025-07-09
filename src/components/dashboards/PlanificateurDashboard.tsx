@@ -1,39 +1,21 @@
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
-import { Badge } from '../ui/badge';
-import { Input } from '../ui/input';
-import { Label } from '../ui/label';
-import { Textarea } from '../ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
 import { toast } from 'sonner';
-import { 
-  FileText, 
-  Check, 
-  X, 
-  Plus, 
-  User, 
-  MapPin,
-  Settings,
-  ClipboardList,
-  Edit,
-  Trash2
-} from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { Declaration, Chauffeur } from '../../types';
-import { useSharedData } from '../../contexts/SharedDataContext';
 import SearchAndFilter from '../SearchAndFilter';
 import ProfilePage from '../ProfilePage';
 import TracageSection from '../TracageSection';
 import Header from '../Header';
-import PasswordField from '../PasswordField';
-import PhoneNumbersField from '../PhoneNumbersField';
 import EditDeclarationDialog from '../EditDeclarationDialog';
+import PlanificateurStats from './PlanificateurStats';
+import PlanificateurSidebar from './PlanificateurSidebar';
+import DeclarationsTable from './DeclarationsTable';
+import ChauffeursTable from './ChauffeursTable';
+import CreateChauffeurDialog from './CreateChauffeurDialog';
 
 const PlanificateurDashboard = () => {
-  const { vehicleTypes } = useSharedData();
   const [activeTab, setActiveTab] = useState('dashboard');
   
   const [declarations, setDeclarations] = useState<Declaration[]>([
@@ -154,8 +136,7 @@ const PlanificateurDashboard = () => {
   const [editingDeclaration, setEditingDeclaration] = useState<Declaration | null>(null);
   const [editingChauffeur, setEditingChauffeur] = useState<Chauffeur | null>(null);
   const [newChauffeur, setNewChauffeur] = useState({
-    firstName: '',
-    lastName: '',
+    fullName: '',
     username: '',
     password: '',
     phone: [''],
@@ -188,34 +169,26 @@ const PlanificateurDashboard = () => {
     });
   }, [declarations, searchValue, filterStatus]);
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'en_cours':
-        return <Badge className="bg-yellow-100 text-yellow-800 text-xs whitespace-nowrap">En Attente</Badge>;
-      case 'valide':
-        return <Badge className="bg-green-100 text-green-800 text-xs whitespace-nowrap">Validé</Badge>;
-      case 'refuse':
-        return <Badge className="bg-red-100 text-red-800 text-xs whitespace-nowrap">Refusé</Badge>;
-      default:
-        return <Badge variant="outline" className="text-xs whitespace-nowrap">{status}</Badge>;
-    }
-  };
-
   const handleCreateChauffeur = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!newChauffeur.firstName || !newChauffeur.lastName || !newChauffeur.username || !newChauffeur.password) {
+    if (!newChauffeur.fullName || !newChauffeur.username || !newChauffeur.password) {
       toast.error('Veuillez remplir tous les champs obligatoires');
       return;
     }
+
+    // Parse fullName to firstName and lastName
+    const nameParts = newChauffeur.fullName.trim().split(' ');
+    const firstName = nameParts[0] || '';
+    const lastName = nameParts.slice(1).join(' ') || '';
 
     if (editingChauffeur) {
       // Modification d'un chauffeur existant
       const updatedChauffeur: Chauffeur = {
         ...editingChauffeur,
-        firstName: newChauffeur.firstName,
-        lastName: newChauffeur.lastName,
-        fullName: `${newChauffeur.employeeType === 'externe' ? 'TP - ' : ''}${newChauffeur.firstName} ${newChauffeur.lastName}`,
+        firstName,
+        lastName,
+        fullName: `${newChauffeur.employeeType === 'externe' ? 'TP - ' : ''}${newChauffeur.fullName}`,
         username: newChauffeur.username,
         password: newChauffeur.password,
         phone: newChauffeur.phone,
@@ -230,9 +203,9 @@ const PlanificateurDashboard = () => {
       // Création d'un nouveau chauffeur
       const chauffeur: Chauffeur = {
         id: Date.now().toString(),
-        firstName: newChauffeur.firstName,
-        lastName: newChauffeur.lastName,
-        fullName: `${newChauffeur.employeeType === 'externe' ? 'TP - ' : ''}${newChauffeur.firstName} ${newChauffeur.lastName}`,
+        firstName,
+        lastName,
+        fullName: `${newChauffeur.employeeType === 'externe' ? 'TP - ' : ''}${newChauffeur.fullName}`,
         username: newChauffeur.username,
         password: newChauffeur.password,
         phone: newChauffeur.phone,
@@ -247,8 +220,7 @@ const PlanificateurDashboard = () => {
     }
 
     setNewChauffeur({
-      firstName: '',
-      lastName: '',
+      fullName: '',
       username: '',
       password: '',
       phone: [''],
@@ -261,8 +233,7 @@ const PlanificateurDashboard = () => {
   const handleEditChauffeur = (chauffeur: Chauffeur) => {
     setEditingChauffeur(chauffeur);
     setNewChauffeur({
-      firstName: chauffeur.firstName,
-      lastName: chauffeur.lastName,
+      fullName: `${chauffeur.firstName} ${chauffeur.lastName}`,
       username: chauffeur.username,
       password: chauffeur.password,
       phone: chauffeur.phone,
@@ -352,42 +323,7 @@ const PlanificateurDashboard = () => {
     <div>
       <Header onProfileClick={handleProfileClick} />
       <div className="flex h-[calc(100vh-4rem)]">
-        <div className="w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 p-4">
-          <nav className="space-y-2">
-            <Button
-              variant={activeTab === 'dashboard' ? 'default' : 'ghost'}
-              className="w-full justify-start"
-              onClick={() => setActiveTab('dashboard')}
-            >
-              <ClipboardList className="mr-2 h-4 w-4" />
-              Tableau de bord
-            </Button>
-            <Button
-              variant={activeTab === 'declarations' ? 'default' : 'ghost'}
-              className="w-full justify-start"
-              onClick={() => setActiveTab('declarations')}
-            >
-              <FileText className="mr-2 h-4 w-4" />
-              Déclarations
-            </Button>
-            <Button
-              variant={activeTab === 'chauffeurs' ? 'default' : 'ghost'}
-              className="w-full justify-start"
-              onClick={() => setActiveTab('chauffeurs')}
-            >
-              <User className="mr-2 h-4 w-4" />
-              Chauffeurs
-            </Button>
-            <Button
-              variant={activeTab === 'tracage' ? 'default' : 'ghost'}
-              className="w-full justify-start"
-              onClick={() => setActiveTab('tracage')}
-            >
-              <MapPin className="mr-2 h-4 w-4" />
-              Traçage
-            </Button>
-          </nav>
-        </div>
+        <PlanificateurSidebar activeTab={activeTab} onTabChange={setActiveTab} />
 
         <div className="flex-1 p-6 overflow-auto">
           {activeTab === 'dashboard' && (
@@ -396,21 +332,7 @@ const PlanificateurDashboard = () => {
                 <h1 className="text-3xl font-bold">Tableau de bord - Planificateur</h1>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <Card 
-                  className="cursor-pointer hover:shadow-md transition-shadow"
-                  onClick={handleEnAttenteClick}
-                >
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">En Attente de Validation</CardTitle>
-                    <FileText className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold text-yellow-600">{stats.enAttente}</div>
-                    <p className="text-xs text-muted-foreground">Cliquez pour filtrer</p>
-                  </CardContent>
-                </Card>
-              </div>
+              <PlanificateurStats stats={stats} onEnAttenteClick={handleEnAttenteClick} />
 
               <Card>
                 <CardHeader>
@@ -427,7 +349,7 @@ const PlanificateurDashboard = () => {
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          {getStatusBadge(declaration.status)}
+                          {/* Status badge logic moved to DeclarationsTable */}
                         </div>
                       </div>
                     ))}
@@ -457,101 +379,13 @@ const PlanificateurDashboard = () => {
                 filterPlaceholder="Filtrer par statut..."
               />
 
-              <Card>
-                <CardContent className="p-0">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-[140px] text-xs">Numéro</TableHead>
-                        <TableHead className="w-[130px] text-xs">Chauffeur</TableHead>
-                        <TableHead className="w-[100px] text-xs">Distance (km)</TableHead>
-                        <TableHead className="w-[120px] text-xs">Frais (DZD)</TableHead>
-                        <TableHead className="w-[120px] text-xs">Créé le</TableHead>
-                        <TableHead className="w-[120px] text-xs">Validé le</TableHead>
-                        <TableHead className="w-[100px] text-xs">État</TableHead>
-                        <TableHead className="w-[120px] text-xs">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredDeclarations.map((declaration) => (
-                        <TableRow key={declaration.id}>
-                          <TableCell className="font-medium">
-                            <div className="truncate text-xs">{declaration.number}</div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="truncate text-xs">{declaration.chauffeurName}</div>
-                          </TableCell>
-                          <TableCell className="text-center text-xs">
-                            {declaration.distance ? `${declaration.distance.toFixed(2)}` : '-'}
-                          </TableCell>
-                          <TableCell className="text-right text-xs">
-                            {declaration.deliveryFees ? 
-                              `${declaration.deliveryFees.toFixed(2)} DZD` : '-'}
-                          </TableCell>
-                          <TableCell className="text-xs">
-                            {new Date(declaration.createdAt).toLocaleDateString('fr-FR', {
-                              day: '2-digit',
-                              month: '2-digit',
-                              year: 'numeric'
-                            })}
-                          </TableCell>
-                          <TableCell className="text-xs">
-                            {declaration.validatedAt 
-                              ? new Date(declaration.validatedAt).toLocaleDateString('fr-FR', {
-                                  day: '2-digit',
-                                  month: '2-digit',
-                                  year: 'numeric'
-                                })
-                              : '-'
-                            }
-                          </TableCell>
-                          <TableCell>{getStatusBadge(declaration.status)}</TableCell>
-                          <TableCell>
-                            <div className="flex gap-1">
-                              <Button 
-                                size="sm" 
-                                variant="outline"
-                                className="h-6 w-6 p-0"
-                                onClick={() => handleEditDeclaration(declaration)}
-                              >
-                                <Edit className="h-3 w-3" />
-                              </Button>
-                              <Button 
-                                size="sm" 
-                                variant="outline"
-                                className="h-6 w-6 p-0"
-                                onClick={() => handleDeleteDeclaration(declaration.id)}
-                              >
-                                <Trash2 className="h-3 w-3" />
-                              </Button>
-                              {declaration.status === 'en_cours' && (
-                                <>
-                                  <Button 
-                                    size="sm" 
-                                    variant="outline" 
-                                    className="h-6 w-6 p-0 text-green-600 hover:text-green-700"
-                                    onClick={() => handleValidateDeclaration(declaration.id)}
-                                  >
-                                    <Check className="h-3 w-3" />
-                                  </Button>
-                                  <Button 
-                                    size="sm" 
-                                    variant="outline" 
-                                    className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
-                                    onClick={() => handleRejectDeclaration(declaration.id)}
-                                  >
-                                    <X className="h-3 w-3" />
-                                  </Button>
-                                </>
-                              )}
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
+              <DeclarationsTable
+                declarations={filteredDeclarations}
+                onValidateDeclaration={handleValidateDeclaration}
+                onRejectDeclaration={handleRejectDeclaration}
+                onEditDeclaration={handleEditDeclaration}
+                onDeleteDeclaration={handleDeleteDeclaration}
+              />
             </div>
           )}
 
@@ -559,200 +393,36 @@ const PlanificateurDashboard = () => {
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-bold">Gestion des Chauffeurs</h2>
-                <Dialog open={showCreateChauffeur} onOpenChange={setShowCreateChauffeur}>
-                  <DialogTrigger asChild>
-                    <Button className="flex items-center gap-2">
-                      <Plus className="h-4 w-4" />
-                      Ajouter un chauffeur
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-md">
-                    <DialogHeader>
-                      <DialogTitle>
-                        {editingChauffeur ? 'Modifier le chauffeur' : 'Créer un nouveau chauffeur'}
-                      </DialogTitle>
-                    </DialogHeader>
-                    <form onSubmit={handleCreateChauffeur} className="space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <Label htmlFor="firstName">Prénom *</Label>
-                          <Input
-                            id="firstName"
-                            value={newChauffeur.firstName}
-                            onChange={(e) => setNewChauffeur({ ...newChauffeur, firstName: e.target.value })}
-                            required
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="lastName">Nom *</Label>
-                          <Input
-                            id="lastName"
-                            value={newChauffeur.lastName}
-                            onChange={(e) => setNewChauffeur({ ...newChauffeur, lastName: e.target.value })}
-                            required
-                          />
-                        </div>
-                      </div>
-                      <div>
-                        <Label htmlFor="username">Nom d'utilisateur *</Label>
-                        <Input
-                          id="username"
-                          value={newChauffeur.username}
-                          onChange={(e) => setNewChauffeur({ ...newChauffeur, username: e.target.value })}
-                          required
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="password">Mot de passe *</Label>
-                        <Input
-                          id="password"
-                          type="password"
-                          value={newChauffeur.password}
-                          onChange={(e) => setNewChauffeur({ ...newChauffeur, password: e.target.value })}
-                          required
-                        />
-                      </div>
-                      <div>
-                        <PhoneNumbersField
-                          phones={newChauffeur.phone}
-                          onChange={(phones) => setNewChauffeur({ ...newChauffeur, phone: phones })}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="vehicleType">Type de véhicule</Label>
-                        <Select value={newChauffeur.vehicleType} onValueChange={(value) => setNewChauffeur({ ...newChauffeur, vehicleType: value })}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Sélectionner un type" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {vehicleTypes.map((type) => (
-                              <SelectItem key={type.id} value={type.name}>{type.name}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div>
-                        <Label htmlFor="employeeType">Type d'employé</Label>
-                        <Select value={newChauffeur.employeeType} onValueChange={(value: 'interne' | 'externe') => setNewChauffeur({ ...newChauffeur, employeeType: value })}>
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="interne">Interne</SelectItem>
-                            <SelectItem value="externe">Externe</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="flex gap-2 pt-4">
-                        <Button type="submit" className="flex-1">
-                          {editingChauffeur ? 'Modifier' : 'Créer'}
-                        </Button>
-                        <Button type="button" variant="outline" onClick={() => {
-                          setShowCreateChauffeur(false);
-                          setEditingChauffeur(null);
-                          setNewChauffeur({
-                            firstName: '',
-                            lastName: '',
-                            username: '',
-                            password: '',
-                            phone: [''],
-                            vehicleType: '',
-                            employeeType: 'interne'
-                          });
-                        }}>
-                          Annuler
-                        </Button>
-                      </div>
-                    </form>
-                  </DialogContent>
-                </Dialog>
+                <Button 
+                  className="flex items-center gap-2"
+                  onClick={() => setShowCreateChauffeur(true)}
+                >
+                  <Plus className="h-4 w-4" />
+                  Ajouter un chauffeur
+                </Button>
               </div>
 
-              <Card>
-                <CardContent className="p-0">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-[140px]">Nom complet</TableHead>
-                        <TableHead className="w-[100px]">Utilisateur</TableHead>
-                        <TableHead className="w-[90px]">Mot de passe</TableHead>
-                        <TableHead className="w-[120px]">Téléphone</TableHead>
-                        <TableHead className="w-[100px]">Véhicule</TableHead>
-                        <TableHead className="w-[60px]">Type</TableHead>
-                        <TableHead className="w-[60px]">Statut</TableHead>
-                        <TableHead className="w-[80px]">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {chauffeurs.map((chauffeur) => (
-                        <TableRow key={chauffeur.id}>
-                          <TableCell className="font-medium">
-                            <div className="truncate text-sm">
-                              {chauffeur.employeeType === 'externe' ? 'TP - ' : ''}{chauffeur.firstName} {chauffeur.lastName}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="truncate text-sm">{chauffeur.username}</div>
-                          </TableCell>
-                          <TableCell>
-                            <PasswordField password={chauffeur.password} showLabel={false} />
-                          </TableCell>
-                          <TableCell>
-                            <div className="space-y-1">
-                              {chauffeur.phone.map((p, index) => (
-                                <div key={index} className="text-sm truncate">{p}</div>
-                              ))}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="text-sm truncate">{chauffeur.vehicleType || '-'}</div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge 
-                              variant={chauffeur.employeeType === 'interne' ? 'default' : 'secondary'}
-                              className="text-xs"
-                            >
-                              {chauffeur.employeeType === 'interne' ? 'Int.' : 'Ext.'}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <Badge 
-                              variant={chauffeur.isActive ? 'default' : 'secondary'}
-                              className="text-xs"
-                            >
-                              {chauffeur.isActive ? 'Actif' : 'Inactif'}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex gap-1">
-                              <Button 
-                                size="sm" 
-                                variant="outline"
-                                className="h-7 w-7 p-0"
-                                onClick={() => handleEditChauffeur(chauffeur)}
-                              >
-                                <Edit className="h-3 w-3" />
-                              </Button>
-                              <Button 
-                                size="sm" 
-                                variant="outline"
-                                className="h-7 w-7 p-0"
-                                onClick={() => handleDeleteChauffeur(chauffeur.id)}
-                              >
-                                <Trash2 className="h-3 w-3" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
+              <ChauffeursTable
+                chauffeurs={chauffeurs}
+                onEditChauffeur={handleEditChauffeur}
+                onDeleteChauffeur={handleDeleteChauffeur}
+              />
             </div>
           )}
         </div>
       </div>
+
+      <CreateChauffeurDialog
+        isOpen={showCreateChauffeur}
+        onClose={() => {
+          setShowCreateChauffeur(false);
+          setEditingChauffeur(null);
+        }}
+        onSubmit={handleCreateChauffeur}
+        editingChauffeur={editingChauffeur}
+        newChauffeur={newChauffeur}
+        setNewChauffeur={setNewChauffeur}
+      />
 
       <EditDeclarationDialog
         declaration={editingDeclaration}
