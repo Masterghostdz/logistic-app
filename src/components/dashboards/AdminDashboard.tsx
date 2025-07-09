@@ -18,12 +18,24 @@ import {
   ClipboardList
 } from 'lucide-react';
 import { User as UserType, Company, VehicleType } from '../../types';
+import { useSharedData } from '../../contexts/SharedDataContext';
 import Header from '../Header';
 import ProfilePage from '../ProfilePage';
 import PhoneNumbersField from '../PhoneNumbersField';
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
+  const { 
+    companies, 
+    vehicleTypes, 
+    addCompany, 
+    addVehicleType, 
+    updateCompany, 
+    updateVehicleType, 
+    deleteCompany, 
+    deleteVehicleType 
+  } = useSharedData();
+  
   const [users, setUsers] = useState<UserType[]>([
     {
       id: '1',
@@ -34,48 +46,6 @@ const AdminDashboard = () => {
       lastName: 'System',
       fullName: 'Admin System',
       phone: ['+213 21 00 00 00'],
-      createdAt: new Date().toISOString()
-    }
-  ]);
-
-  const [companies, setCompanies] = useState<Company[]>([
-    {
-      id: '1',
-      name: 'Logigrine Algérie',
-      address: '123 Rue des Entrepreneurs, Alger',
-      phone: ['+213 21 12 34 56'],
-      email: 'contact@logigrine.dz',
-      createdAt: new Date().toISOString()
-    },
-    {
-      id: '2',
-      name: 'Transport Express DZ',
-      address: '456 Boulevard des Martyrs, Oran',
-      phone: ['+213 41 98 76 54'],
-      email: 'info@transportexpress.dz',
-      createdAt: new Date().toISOString()
-    }
-  ]);
-
-  const [vehicleTypes, setVehicleTypes] = useState<VehicleType[]>([
-    {
-      id: '1',
-      name: 'Camion 3.5T',
-      createdAt: new Date().toISOString()
-    },
-    {
-      id: '2',
-      name: 'Camionnette',
-      createdAt: new Date().toISOString()
-    },
-    {
-      id: '3',
-      name: 'Utilitaire',
-      createdAt: new Date().toISOString()
-    },
-    {
-      id: '4',
-      name: 'Poids Lourd',
       createdAt: new Date().toISOString()
     }
   ]);
@@ -175,9 +145,9 @@ const AdminDashboard = () => {
         email: newCompany.email
       };
 
-      setCompanies(prev => prev.map(c => c.id === editingCompany.id ? updatedCompany : c));
+      updateCompany(editingCompany.id, updatedCompany);
       setEditingCompany(null);
-      toast.success('Société modifiée');
+      toast.success('Société modifiée et synchronisée');
     } else {
       const company: Company = {
         id: Date.now().toString(),
@@ -188,8 +158,8 @@ const AdminDashboard = () => {
         createdAt: new Date().toISOString()
       };
 
-      setCompanies(prev => [...prev, company]);
-      toast.success('Société créée');
+      addCompany(company);
+      toast.success('Société créée et synchronisée');
     }
 
     setNewCompany({
@@ -215,9 +185,9 @@ const AdminDashboard = () => {
         name: newVehicleType.name
       };
 
-      setVehicleTypes(prev => prev.map(v => v.id === editingVehicleType.id ? updatedVehicleType : v));
+      updateVehicleType(editingVehicleType.id, updatedVehicleType);
       setEditingVehicleType(null);
-      toast.success('Type de véhicule modifié');
+      toast.success('Type de véhicule modifié et synchronisé');
     } else {
       const vehicleType: VehicleType = {
         id: Date.now().toString(),
@@ -225,8 +195,8 @@ const AdminDashboard = () => {
         createdAt: new Date().toISOString()
       };
 
-      setVehicleTypes(prev => [...prev, vehicleType]);
-      toast.success('Type de véhicule créé');
+      addVehicleType(vehicleType);
+      toast.success('Type de véhicule créé et synchronisé');
     }
 
     setNewVehicleType({
@@ -273,13 +243,13 @@ const AdminDashboard = () => {
   };
 
   const handleDeleteCompany = (id: string) => {
-    setCompanies(prev => prev.filter(c => c.id !== id));
-    toast.success('Société supprimée');
+    deleteCompany(id);
+    toast.success('Société supprimée et synchronisée');
   };
 
   const handleDeleteVehicleType = (id: string) => {
-    setVehicleTypes(prev => prev.filter(v => v.id !== id));
-    toast.success('Type de véhicule supprimé');
+    deleteVehicleType(id);
+    toast.success('Type de véhicule supprimé et synchronisé');
   };
 
   const handleProfileClick = () => {
