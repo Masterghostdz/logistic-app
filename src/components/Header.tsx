@@ -8,6 +8,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from '../hooks/useTranslation';
 import { User, Settings, LogOut, Menu } from 'lucide-react';
 import SettingsDialog from './SettingsDialog';
+import ProfilePage from './ProfilePage';
 
 interface HeaderProps {
   onMenuToggle?: () => void;
@@ -19,6 +20,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle, showMenuButton = false, o
   const { user, logout } = useAuth();
   const { t } = useTranslation();
   const [showSettings, setShowSettings] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
 
   const getRoleBadgeColor = (role: string) => {
     switch (role) {
@@ -38,6 +40,19 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle, showMenuButton = false, o
   const getInitials = (firstName: string, lastName: string) => {
     return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
   };
+
+  const handleProfileClick = () => {
+    if (onProfileClick) {
+      onProfileClick();
+    } else {
+      setShowProfile(true);
+    }
+  };
+
+  // Si on affiche le profil, on rend ProfilePage
+  if (showProfile) {
+    return <ProfilePage onBack={() => setShowProfile(false)} />;
+  }
 
   return (
     <>
@@ -92,7 +107,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle, showMenuButton = false, o
                   </div>
                 </div>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={onProfileClick}>
+                <DropdownMenuItem onClick={handleProfileClick}>
                   <User className="mr-2 h-4 w-4" />
                   <span>Profil</span>
                 </DropdownMenuItem>
