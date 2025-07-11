@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useSharedData } from '../../contexts/SharedDataContext';
@@ -185,9 +186,9 @@ const ChauffeurDashboard = () => {
   // Si on affiche le profil, on rend seulement ProfilePage sans le header du tableau de bord
   if (showProfile) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background w-full overflow-x-hidden">
         <Header onProfileClick={() => setShowProfile(false)} />
-        <div className="container mx-auto p-6">
+        <div className="container mx-auto p-2 sm:p-4 md:p-6 max-w-full">
           <ProfilePage onBack={() => setShowProfile(false)} />
         </div>
       </div>
@@ -195,74 +196,74 @@ const ChauffeurDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background w-full overflow-x-hidden">
       <Header onProfileClick={() => setShowProfile(true)} />
-      <div className="container mx-auto p-6 space-y-6">
-        <div className="flex items-center gap-4">
-          <h1 className="text-3xl font-bold text-foreground">
+      <div className="container mx-auto p-2 sm:p-4 md:p-6 space-y-4 md:space-y-6 max-w-full">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground">
             {t('dashboard.chauffeurTitle')}
           </h1>
-          <Badge variant="secondary" className="text-sm">
+          <Badge variant="secondary" className="text-xs sm:text-sm">
             {user?.fullName}
           </Badge>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
           {/* Create Declaration Form */}
-          <Card className="bg-card border-border">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-card-foreground">
-                <Plus className="h-5 w-5" />
+          <Card className="bg-card border-border w-full">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-card-foreground text-lg">
+                <Plus className="h-4 w-4 sm:h-5 sm:w-5" />
                 {t('dashboard.newDeclaration')}
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-3 sm:space-y-4">
               {!isCreating ? (
-                <Button onClick={() => setIsCreating(true)} className="w-full">
+                <Button onClick={() => setIsCreating(true)} className="w-full text-sm sm:text-base">
                   {t('dashboard.createNewDeclaration')}
                 </Button>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-3 sm:space-y-4">
                   <SimpleDeclarationNumberForm
                     onNumberChange={handleNumberChange}
                     onComponentsChange={handleComponentsChange}
                   />
                   
                   <div>
-                    <Label htmlFor="distance" className="text-foreground">{t('declarations.distance')}</Label>
+                    <Label htmlFor="distance" className="text-foreground text-sm">{t('declarations.distance')}</Label>
                     <Input
                       id="distance"
                       type="number"
                       value={formData.distance}
                       onChange={(e) => setFormData({ ...formData, distance: e.target.value })}
-                      className="bg-background border-border text-foreground"
+                      className="bg-background border-border text-foreground text-sm w-full mt-1"
                     />
                   </div>
                   
                   <div>
-                    <Label htmlFor="deliveryFees" className="text-foreground">{t('declarations.deliveryFees')}</Label>
+                    <Label htmlFor="deliveryFees" className="text-foreground text-sm">{t('declarations.deliveryFees')}</Label>
                     <Input
                       id="deliveryFees"
                       type="number"
                       value={formData.deliveryFees}
                       onChange={(e) => setFormData({ ...formData, deliveryFees: e.target.value })}
-                      className="bg-background border-border text-foreground"
+                      className="bg-background border-border text-foreground text-sm w-full mt-1"
                     />
                   </div>
                   
                   <div>
-                    <Label htmlFor="notes" className="text-foreground">{t('declarations.notes')}</Label>
+                    <Label htmlFor="notes" className="text-foreground text-sm">{t('declarations.notes')}</Label>
                     <Textarea
                       id="notes"
                       value={formData.notes}
                       onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                       rows={3}
-                      className="bg-background border-border text-foreground"
+                      className="bg-background border-border text-foreground text-sm w-full mt-1 resize-none"
                     />
                   </div>
                   
-                  <div className="flex gap-2">
-                    <Button onClick={handleCreateDeclaration} className="flex-1">
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <Button onClick={handleCreateDeclaration} className="flex-1 text-sm">
                       {t('forms.save')}
                     </Button>
                     <Button 
@@ -279,6 +280,7 @@ const ChauffeurDashboard = () => {
                           programNumber: ''
                         });
                       }}
+                      className="flex-1 sm:flex-none text-sm"
                     >
                       {t('forms.cancel')}
                     </Button>
@@ -289,32 +291,32 @@ const ChauffeurDashboard = () => {
           </Card>
 
           {/* My Declarations Summary */}
-          <Card className="bg-card border-border">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-card-foreground">
-                <Clock className="h-5 w-5" />
+          <Card className="bg-card border-border w-full">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-card-foreground text-lg">
+                <Clock className="h-4 w-4 sm:h-5 sm:w-5" />
                 {t('dashboard.myDeclarationsSummary')}
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-3 gap-4 text-center">
-                <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
-                  <div className="text-2xl font-bold text-yellow-700 dark:text-yellow-400">
+              <div className="grid grid-cols-3 gap-2 sm:gap-4 text-center">
+                <div className="p-3 sm:p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                  <div className="text-xl sm:text-2xl font-bold text-yellow-700 dark:text-yellow-400">
                     {chauffeurDeclarations.filter(d => d.status === 'en_cours').length}
                   </div>
-                  <div className="text-sm text-yellow-600 dark:text-yellow-300">{t('dashboard.pending')}</div>
+                  <div className="text-xs sm:text-sm text-yellow-600 dark:text-yellow-300">{t('dashboard.pending')}</div>
                 </div>
-                <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
-                  <div className="text-2xl font-bold text-green-700 dark:text-green-400">
+                <div className="p-3 sm:p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                  <div className="text-xl sm:text-2xl font-bold text-green-700 dark:text-green-400">
                     {chauffeurDeclarations.filter(d => d.status === 'valide').length}
                   </div>
-                  <div className="text-sm text-green-600 dark:text-green-300">{t('dashboard.validated')}</div>
+                  <div className="text-xs sm:text-sm text-green-600 dark:text-green-300">{t('dashboard.validated')}</div>
                 </div>
-                <div className="p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
-                  <div className="text-2xl font-bold text-red-700 dark:text-red-400">
+                <div className="p-3 sm:p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
+                  <div className="text-xl sm:text-2xl font-bold text-red-700 dark:text-red-400">
                     {chauffeurDeclarations.filter(d => d.status === 'refuse').length}
                   </div>
-                  <div className="text-sm text-red-600 dark:text-red-300">{t('dashboard.refused')}</div>
+                  <div className="text-xs sm:text-sm text-red-600 dark:text-red-300">{t('dashboard.refused')}</div>
                 </div>
               </div>
             </CardContent>
@@ -324,10 +326,10 @@ const ChauffeurDashboard = () => {
         <Separator className="bg-border" />
 
         {/* Declarations List */}
-        <Card className="bg-card border-border">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-card-foreground">
-              <Search className="h-5 w-5" />
+        <Card className="bg-card border-border w-full">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-card-foreground text-lg">
+              <Search className="h-4 w-4 sm:h-5 sm:w-5" />
               {t('dashboard.myDeclarations')} ({chauffeurDeclarations.length})
             </CardTitle>
           </CardHeader>
@@ -344,70 +346,73 @@ const ChauffeurDashboard = () => {
               />
 
               {filteredDeclarations.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
+                <div className="text-center py-8 text-muted-foreground text-sm">
                   {searchTerm || statusFilter !== 'all' 
                     ? t('declarations.noDeclarationsWithFilters')
                     : t('declarations.noDeclarations')
                   }
                 </div>
               ) : (
-                <div className="rounded-md border border-border bg-card">
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="border-border hover:bg-muted/50">
-                        <TableHead className="text-foreground">{t('declarations.number')}</TableHead>
-                        <TableHead className="text-foreground">{t('declarations.distance')}</TableHead>
-                        <TableHead className="text-foreground">{t('declarations.deliveryFees')}</TableHead>
-                        <TableHead className="text-foreground">{t('declarations.status')}</TableHead>
-                        <TableHead className="text-foreground">{t('declarations.createdDate')}</TableHead>
-                        <TableHead className="text-foreground">{t('declarations.actions')}</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredDeclarations.map((declaration) => (
-                        <TableRow key={declaration.id} className="border-border hover:bg-muted/50">
-                          <TableCell className="font-medium text-foreground">
-                            {declaration.number}
-                          </TableCell>
-                          <TableCell className="text-foreground">
-                            {declaration.distance ? `${declaration.distance} km` : '-'}
-                          </TableCell>
-                          <TableCell className="text-foreground">
-                            {declaration.deliveryFees ? `${declaration.deliveryFees} DZD` : '-'}
-                          </TableCell>
-                          <TableCell>
-                            {getStatusBadge(declaration.status)}
-                          </TableCell>
-                          <TableCell className="text-foreground">
-                            {new Date(declaration.createdAt).toLocaleDateString('fr-FR')}
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex gap-2">
-                              {declaration.status === 'en_cours' && (
-                                <>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => handleEditDeclaration(declaration)}
-                                  >
-                                    <Edit className="h-4 w-4" />
-                                  </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => handleDeleteDeclaration(declaration.id)}
-                                    className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
-                                </>
-                              )}
-                            </div>
-                          </TableCell>
+                <div className="w-full overflow-x-auto">
+                  <div className="rounded-md border border-border bg-card min-w-full">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="border-border hover:bg-muted/50">
+                          <TableHead className="text-foreground text-xs sm:text-sm whitespace-nowrap">{t('declarations.number')}</TableHead>
+                          <TableHead className="text-foreground text-xs sm:text-sm whitespace-nowrap">{t('declarations.distance')}</TableHead>
+                          <TableHead className="text-foreground text-xs sm:text-sm whitespace-nowrap">{t('declarations.deliveryFees')}</TableHead>
+                          <TableHead className="text-foreground text-xs sm:text-sm whitespace-nowrap">{t('declarations.status')}</TableHead>
+                          <TableHead className="text-foreground text-xs sm:text-sm whitespace-nowrap">{t('declarations.createdDate')}</TableHead>
+                          <TableHead className="text-foreground text-xs sm:text-sm whitespace-nowrap">{t('declarations.actions')}</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredDeclarations.map((declaration) => (
+                          <TableRow key={declaration.id} className="border-border hover:bg-muted/50">
+                            <TableCell className="font-medium text-foreground text-xs sm:text-sm whitespace-nowrap">
+                              {declaration.number}
+                            </TableCell>
+                            <TableCell className="text-foreground text-xs sm:text-sm whitespace-nowrap">
+                              {declaration.distance ? `${declaration.distance} km` : '-'}
+                            </TableCell>
+                            <TableCell className="text-foreground text-xs sm:text-sm whitespace-nowrap">
+                              {declaration.deliveryFees ? `${declaration.deliveryFees} DZD` : '-'}
+                            </TableCell>
+                            <TableCell className="whitespace-nowrap">
+                              {getStatusBadge(declaration.status)}
+                            </TableCell>
+                            <TableCell className="text-foreground text-xs sm:text-sm whitespace-nowrap">
+                              {new Date(declaration.createdAt).toLocaleDateString('fr-FR')}
+                            </TableCell>
+                            <TableCell className="whitespace-nowrap">
+                              <div className="flex gap-1 sm:gap-2">
+                                {declaration.status === 'en_cours' && (
+                                  <>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => handleEditDeclaration(declaration)}
+                                      className="h-8 w-8 p-0"
+                                    >
+                                      <Edit className="h-3 w-3 sm:h-4 sm:w-4" />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => handleDeleteDeclaration(declaration.id)}
+                                      className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 h-8 w-8 p-0"
+                                    >
+                                      <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
+                                    </Button>
+                                  </>
+                                )}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
                 </div>
               )}
             </div>
@@ -416,16 +421,16 @@ const ChauffeurDashboard = () => {
 
         <Separator className="bg-border" />
 
-        {/* Interactive Map section - Fixed for better mobile/desktop handling */}
-        <Card className="bg-card border-border">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-card-foreground">
-              <MapPin className="h-5 w-5" />
+        {/* Interactive Map section - Optimized for mobile */}
+        <Card className="bg-card border-border w-full">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-card-foreground text-lg">
+              <MapPin className="h-4 w-4 sm:h-5 sm:w-5" />
               {t('dashboard.warehouseMap')}
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="h-[400px] lg:h-[500px] w-full">
+          <CardContent className="p-2 sm:p-6">
+            <div className="h-[300px] sm:h-[400px] lg:h-[500px] w-full">
               {isMobile ? (
                 <MobileOpenStreetMap 
                   warehouses={warehouses}

@@ -22,7 +22,7 @@ const MobileLayout = ({
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background w-full overflow-x-hidden">
       {/* Mobile Header - only shown on small screens */}
       <div className="md:hidden">
         <MobileHeader />
@@ -44,9 +44,11 @@ const MobileLayout = ({
         />
       )}
 
-      {/* Main Content */}
-      <main className="flex-1">
-        {children}
+      {/* Main Content - Mobile optimized */}
+      <main className="flex-1 w-full px-2 sm:px-4 md:px-6 pb-4 overflow-x-hidden">
+        <div className="w-full max-w-full">
+          {children}
+        </div>
       </main>
     </div>
   );

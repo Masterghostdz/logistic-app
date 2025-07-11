@@ -19,8 +19,13 @@ const SimpleDeclarationNumberForm = ({
   initialMonth = '',
   initialProgramNumber = ''
 }: SimpleDeclarationNumberFormProps) => {
-  const [year, setYear] = useState(initialYear);
-  const [month, setMonth] = useState(initialMonth);
+  // Get current date for defaults
+  const now = new Date();
+  const currentYear = now.getFullYear().toString().slice(-2); // Last 2 digits of year
+  const currentMonth = (now.getMonth() + 1).toString().padStart(2, '0'); // Current month with leading zero
+
+  const [year, setYear] = useState(initialYear || currentYear);
+  const [month, setMonth] = useState(initialMonth || currentMonth);
   const [programNumber, setProgramNumber] = useState(initialProgramNumber);
 
   const years = ['24', '25', '26', '27'];
@@ -42,9 +47,13 @@ const SimpleDeclarationNumberForm = ({
   // Update local state when initial values change
   useEffect(() => {
     if (initialYear) setYear(initialYear);
+    else setYear(currentYear);
+    
     if (initialMonth) setMonth(initialMonth);
+    else setMonth(currentMonth);
+    
     if (initialProgramNumber) setProgramNumber(initialProgramNumber);
-  }, [initialYear, initialMonth, initialProgramNumber]);
+  }, [initialYear, initialMonth, initialProgramNumber, currentYear, currentMonth]);
 
   useEffect(() => {
     if (year && month && programNumber && programNumber.length === 4) {
@@ -69,7 +78,7 @@ const SimpleDeclarationNumberForm = ({
     <div className="space-y-4">
       <Label>Programme de Livraison</Label>
       <div className="flex items-center gap-1 p-3 bg-gray-50 rounded-md border">
-        <span className="text-gray-500 font-mono">DCP/</span>
+        <span className="text-gray-500 font-mono text-sm">DCP/</span>
         
         <Select value={year} onValueChange={setYear}>
           <SelectTrigger className="w-16 h-8 px-2 py-1 text-sm">
@@ -82,7 +91,7 @@ const SimpleDeclarationNumberForm = ({
           </SelectContent>
         </Select>
         
-        <span className="text-gray-500 font-mono">/</span>
+        <span className="text-gray-500 font-mono text-sm">/</span>
         
         <Select value={month} onValueChange={setMonth}>
           <SelectTrigger className="w-16 h-8 px-2 py-1 text-sm">
@@ -95,7 +104,7 @@ const SimpleDeclarationNumberForm = ({
           </SelectContent>
         </Select>
         
-        <span className="text-gray-500 font-mono">/</span>
+        <span className="text-gray-500 font-mono text-sm">/</span>
         
         <Input
           type="text"

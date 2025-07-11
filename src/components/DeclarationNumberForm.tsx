@@ -15,6 +15,11 @@ const DeclarationNumberForm: React.FC<DeclarationNumberFormProps> = ({
   onComponentsChange,
   initialNumber 
 }) => {
+  // Get current date for defaults
+  const now = new Date();
+  const currentYear = now.getFullYear().toString().slice(-2); // Last 2 digits of year
+  const currentMonth = (now.getMonth() + 1).toString().padStart(2, '0'); // Current month with leading zero
+
   const [year, setYear] = useState('');
   const [month, setMonth] = useState('');
   const [programNumber, setProgramNumber] = useState('');
@@ -36,12 +41,8 @@ const DeclarationNumberForm: React.FC<DeclarationNumberFormProps> = ({
   ];
 
   useEffect(() => {
-    // Set default values based on current date
-    const now = new Date();
-    const currentYear = now.getFullYear().toString().slice(-2);
-    const currentMonth = (now.getMonth() + 1).toString().padStart(2, '0');
-    
     if (!initialNumber) {
+      // Set default values to current year and month
       setYear(currentYear);
       setMonth(currentMonth);
     } else {
@@ -53,7 +54,7 @@ const DeclarationNumberForm: React.FC<DeclarationNumberFormProps> = ({
         setProgramNumber(parts[2]);
       }
     }
-  }, [initialNumber]);
+  }, [initialNumber, currentYear, currentMonth]);
 
   useEffect(() => {
     if (year && month && programNumber) {
@@ -93,7 +94,7 @@ const DeclarationNumberForm: React.FC<DeclarationNumberFormProps> = ({
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div>
           <Label htmlFor="year">Année</Label>
           <Select value={year} onValueChange={setYear}>
@@ -131,6 +132,7 @@ const DeclarationNumberForm: React.FC<DeclarationNumberFormProps> = ({
             onChange={(e) => handleProgramNumberChange(e.target.value)}
             placeholder="0000"
             maxLength={4}
+            className="w-full"
           />
         </div>
       </div>
