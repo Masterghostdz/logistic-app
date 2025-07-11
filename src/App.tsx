@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -12,9 +11,15 @@ import ChauffeurDashboard from './components/dashboards/ChauffeurDashboard';
 import PlanificateurDashboard from './components/dashboards/PlanificateurDashboard';
 import FinancierDashboard from './components/dashboards/FinancierDashboard';
 import AdminDashboard from './components/dashboards/AdminDashboard';
+import { mobileService } from './services/mobileService';
 
 const AppContent = () => {
   const { user, isAuthenticated } = useAuth();
+
+  useEffect(() => {
+    // Initialize mobile services when app starts
+    mobileService.initialize().catch(console.error);
+  }, []);
 
   if (!isAuthenticated || !user) {
     return <LoginForm />;
