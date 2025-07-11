@@ -1,7 +1,7 @@
 
 import L from 'leaflet';
 import { Warehouse, Chauffeur } from '../../types';
-import { warehouseIcon, chauffeurIcon } from './MapIcons';
+import { warehouseIcon, chauffeurIcon, desktopWarehouseIcon, desktopChauffeurIcon } from './MapIcons';
 
 interface CreateMarkersOptions {
   warehouses: Warehouse[];
@@ -10,6 +10,7 @@ interface CreateMarkersOptions {
   t: (key: string) => string;
   onWarehouseClick?: (warehouse: Warehouse) => void;
   onChauffeurClick?: (chauffeur: Chauffeur) => void;
+  isMobile?: boolean;
 }
 
 export const createMarkers = ({
@@ -18,25 +19,38 @@ export const createMarkers = ({
   map,
   t,
   onWarehouseClick,
-  onChauffeurClick
+  onChauffeurClick,
+  isMobile = false
 }: CreateMarkersOptions): L.Marker[] => {
   const markers: L.Marker[] = [];
+
+  // Choose appropriate icons based on mobile/desktop
+  const warehouseIconToUse = isMobile ? warehouseIcon : desktopWarehouseIcon;
+  const chauffeurIconToUse = isMobile ? chauffeurIcon : desktopChauffeurIcon;
+
+  // Popup styling based on mobile/desktop
+  const popupPadding = isMobile ? '16px' : '12px';
+  const popupMinWidth = isMobile ? '250px' : '200px';
+  const popupFontSize = isMobile ? '16px' : '14px';
+  const popupTitleSize = isMobile ? '18px' : '16px';
+  const popupMargin = isMobile ? '12px' : '8px';
+  const popupLineMargin = isMobile ? '8px' : '4px';
 
   // Add warehouse markers
   warehouses.forEach(warehouse => {
     const marker = L.marker([warehouse.coordinates.lat, warehouse.coordinates.lng], {
-      icon: warehouseIcon
+      icon: warehouseIconToUse
     })
       .addTo(map)
       .bindPopup(`
-        <div style="padding: 16px; min-width: 250px; background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-          <h3 style="font-weight: 600; font-size: 18px; margin-bottom: 12px; color: #1f2937;">${warehouse.name}</h3>
-          <p style="font-size: 16px; color: #6b7280; margin-bottom: 8px;"><strong>${t('warehouses.company')}:</strong> ${warehouse.companyName}</p>
-          <p style="font-size: 16px; color: #6b7280; margin-bottom: 8px;"><strong>${t('warehouses.address')}:</strong> ${warehouse.address}</p>
-          <p style="font-size: 16px; color: #6b7280;"><strong>${t('warehouses.phone')}:</strong> ${warehouse.phone}</p>
+        <div style="padding: ${popupPadding}; min-width: ${popupMinWidth}; background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+          <h3 style="font-weight: 600; font-size: ${popupTitleSize}; margin-bottom: ${popupMargin}; color: #1f2937;">${warehouse.name}</h3>
+          <p style="font-size: ${popupFontSize}; color: #6b7280; margin-bottom: ${popupLineMargin};"><strong>${t('warehouses.company')}:</strong> ${warehouse.companyName}</p>
+          <p style="font-size: ${popupFontSize}; color: #6b7280; margin-bottom: ${popupLineMargin};"><strong>${t('warehouses.address')}:</strong> ${warehouse.address}</p>
+          <p style="font-size: ${popupFontSize}; color: #6b7280;"><strong>${t('warehouses.phone')}:</strong> ${warehouse.phone}</p>
         </div>
       `, {
-        maxWidth: 300,
+        maxWidth: isMobile ? 300 : 250,
         closeButton: true,
         autoClose: false
       });
@@ -56,18 +70,18 @@ export const createMarkers = ({
         : chauffeur.fullName;
 
       const marker = L.marker([chauffeur.coordinates.lat, chauffeur.coordinates.lng], {
-        icon: chauffeurIcon
+        icon: chauffeurIconToUse
       })
         .addTo(map)
         .bindPopup(`
-          <div style="padding: 16px; min-width: 250px; background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-            <h3 style="font-weight: 600; font-size: 18px; margin-bottom: 12px; color: #1f2937;">${displayName}</h3>
-            <p style="font-size: 16px; color: #6b7280; margin-bottom: 8px;"><strong>${t('chauffeurs.employeeType')}:</strong> ${chauffeur.employeeType}</p>
-            <p style="font-size: 16px; color: #6b7280; margin-bottom: 8px;"><strong>${t('chauffeurs.vehicleType')}:</strong> ${chauffeur.vehicleType}</p>
-            <p style="font-size: 16px; color: #6b7280;"><strong>${t('chauffeurs.phone')}:</strong> ${chauffeur.phone}</p>
+          <div style="padding: ${popupPadding}; min-width: ${popupMinWidth}; background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+            <h3 style="font-weight: 600; font-size: ${popupTitleSize}; margin-bottom: ${popupMargin}; color: #1f2937;">${displayName}</h3>
+            <p style="font-size: ${popupFontSize}; color: #6b7280; margin-bottom: ${popupLineMargin};"><strong>${t('chauffeurs.employeeType')}:</strong> ${chauffeur.employeeType}</p>
+            <p style="font-size: ${popupFontSize}; color: #6b7280; margin-bottom: ${popupLineMargin};"><strong>${t('chauffeurs.vehicleType')}:</strong> ${chauffeur.vehicleType}</p>
+            <p style="font-size: ${popupFontSize}; color: #6b7280;"><strong>${t('chauffeurs.phone')}:</strong> ${chauffeur.phone}</p>
           </div>
         `, {
-          maxWidth: 300,
+          maxWidth: isMobile ? 300 : 250,
           closeButton: true,
           autoClose: false
         });
@@ -86,6 +100,6 @@ export const createMarkers = ({
 export const fitMapToMarkers = (map: L.Map, markers: L.Marker[]) => {
   if (markers.length > 0) {
     const group = L.featureGroup(markers);
-    map.fitBounds(group.getBounds().pad(0.15));
+    map.fitBounds(group.getBounds().pad(0.1));
   }
 };

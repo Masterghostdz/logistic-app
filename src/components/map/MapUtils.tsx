@@ -1,8 +1,8 @@
 
 import L from 'leaflet';
 
-export const createMap = (container: HTMLDivElement): L.Map => {
-  const map = L.map(container, {
+export const createMap = (container: HTMLDivElement, options?: Partial<L.MapOptions>): L.Map => {
+  const defaultOptions: L.MapOptions = {
     center: [28.0339, 1.6596],
     zoom: 6,
     zoomControl: false,
@@ -12,12 +12,25 @@ export const createMap = (container: HTMLDivElement): L.Map => {
     scrollWheelZoom: true,
     boxZoom: false,
     keyboard: false
-  });
+  };
+
+  const map = L.map(container, { ...defaultOptions, ...options });
 
   // Add OpenStreetMap tiles
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '© OpenStreetMap contributors',
     maxZoom: 18
+  }).addTo(map);
+
+  return map;
+};
+
+export const createSimpleMap = (container: HTMLDivElement): L.Map => {
+  // For desktop version - simpler setup
+  const map = L.map(container).setView([28.0339, 1.6596], 6);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors'
   }).addTo(map);
 
   return map;
