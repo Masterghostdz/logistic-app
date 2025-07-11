@@ -59,17 +59,29 @@ export const createMarkers = ({
       closeButton: true,
       autoClose: false,
       autoPan: true,
-      offset: [0, -10]
+      offset: [0, -10],
+      className: 'custom-popup'
     });
 
-    // Add click event handler
-    marker.on('click', () => {
-      // Open popup programmatically to ensure it shows
-      marker.openPopup();
+    // Add click event handler with proper popup opening
+    marker.on('click', (e) => {
+      // Ensure popup opens immediately
+      setTimeout(() => {
+        if (marker.getPopup()) {
+          marker.openPopup();
+        }
+      }, 50);
       
       // Call custom click handler if provided
       if (onWarehouseClick) {
         onWarehouseClick(warehouse);
+      }
+    });
+
+    // Ensure popup opens on hover for better UX
+    marker.on('mouseover', () => {
+      if (!marker.isPopupOpen()) {
+        marker.openPopup();
       }
     });
 
@@ -104,17 +116,29 @@ export const createMarkers = ({
         closeButton: true,
         autoClose: false,
         autoPan: true,
-        offset: [0, -10]
+        offset: [0, -10],
+        className: 'custom-popup'
       });
 
-      // Add click event handler
-      marker.on('click', () => {
-        // Open popup programmatically to ensure it shows
-        marker.openPopup();
+      // Add click event handler with proper popup opening
+      marker.on('click', (e) => {
+        // Ensure popup opens immediately
+        setTimeout(() => {
+          if (marker.getPopup()) {
+            marker.openPopup();
+          }
+        }, 50);
         
         // Call custom click handler if provided
         if (onChauffeurClick) {
           onChauffeurClick(chauffeur);
+        }
+      });
+
+      // Ensure popup opens on hover for better UX
+      marker.on('mouseover', () => {
+        if (!marker.isPopupOpen()) {
+          marker.openPopup();
         }
       });
 
@@ -128,6 +152,15 @@ export const createMarkers = ({
 export const fitMapToMarkers = (map: L.Map, markers: L.Marker[]) => {
   if (markers.length > 0) {
     const group = L.featureGroup(markers);
-    map.fitBounds(group.getBounds().pad(0.1));
+    const bounds = group.getBounds();
+    
+    // Add padding and ensure minimum zoom level
+    map.fitBounds(bounds, {
+      padding: [20, 20],
+      maxZoom: 15
+    });
+  } else {
+    // Default view if no markers
+    map.setView([28.0339, 1.6596], 6);
   }
 };

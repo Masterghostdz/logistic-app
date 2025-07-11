@@ -1,8 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useSharedData } from '../../contexts/SharedDataContext';
 import { useTranslation } from '../../hooks/useTranslation';
+import { useIsMobile } from '../../hooks/use-mobile';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -15,6 +15,7 @@ import { MapPin, Plus, Clock, Search, Edit, Trash2 } from 'lucide-react';
 import { Declaration, Warehouse } from '../../types';
 import SimpleDeclarationNumberForm from '../SimpleDeclarationNumberForm';
 import OpenStreetMap from '../OpenStreetMap';
+import MobileOpenStreetMap from '../MobileOpenStreetMap';
 import SearchAndFilter from '../SearchAndFilter';
 import EditDeclarationDialog from '../EditDeclarationDialog';
 import Header from '../Header';
@@ -24,6 +25,7 @@ const ChauffeurDashboard = () => {
   const { user } = useAuth();
   const { declarations, addDeclaration, updateDeclaration, deleteDeclaration } = useSharedData();
   const { t } = useTranslation();
+  const isMobile = useIsMobile();
   
   const [isCreating, setIsCreating] = useState(false);
   const [formData, setFormData] = useState({
@@ -414,7 +416,7 @@ const ChauffeurDashboard = () => {
 
         <Separator className="bg-border" />
 
-        {/* Interactive Map section */}
+        {/* Interactive Map section - Fixed for better mobile/desktop handling */}
         <Card className="bg-card border-border">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-card-foreground">
@@ -423,10 +425,19 @@ const ChauffeurDashboard = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <OpenStreetMap 
-              warehouses={warehouses}
-              height="500px"
-            />
+            <div className="h-[400px] lg:h-[500px] w-full">
+              {isMobile ? (
+                <MobileOpenStreetMap 
+                  warehouses={warehouses}
+                  height="100%"
+                />
+              ) : (
+                <OpenStreetMap 
+                  warehouses={warehouses}
+                  height="100%"
+                />
+              )}
+            </div>
           </CardContent>
         </Card>
 
