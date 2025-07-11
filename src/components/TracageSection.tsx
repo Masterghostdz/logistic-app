@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
@@ -10,12 +9,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { toast } from 'sonner';
 import { MapPin, Truck, Plus, Building2 } from 'lucide-react';
 import OpenStreetMap from './OpenStreetMap';
+import MobileOpenStreetMap from './MobileOpenStreetMap';
 import { Warehouse, Chauffeur } from '../types';
 import { useSharedData } from '../contexts/SharedDataContext';
+import { useIsMobile } from '../hooks/use-mobile';
 import PhoneNumbersField from './PhoneNumbersField';
 
 const TracageSection = () => {
   const { companies } = useSharedData();
+  const isMobile = useIsMobile();
   
   const [warehouses, setWarehouses] = useState<Warehouse[]>([
     {
@@ -126,7 +128,7 @@ const TracageSection = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-4 md:p-6">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold">Traçage</h2>
       </div>
@@ -237,37 +239,49 @@ const TracageSection = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="space-y-4">
               <h4 className="font-semibold">Liste des Entrepôts</h4>
-              {warehouses.map((warehouse) => (
-                <Card key={warehouse.id}>
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <h5 className="font-semibold">{warehouse.name}</h5>
-                        <p className="text-sm text-gray-600">{warehouse.companyName}</p>
-                        <p className="text-sm text-gray-500">{warehouse.address}</p>
-                        <div className="text-sm text-gray-500">
-                          {warehouse.phone.map((phone, index) => (
-                            <div key={index}>{phone}</div>
-                          ))}
+              <div className="max-h-96 overflow-y-auto space-y-4">
+                {warehouses.map((warehouse) => (
+                  <Card key={warehouse.id}>
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1 min-w-0">
+                          <h5 className="font-semibold truncate">{warehouse.name}</h5>
+                          <p className="text-sm text-gray-600 truncate">{warehouse.companyName}</p>
+                          <p className="text-sm text-gray-500 truncate">{warehouse.address}</p>
+                          <div className="text-sm text-gray-500">
+                            {warehouse.phone.map((phone, index) => (
+                              <div key={index} className="truncate">{phone}</div>
+                            ))}
+                          </div>
                         </div>
+                        <Badge variant="outline" className="bg-green-50 text-green-700 ml-2 flex-shrink-0">
+                          <MapPin className="h-3 w-3 mr-1" />
+                          Actif
+                        </Badge>
                       </div>
-                      <Badge variant="outline" className="bg-green-50 text-green-700">
-                        <MapPin className="h-3 w-3 mr-1" />
-                        Actif
-                      </Badge>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             </div>
             
-            <div>
+            <div className="min-h-0">
               <h4 className="font-semibold mb-4">Carte des Entrepôts</h4>
-              <OpenStreetMap 
-                warehouses={warehouses}
-                chauffeurs={chauffeurs}
-                height="500px"
-              />
+              <div className="h-96 lg:h-[500px] w-full">
+                {isMobile ? (
+                  <MobileOpenStreetMap 
+                    warehouses={warehouses}
+                    chauffeurs={chauffeurs}
+                    height="100%"
+                  />
+                ) : (
+                  <OpenStreetMap 
+                    warehouses={warehouses}
+                    chauffeurs={chauffeurs}
+                    height="100%"
+                  />
+                )}
+              </div>
             </div>
           </div>
         </TabsContent>

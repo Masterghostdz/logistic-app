@@ -41,23 +41,37 @@ export const createMarkers = ({
     const marker = L.marker([warehouse.coordinates.lat, warehouse.coordinates.lng], {
       icon: warehouseIconToUse
     })
-      .addTo(map)
-      .bindPopup(`
-        <div style="padding: ${popupPadding}; min-width: ${popupMinWidth}; background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-          <h3 style="font-weight: 600; font-size: ${popupTitleSize}; margin-bottom: ${popupMargin}; color: #1f2937;">${warehouse.name}</h3>
-          <p style="font-size: ${popupFontSize}; color: #6b7280; margin-bottom: ${popupLineMargin};"><strong>${t('warehouses.company')}:</strong> ${warehouse.companyName}</p>
-          <p style="font-size: ${popupFontSize}; color: #6b7280; margin-bottom: ${popupLineMargin};"><strong>${t('warehouses.address')}:</strong> ${warehouse.address}</p>
-          <p style="font-size: ${popupFontSize}; color: #6b7280;"><strong>${t('warehouses.phone')}:</strong> ${warehouse.phone}</p>
-        </div>
-      `, {
-        maxWidth: isMobile ? 300 : 250,
-        closeButton: true,
-        autoClose: false
-      });
+      .addTo(map);
 
-    if (onWarehouseClick) {
-      marker.on('click', () => onWarehouseClick(warehouse));
-    }
+    // Create popup content
+    const popupContent = `
+      <div style="padding: ${popupPadding}; min-width: ${popupMinWidth}; background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+        <h3 style="font-weight: 600; font-size: ${popupTitleSize}; margin-bottom: ${popupMargin}; color: #1f2937;">${warehouse.name}</h3>
+        <p style="font-size: ${popupFontSize}; color: #6b7280; margin-bottom: ${popupLineMargin};"><strong>${t('warehouses.company')}:</strong> ${warehouse.companyName}</p>
+        <p style="font-size: ${popupFontSize}; color: #6b7280; margin-bottom: ${popupLineMargin};"><strong>${t('warehouses.address')}:</strong> ${warehouse.address}</p>
+        <p style="font-size: ${popupFontSize}; color: #6b7280;"><strong>${t('warehouses.phone')}:</strong> ${warehouse.phone.join(', ')}</p>
+      </div>
+    `;
+
+    // Bind popup with proper configuration
+    marker.bindPopup(popupContent, {
+      maxWidth: isMobile ? 300 : 250,
+      closeButton: true,
+      autoClose: false,
+      autoPan: true,
+      offset: [0, -10]
+    });
+
+    // Add click event handler
+    marker.on('click', () => {
+      // Open popup programmatically to ensure it shows
+      marker.openPopup();
+      
+      // Call custom click handler if provided
+      if (onWarehouseClick) {
+        onWarehouseClick(warehouse);
+      }
+    });
 
     markers.push(marker);
   });
@@ -72,23 +86,37 @@ export const createMarkers = ({
       const marker = L.marker([chauffeur.coordinates.lat, chauffeur.coordinates.lng], {
         icon: chauffeurIconToUse
       })
-        .addTo(map)
-        .bindPopup(`
-          <div style="padding: ${popupPadding}; min-width: ${popupMinWidth}; background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-            <h3 style="font-weight: 600; font-size: ${popupTitleSize}; margin-bottom: ${popupMargin}; color: #1f2937;">${displayName}</h3>
-            <p style="font-size: ${popupFontSize}; color: #6b7280; margin-bottom: ${popupLineMargin};"><strong>${t('chauffeurs.employeeType')}:</strong> ${chauffeur.employeeType}</p>
-            <p style="font-size: ${popupFontSize}; color: #6b7280; margin-bottom: ${popupLineMargin};"><strong>${t('chauffeurs.vehicleType')}:</strong> ${chauffeur.vehicleType}</p>
-            <p style="font-size: ${popupFontSize}; color: #6b7280;"><strong>${t('chauffeurs.phone')}:</strong> ${chauffeur.phone}</p>
-          </div>
-        `, {
-          maxWidth: isMobile ? 300 : 250,
-          closeButton: true,
-          autoClose: false
-        });
+        .addTo(map);
 
-      if (onChauffeurClick) {
-        marker.on('click', () => onChauffeurClick(chauffeur));
-      }
+      // Create popup content
+      const popupContent = `
+        <div style="padding: ${popupPadding}; min-width: ${popupMinWidth}; background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+          <h3 style="font-weight: 600; font-size: ${popupTitleSize}; margin-bottom: ${popupMargin}; color: #1f2937;">${displayName}</h3>
+          <p style="font-size: ${popupFontSize}; color: #6b7280; margin-bottom: ${popupLineMargin};"><strong>${t('chauffeurs.employeeType')}:</strong> ${chauffeur.employeeType}</p>
+          <p style="font-size: ${popupFontSize}; color: #6b7280; margin-bottom: ${popupLineMargin};"><strong>${t('chauffeurs.vehicleType')}:</strong> ${chauffeur.vehicleType}</p>
+          <p style="font-size: ${popupFontSize}; color: #6b7280;"><strong>${t('chauffeurs.phone')}:</strong> ${chauffeur.phone.join(', ')}</p>
+        </div>
+      `;
+
+      // Bind popup with proper configuration
+      marker.bindPopup(popupContent, {
+        maxWidth: isMobile ? 300 : 250,
+        closeButton: true,
+        autoClose: false,
+        autoPan: true,
+        offset: [0, -10]
+      });
+
+      // Add click event handler
+      marker.on('click', () => {
+        // Open popup programmatically to ensure it shows
+        marker.openPopup();
+        
+        // Call custom click handler if provided
+        if (onChauffeurClick) {
+          onChauffeurClick(chauffeur);
+        }
+      });
 
       markers.push(marker);
     }
