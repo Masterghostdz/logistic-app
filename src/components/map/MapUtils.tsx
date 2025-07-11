@@ -24,19 +24,31 @@ export const createMap = (container: HTMLDivElement, options?: Partial<L.MapOpti
     minZoom: 2
   }).addTo(map);
 
-  // Add custom CSS for popups
+  // Add custom CSS for popups with better mobile support
   const style = document.createElement('style');
   style.textContent = `
     .custom-popup .leaflet-popup-content-wrapper {
       border-radius: 8px;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      max-width: 320px !important;
     }
     .custom-popup .leaflet-popup-content {
       margin: 0;
       padding: 0;
+      max-width: none !important;
+      overflow: hidden;
     }
     .custom-popup .leaflet-popup-tip {
       background: white;
+    }
+    @media (max-width: 768px) {
+      .custom-popup .leaflet-popup-content-wrapper {
+        max-width: 280px !important;
+        min-width: 260px !important;
+      }
+      .leaflet-popup {
+        margin-bottom: 20px !important;
+      }
     }
   `;
   document.head.appendChild(style);
