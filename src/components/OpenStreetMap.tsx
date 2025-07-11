@@ -27,34 +27,31 @@ const OpenStreetMap: React.FC<OpenStreetMapProps> = ({
   const map = useRef<L.Map | null>(null);
   const markersRef = useRef<L.Marker[]>([]);
   const { t } = useTranslation();
+  const isInitialized = useRef(false);
 
   useEffect(() => {
-    if (!mapRef.current) return;
+    if (!mapRef.current || isInitialized.current) return;
 
     // Initialize Leaflet icons
     initializeLeafletIcons();
 
     // Create map using utility function
     map.current = createSimpleMap(mapRef.current);
+    isInitialized.current = true;
 
     return () => {
       if (map.current) {
         map.current.remove();
         map.current = null;
+        isInitialized.current = false;
       }
     };
   }, []);
 
   useEffect(() => {
-    if (!map.current) return;
+    if (!map.current || !isInitialized.current) return;
 
-    // Clear existing markers
-    markersRef.current.forEach(marker => {
-      map.current?.removeLayer(marker);
-    });
-    markersRef.current = [];
-
-    // Create new markers using utility function
+    // Create new markers using utility function - no need to clear existing ones
     markersRef.current = createMarkers({
       warehouses,
       chauffeurs,
@@ -65,8 +62,10 @@ const OpenStreetMap: React.FC<OpenStreetMapProps> = ({
       isMobile: false // Desktop version
     });
 
-    // Fit map to show all markers
-    fitMapToMarkers(map.current, markersRef.current);
+    // Fit map to show all markers only on first load or when markers change significantly
+    if (markersRef.current.length > 0) {
+      fitMapToMarkers(map.current, markersRef.current);
+    }
   }, [warehouses, chauffeurs, onWarehouseClick, onChauffeurClick, t]);
 
   return (

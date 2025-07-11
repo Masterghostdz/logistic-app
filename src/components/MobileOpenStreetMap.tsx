@@ -29,45 +29,45 @@ const MobileOpenStreetMap: React.FC<MobileOpenStreetMapProps> = ({
   const markersRef = useRef<L.Marker[]>([]);
   const { t } = useTranslation();
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const isInitialized = useRef(false);
 
   useEffect(() => {
-    if (!mapRef.current) return;
+    if (!mapRef.current || isInitialized.current) return;
 
     // Initialize Leaflet icons
     initializeLeafletIcons();
 
     // Create map
     map.current = createMap(mapRef.current);
+    isInitialized.current = true;
 
     return () => {
       if (map.current) {
         map.current.remove();
         map.current = null;
+        isInitialized.current = false;
       }
     };
   }, []);
 
   useEffect(() => {
-    if (!map.current) return;
+    if (!map.current || !isInitialized.current) return;
 
-    // Clear existing markers
-    markersRef.current.forEach(marker => {
-      map.current?.removeLayer(marker);
-    });
-    markersRef.current = [];
-
-    // Create new markers
+    // Create new markers - no need to clear existing ones
     markersRef.current = createMarkers({
       warehouses,
       chauffeurs,
       map: map.current,
       t,
       onWarehouseClick,
-      onChauffeurClick
+      onChauffeurClick,
+      isMobile: true
     });
 
-    // Fit map to show all markers
-    fitMapToMarkers(map.current, markersRef.current);
+    // Fit map to show all markers only when markers change significantly
+    if (markersRef.current.length > 0) {
+      fitMapToMarkers(map.current, markersRef.current);
+    }
   }, [warehouses, chauffeurs, onWarehouseClick, onChauffeurClick, t]);
 
   const handleZoomIn = () => {
