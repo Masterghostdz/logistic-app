@@ -73,7 +73,6 @@ const MobileOpenStreetMap: React.FC<MobileOpenStreetMapProps> = ({
       zoom: 6,
       zoomControl: false, // We'll add custom controls
       attributionControl: false,
-      tap: true,
       touchZoom: true,
       doubleClickZoom: true,
       scrollWheelZoom: true,
@@ -86,18 +85,6 @@ const MobileOpenStreetMap: React.FC<MobileOpenStreetMapProps> = ({
       attribution: '© OpenStreetMap contributors',
       maxZoom: 18
     }).addTo(map.current);
-
-    // Add custom zoom controls
-    const customZoomControl = L.control({ position: 'bottomright' });
-    customZoomControl.onAdd = function() {
-      const div = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
-      div.style.backgroundColor = 'white';
-      div.style.padding = '8px';
-      div.style.borderRadius = '8px';
-      div.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
-      return div;
-    };
-    customZoomControl.addTo(map.current);
 
     return () => {
       if (map.current) {
