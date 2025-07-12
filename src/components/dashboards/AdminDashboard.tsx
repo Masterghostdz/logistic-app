@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
@@ -42,22 +42,22 @@ const AdminDashboard = () => {
     deleteVehicleType 
   } = useSharedData();
   
-  // Initialize users from demo accounts configuration with default passwords
-  const [users, setUsers] = useState<(UserType & { password: string })[]>(() => {
-    return demoAccountsConfig.map(account => ({
-      id: account.id,
-      username: account.username,
-      role: account.role,
-      firstName: account.firstName,
-      lastName: account.lastName,
-      fullName: account.fullName,
-      phone: account.phone,
-      email: account.email,
-      createdAt: account.createdAt,
-      isActive: account.isActive,
-      password: account.username === 'admin' ? 'admin123' : 'demo123' // Default passwords based on role
-    }));
-  });
+  // Synchronisation temps réel avec Firestore
+  const [users, setUsers] = useState<(UserType & { password?: string })[]>([]);
+
+  useEffect(() => {
+    let unsubscribe: (() => void) | undefined;
+    const listen = async () => {
+      const { listenUsers } = await import('../../services/userService');
+      unsubscribe = listenUsers((cloudUsers) => {
+        setUsers(cloudUsers);
+      });
+    };
+    listen();
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, []);
 
   const [showCreateUser, setShowCreateUser] = useState(false);
   const [showCreateCompany, setShowCreateCompany] = useState(false);
@@ -73,7 +73,8 @@ const AdminDashboard = () => {
     role: 'chauffeur' as UserType['role'],
     firstName: '',
     lastName: '',
-    phone: [] as string[]
+    phone: [] as string[],
+    password: ''
   });
 
   const [newCompany, setNewCompany] = useState({
@@ -94,51 +95,67 @@ const AdminDashboard = () => {
 
   const handleCreateUser = (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!newUser.username || !newUser.firstName || !newUser.lastName) {
       toast.error('Veuillez remplir tous les champs obligatoires');
       return;
     }
 
-    if (editingUser) {
-      const updatedUser = {
-        ...editingUser,
-        username: newUser.username,
-        role: newUser.role,
-        firstName: newUser.firstName,
-        lastName: newUser.lastName,
-        fullName: `${newUser.firstName} ${newUser.lastName}`,
-        phone: newUser.phone,
-        password: users.find(u => u.id === editingUser.id)?.password || 'password123'
-      };
+    const saveUserToCloud = async () => {
+      try {
+        const { addUser, updateUser } = await import('../../services/userService');
+        const { simpleHash } = await import('../../utils/authUtils');
+        let userToSave: {
+          username: string;
+          role: UserType['role'];
+          firstName: string;
+          lastName: string;
+          fullName: string;
+          phone: string[];
+          createdAt: string;
+          isActive: boolean;
+          salt?: string;
+          passwordHash?: string;
+        } = {
+          username: newUser.username,
+          role: newUser.role,
+          firstName: newUser.firstName,
+          lastName: newUser.lastName,
+          fullName: `${newUser.firstName} ${newUser.lastName}`,
+          phone: newUser.phone,
+          createdAt: new Date().toISOString(),
+          isActive: true
+        };
+        // Si mot de passe rempli, on hash et ajoute
+        if (newUser.password && newUser.password.length >= 6) {
+          const salt = 'logigrine2025';
+          const passwordHash = await simpleHash(newUser.password, salt);
+          userToSave = { ...userToSave, salt, passwordHash };
+        }
+        if (editingUser) {
+          // Modification utilisateur existant
+          await updateUser(editingUser.id, userToSave);
+          toast.success('Utilisateur modifié dans le cloud');
+        } else {
+          // Création nouvel utilisateur
+          await addUser(userToSave);
+          toast.success('Utilisateur créé dans le cloud');
+        }
+      } catch (err) {
+        toast.error('Erreur lors de la synchronisation avec le cloud');
+      }
+    };
 
-      setUsers(prev => prev.map(u => u.id === editingUser.id ? updatedUser : u));
-      setEditingUser(null);
-      toast.success('Utilisateur modifié');
-    } else {
-      const user = {
-        id: Date.now().toString(),
-        username: newUser.username,
-        role: newUser.role,
-        firstName: newUser.firstName,
-        lastName: newUser.lastName,
-        fullName: `${newUser.firstName} ${newUser.lastName}`,
-        phone: newUser.phone,
-        createdAt: new Date().toISOString(),
-        password: 'password123' // Default password
-      };
-
-      setUsers(prev => [...prev, user]);
-      toast.success('Utilisateur créé avec mot de passe par défaut: password123');
-    }
+    saveUserToCloud();
 
     setNewUser({
       username: '',
       role: 'chauffeur',
       firstName: '',
       lastName: '',
-      phone: []
+      phone: [],
+      password: ''
     });
+    setEditingUser(null);
     setShowCreateUser(false);
   };
 
@@ -255,7 +272,8 @@ const AdminDashboard = () => {
       role: user.role,
       firstName: user.firstName,
       lastName: user.lastName,
-      phone: user.phone || []
+      phone: user.phone || [],
+      password: ''
     });
     setShowCreateUser(true);
   };
@@ -279,9 +297,14 @@ const AdminDashboard = () => {
     setShowCreateVehicleType(true);
   };
 
-  const handleDeleteUser = (id: string) => {
-    setUsers(prev => prev.filter(u => u.id !== id));
-    toast.success('Utilisateur supprimé');
+  const handleDeleteUser = async (id: string) => {
+    try {
+      const { deleteUser } = await import('../../services/userService');
+      await deleteUser(id);
+      toast.success('Utilisateur supprimé du cloud');
+    } catch (err) {
+      toast.error('Erreur lors de la suppression sur le cloud');
+    }
   };
 
   const handleDeleteCompany = (id: string) => {
@@ -457,6 +480,18 @@ const AdminDashboard = () => {
                           required
                         />
                       </div>
+                     <div>
+                       <Label htmlFor="password">Mot de passe{editingUser ? '' : ' *'}</Label>
+                       <Input
+                         id="password"
+                         type="password"
+                         value={newUser.password}
+                         onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+                         required={!editingUser}
+                         minLength={editingUser ? 0 : 6}
+                         placeholder={editingUser ? 'Laisser vide pour ne pas changer' : ''}
+                       />
+                     </div>
                       <div>
                         <Label htmlFor="role">Rôle</Label>
                         <Select value={newUser.role} onValueChange={(value) => setNewUser({ ...newUser, role: value as UserType['role'] })}>
@@ -484,13 +519,14 @@ const AdminDashboard = () => {
                         <Button type="button" variant="outline" onClick={() => {
                           setShowCreateUser(false);
                           setEditingUser(null);
-                          setNewUser({
-                            username: '',
-                            role: 'chauffeur',
-                            firstName: '',
-                            lastName: '',
-                            phone: []
-                          });
+    setNewUser({
+      username: '',
+      role: 'chauffeur',
+      firstName: '',
+      lastName: '',
+      phone: [],
+      password: ''
+    });
                         }}>
                           Annuler
                         </Button>
@@ -574,7 +610,7 @@ const AdminDashboard = () => {
                             ) : '-'}
                           </TableCell>
                           <TableCell>
-                            <PasswordField password={user.password} showLabel={false} />
+                            <PasswordField password={user.password ?? ''} showLabel={false} />
                           </TableCell>
                           <TableCell>
                             <div className="flex gap-2">

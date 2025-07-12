@@ -15,16 +15,24 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     // Check for valid session
     const session = getStoredSession();
     if (session) {
-      const sessionRestored = restoreSession(session.userId);
-      if (!sessionRestored) {
-        // Invalid user, clear session
-        clearSession();
+      // Supporte restoreSession asynchrone ou synchrone
+      const maybePromise = restoreSession(session.userId);
+      if (maybePromise instanceof Promise) {
+        maybePromise.then((sessionRestored) => {
+          if (!sessionRestored) {
+            clearSession();
+          }
+        });
+      } else {
+        if (!maybePromise) {
+          clearSession();
+        }
       }
     } else {
       // Session expired or doesn't exist
       console.log('No valid session found');
     }
-  }, [restoreSession]);
+  }, []);
 
   return (
     <AuthContext.Provider value={{ user, login, logout, changePassword, isAuthenticated }}>
