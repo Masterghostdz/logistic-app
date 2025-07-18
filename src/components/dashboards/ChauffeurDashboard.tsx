@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useOnlineStatus } from '../../contexts/OnlineStatusContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'sonner';
 // import { useSharedData } from '../../contexts/SharedDataContext';
@@ -60,29 +61,21 @@ const ChauffeurDashboard = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
 
-  // Entrepôts pour la carte
-  const [warehouses] = useState<Warehouse[]>([
-    {
-      id: '1',
-      name: 'Entrepôt Principal Alger',
-      companyId: '1',
-      companyName: 'Logigrine Algérie',
-      phone: ['+213 21 12 34 56'],
-      address: '123 Rue des Entrepreneurs, Alger',
-      coordinates: { lat: 36.7538, lng: 3.0588 },
-      createdAt: new Date().toISOString()
-    },
-    {
-      id: '2',
-      name: 'Entrepôt Oran',
-      companyId: '1',
-      companyName: 'Logigrine Algérie',
-      phone: ['+213 41 98 76 54'],
-      address: '456 Boulevard Commercial, Oran',
-      coordinates: { lat: 35.6969, lng: -0.6331 },
-      createdAt: new Date().toISOString()
-    }
-  ]);
+  // Entrepôts synchronisés Firestore pour la carte
+  const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
+  useEffect(() => {
+    let unsubscribe: (() => void) | undefined;
+    const listen = async () => {
+      const { listenWarehouses } = await import('../../services/warehouseService');
+      unsubscribe = listenWarehouses((cloudWarehouses) => {
+        setWarehouses(cloudWarehouses);
+      });
+    };
+    listen();
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, []);
 
   useEffect(() => {
     if (user) {
@@ -200,6 +193,9 @@ const ChauffeurDashboard = () => {
     }
   };
 
+  // Online status global
+  const { isOnline } = useOnlineStatus();
+
   // Si on affiche le profil, on rend seulement ProfilePage sans le header du tableau de bord
   if (showProfile) {
     return (
@@ -215,6 +211,15 @@ const ChauffeurDashboard = () => {
   return (
     <div className="min-h-screen bg-background w-full overflow-x-hidden">
       <Header onProfileClick={() => setShowProfile(true)} />
+      <div className="flex justify-end items-center px-6 pt-2">
+        <span
+          className={`flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium ${isOnline ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}
+          title={isOnline ? 'Connecté au cloud' : 'Hors ligne'}
+        >
+          <span className={`inline-block w-2 h-2 rounded-full ${isOnline ? 'bg-green-500' : 'bg-red-500'}`}></span>
+          {isOnline ? 'En ligne' : 'Hors ligne'}
+        </span>
+      </div>
       <div className="container mx-auto p-2 sm:p-4 md:p-6 space-y-4 md:space-y-6 max-w-full">
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
           <h1 className="text-2xl md:text-3xl font-bold text-foreground">

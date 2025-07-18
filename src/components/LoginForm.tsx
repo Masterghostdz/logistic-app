@@ -8,6 +8,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from '../hooks/useTranslation';
 import { toast } from 'sonner';
 import { LogIn, User, Lock } from 'lucide-react';
+import { useOnlineStatus } from '../contexts/OnlineStatusContext';
 
 const LoginForm = () => {
   const [username, setUsername] = useState('');
@@ -15,6 +16,7 @@ const LoginForm = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
   const { t } = useTranslation();
+  const { isOnline } = useOnlineStatus();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,6 +42,13 @@ const LoginForm = () => {
             <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center">
               <LogIn className="w-6 h-6 text-white" />
             </div>
+          </div>
+          <div className="flex justify-center mb-2">
+            <span className={`flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium ${isOnline ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}
+                  title={isOnline ? 'Connecté au cloud' : 'Hors ligne'}>
+              <span className={`inline-block w-2 h-2 rounded-full ${isOnline ? 'bg-green-500' : 'bg-red-500'}`}></span>
+              {isOnline ? 'En ligne' : 'Hors ligne'}
+            </span>
           </div>
           <CardTitle className="text-2xl font-bold text-gray-900 dark:text-white">
             {t('auth.welcome')}

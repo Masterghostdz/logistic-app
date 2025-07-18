@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { useOnlineStatus } from '../../contexts/OnlineStatusContext';
 import * as XLSX from 'xlsx';
 import { Warehouse } from '../../types';
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from '../ui/alert-dialog';
@@ -35,25 +36,8 @@ const PlanificateurDashboard = () => {
       if (unsubscribe) unsubscribe();
     };
   }, []);
-  // Firestore connection status
-  const [isOnline, setIsOnline] = useState(true);
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    const checkConnection = async () => {
-      try {
-        const { getFirestore, collection, getDocs } = await import('firebase/firestore');
-        const { db } = await import('../../services/firebaseClient');
-        // On tente de lire une collection pour vérifier la connexion
-        await getDocs(collection(db, 'chauffeurs'));
-        setIsOnline(true);
-      } catch {
-        setIsOnline(false);
-      }
-    };
-    checkConnection();
-    interval = setInterval(checkConnection, 5000);
-    return () => clearInterval(interval);
-  }, []);
+  // Online status global
+  const { isOnline } = useOnlineStatus();
 
   // Synchronisation temps réel des déclarations depuis Firestore
   const [declarations, setDeclarations] = useState<Declaration[]>([]);
@@ -398,7 +382,13 @@ const PlanificateurDashboard = () => {
     <div>
       <Header onProfileClick={handleProfileClick} />
       <div className="flex justify-end items-center px-6 pt-2">
-        <span className={`text-xs font-semibold ${isOnline ? 'text-green-600' : 'text-red-600'}`}>Système {isOnline ? 'en ligne' : 'hors ligne'}</span>
+        <span
+          className={`flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium ${isOnline ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}
+          title={isOnline ? 'Connecté au cloud' : 'Hors ligne'}
+        >
+          <span className={`inline-block w-2 h-2 rounded-full ${isOnline ? 'bg-green-500' : 'bg-red-500'}`}></span>
+          {isOnline ? 'En ligne' : 'Hors ligne'}
+        </span>
       </div>
       <div className="flex h-[calc(100vh-4rem)]">
         <PlanificateurSidebar activeTab={activeTab} onTabChange={setActiveTab} />

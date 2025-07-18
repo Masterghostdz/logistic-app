@@ -12,6 +12,7 @@ import PlanificateurDashboard from './components/dashboards/PlanificateurDashboa
 import FinancierDashboard from './components/dashboards/FinancierDashboard';
 import AdminDashboard from './components/dashboards/AdminDashboard';
 import { mobileService } from './services/mobileService';
+import { OnlineStatusProvider } from './contexts/OnlineStatusContext';
 
 const AppContent = () => {
   const { user, isAuthenticated } = useAuth();
@@ -54,9 +55,11 @@ const App = () => {
     <TooltipProvider>
       <SettingsProvider>
         <AuthProvider>
-          <Toaster />
-          <Sonner />
-          <AppContent />
+          <OnlineStatusProvider>
+            <Toaster />
+            <Sonner />
+            <AppContent />
+          </OnlineStatusProvider>
         </AuthProvider>
       </SettingsProvider>
     </TooltipProvider>

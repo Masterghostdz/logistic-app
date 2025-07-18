@@ -27,10 +27,11 @@ export interface Chauffeur {
   employeeType: 'interne' | 'externe';
   isActive: boolean;
   createdAt: string;
-  coordinates?: {
-    lat: number;
-    lng: number;
-  };
+  // Champs de traçage temps réel
+  latitude?: number;
+  longitude?: number;
+  isTracking?: boolean;
+  lastPositionAt?: string; // ISO date
 }
 
 export interface Declaration {

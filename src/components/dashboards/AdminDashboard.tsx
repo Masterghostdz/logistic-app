@@ -25,6 +25,7 @@ import { User as UserType, Company, VehicleType } from '../../types';
 import { useSharedData } from '../../contexts/SharedDataContext';
 import { demoAccountsConfig } from '../../config/demoAccounts';
 import Header from '../Header';
+import { useOnlineStatus } from '../../contexts/OnlineStatusContext';
 import ProfilePage from '../ProfilePage';
 import PhoneNumbersField from '../PhoneNumbersField';
 import PasswordField from '../PasswordField';
@@ -376,6 +377,8 @@ const AdminDashboard = () => {
     );
   };
 
+  const { isOnline } = useOnlineStatus();
+
   if (activeTab === 'profile') {
     return (
       <div>
@@ -390,6 +393,15 @@ const AdminDashboard = () => {
   return (
     <div>
       <Header onProfileClick={handleProfileClick} />
+      <div className="flex justify-end items-center px-6 pt-2">
+        <span
+          className={`flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium ${isOnline ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}
+          title={isOnline ? 'Connecté au cloud' : 'Hors ligne'}
+        >
+          <span className={`inline-block w-2 h-2 rounded-full ${isOnline ? 'bg-green-500' : 'bg-red-500'}`}></span>
+          {isOnline ? 'En ligne' : 'Hors ligne'}
+        </span>
+      </div>
       <div className="flex h-[calc(100vh-4rem)]">
         <div className="w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 p-4">
           <nav className="space-y-2">

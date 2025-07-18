@@ -48,7 +48,32 @@ const TracageSection = () => {
     };
   }, []);
 
-  // Les chauffeurs sont désormais synchronisés depuis Firestore, pas de positions par défaut locales.
+
+  // Synchronisation temps réel des chauffeurs depuis Firestore
+  const [chauffeurs, setChauffeurs] = useState<Chauffeur[]>([]);
+  useEffect(() => {
+    let unsubscribe: (() => void) | undefined;
+    const listen = async () => {
+      const { listenChauffeurs } = await import('../services/chauffeurService');
+      unsubscribe = listenChauffeurs((cloudChauffeurs) => {
+        setChauffeurs(cloudChauffeurs);
+      });
+    };
+    listen();
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, []);
+
+  // Filtrer les chauffeurs en ligne (tracking actif, position valide, position récente < 5min)
+  const now = Date.now();
+  const ONLINE_TIMEOUT = 5 * 60 * 1000; // 5 minutes
+  const onlineChauffeurs = chauffeurs.filter(c =>
+    c.isTracking === true &&
+    typeof c.latitude === 'number' && typeof c.longitude === 'number' &&
+    !isNaN(c.latitude) && !isNaN(c.longitude) &&
+    c.lastPositionAt && (now - new Date(c.lastPositionAt).getTime() < ONLINE_TIMEOUT)
+  );
 
   const [showCreateWarehouse, setShowCreateWarehouse] = useState(false);
   const [editingWarehouse, setEditingWarehouse] = useState<Warehouse | null>(null);
@@ -337,13 +362,11 @@ const TracageSection = () => {
                 {isMobile ? (
                   <MobileOpenStreetMap 
                     warehouses={validWarehouses}
-                    // chauffeurs synchronisés via Firestore, prop supprimée
                     height="100%"
                   />
                 ) : (
                   <OpenStreetMap 
                     warehouses={validWarehouses}
-                    // chauffeurs synchronisés via Firestore, prop supprimée
                     height="100%"
                   />
                 )}
@@ -353,11 +376,39 @@ const TracageSection = () => {
         </TabsContent>
 
         <TabsContent value="chauffeurs" className="space-y-4">
-          <div className="flex justify-center items-center h-64">
-            <div className="text-center">
-              <Truck className="h-16 w-16 mx-auto text-gray-400 mb-4" />
-              <h3 className="text-xl font-semibold text-gray-600 mb-2">Coming Soon</h3>
-              <p className="text-gray-500 text-sm px-4">La fonctionnalité de traçage des chauffeurs sera bientôt disponible.</p>
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 lg:gap-6 h-80 lg:h-[500px]">
+            {/* Liste des chauffeurs en ligne à gauche */}
+            <div className="col-span-1 overflow-y-auto bg-white rounded-lg border p-2 shadow-sm">
+              <h4 className="font-semibold mb-2 text-sm md:text-base flex items-center gap-2"><Truck className="h-4 w-4" /> Chauffeurs en ligne</h4>
+              {onlineChauffeurs.length === 0 ? (
+                <div className="text-gray-500 text-sm">Aucun chauffeur en ligne</div>
+              ) : (
+                <ul className="space-y-2">
+                  {onlineChauffeurs.map((c) => (
+                    <li key={c.id} className="flex flex-col border-b pb-2 last:border-b-0 last:pb-0">
+                      <span className="font-medium text-sm">{c.fullName}</span>
+                      <span className="text-xs text-gray-500">{c.vehicleType} • {c.phone.join(', ')}</span>
+                      <span className="text-xs text-green-600">En ligne</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+            {/* Carte des chauffeurs en ligne à droite */}
+            <div className="col-span-1 lg:col-span-3">
+              <div className="h-64 sm:h-80 lg:h-[500px] w-full">
+                {isMobile ? (
+                  <MobileOpenStreetMap 
+                    chauffeurs={onlineChauffeurs}
+                    height="100%"
+                  />
+                ) : (
+                  <OpenStreetMap 
+                    chauffeurs={onlineChauffeurs}
+                    height="100%"
+                  />
+                )}
+              </div>
             </div>
           </div>
         </TabsContent>

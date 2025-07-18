@@ -1,3 +1,13 @@
+// Met à jour la position et l'état de tracking d'un chauffeur
+export const updateChauffeurPosition = async (id: string, latitude: number, longitude: number, isTracking: boolean) => {
+  const chauffeurRef = doc(db, 'chauffeurs', id);
+  return await updateDoc(chauffeurRef, {
+    latitude,
+    longitude,
+    isTracking,
+    lastPositionAt: new Date().toISOString(),
+  });
+};
 
 import { db } from './firebaseClient';
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, onSnapshot } from 'firebase/firestore';
