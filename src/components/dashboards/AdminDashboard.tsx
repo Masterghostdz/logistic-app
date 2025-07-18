@@ -1,3 +1,4 @@
+import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from '../ui/alert-dialog';
 
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
@@ -31,16 +32,33 @@ import { simpleHash } from '../../utils/authUtils';
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
-  const { 
-    companies, 
-    vehicleTypes, 
-    addCompany, 
-    addVehicleType, 
-    updateCompany, 
-    updateVehicleType, 
-    deleteCompany, 
-    deleteVehicleType 
-  } = useSharedData();
+  // --- Synchronisation Firestore pour les sociétés ---
+  const [companies, setCompanies] = useState<Company[]>([]);
+  useEffect(() => {
+    let unsubscribe;
+    const listen = async () => {
+      const { listenCompanies } = await import('../../services/companyService');
+      unsubscribe = listenCompanies((cloudCompanies) => {
+        setCompanies(cloudCompanies);
+      });
+    };
+    listen();
+    return () => { if (unsubscribe) unsubscribe(); };
+  }, []);
+
+  // --- Synchronisation Firestore pour les types de véhicules ---
+  const [vehicleTypes, setVehicleTypes] = useState<VehicleType[]>([]);
+  useEffect(() => {
+    let unsubscribe;
+    const listen = async () => {
+      const { listenVehicleTypes } = await import('../../services/vehicleTypeService');
+      unsubscribe = listenVehicleTypes((cloudVehicleTypes) => {
+        setVehicleTypes(cloudVehicleTypes);
+      });
+    };
+    listen();
+    return () => { if (unsubscribe) unsubscribe(); };
+  }, []);
   
   // Synchronisation temps réel avec Firestore
   const [users, setUsers] = useState<(UserType & { password?: string })[]>([]);
@@ -137,8 +155,25 @@ const AdminDashboard = () => {
           toast.success('Utilisateur modifié dans le cloud');
         } else {
           // Création nouvel utilisateur
-          await addUser(userToSave);
+          const userDoc = await addUser(userToSave);
           toast.success('Utilisateur créé dans le cloud');
+          // Synchronisation dans la collection chauffeurs si role chauffeur
+          if (userToSave.role === 'chauffeur') {
+            const { addChauffeur } = await import('../../services/chauffeurService');
+            await addChauffeur({
+              id: userDoc.id || Date.now().toString(),
+              firstName: userToSave.firstName,
+              lastName: userToSave.lastName,
+              fullName: userToSave.fullName,
+              username: userToSave.username,
+              password: userToSave.passwordHash || '',
+              phone: userToSave.phone,
+              vehicleType: '',
+              employeeType: 'interne',
+              isActive: true,
+              createdAt: userToSave.createdAt
+            });
+          }
         }
       } catch (err) {
         toast.error('Erreur lors de la synchronisation avec le cloud');
@@ -159,80 +194,63 @@ const AdminDashboard = () => {
     setShowCreateUser(false);
   };
 
-  const handleCreateCompany = (e: React.FormEvent) => {
+  const handleCreateCompany = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!newCompany.name) {
       toast.error('Le nom de la société est obligatoire');
       return;
     }
-
+    const { addCompany, updateCompany } = await import('../../services/companyService');
     if (editingCompany) {
-      const updatedCompany: Company = {
+      const updatedCompany = {
         ...editingCompany,
         name: newCompany.name,
         address: newCompany.address,
         phone: newCompany.phone,
         email: newCompany.email
       };
-
-      updateCompany(editingCompany.id, updatedCompany);
+      await updateCompany(editingCompany.id, updatedCompany);
       setEditingCompany(null);
       toast.success('Société modifiée et synchronisée');
     } else {
-      const company: Company = {
-        id: Date.now().toString(),
+      const company = {
         name: newCompany.name,
         address: newCompany.address,
         phone: newCompany.phone,
         email: newCompany.email,
         createdAt: new Date().toISOString()
       };
-
-      addCompany(company);
+      await addCompany(company);
       toast.success('Société créée et synchronisée');
     }
-
-    setNewCompany({
-      name: '',
-      address: '',
-      phone: [],
-      email: ''
-    });
+    setNewCompany({ name: '', address: '', phone: [], email: '' });
     setShowCreateCompany(false);
   };
 
-  const handleCreateVehicleType = (e: React.FormEvent) => {
+  const handleCreateVehicleType = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!newVehicleType.name) {
       toast.error('Le nom du type de véhicule est obligatoire');
       return;
     }
-
+    const { addVehicleType, updateVehicleType } = await import('../../services/vehicleTypeService');
     if (editingVehicleType) {
-      const updatedVehicleType: VehicleType = {
+      const updatedVehicleType = {
         ...editingVehicleType,
         name: newVehicleType.name
       };
-
-      updateVehicleType(editingVehicleType.id, updatedVehicleType);
+      await updateVehicleType(editingVehicleType.id, updatedVehicleType);
       setEditingVehicleType(null);
       toast.success('Type de véhicule modifié et synchronisé');
     } else {
-      const vehicleType: VehicleType = {
-        id: Date.now().toString(),
+      const vehicleType = {
         name: newVehicleType.name,
         createdAt: new Date().toISOString()
       };
-
-      addVehicleType(vehicleType);
+      await addVehicleType(vehicleType);
       toast.success('Type de véhicule créé et synchronisé');
     }
-
-    setNewVehicleType({
-      name: ''
-    });
+    setNewVehicleType({ name: '' });
     setShowCreateVehicleType(false);
   };
 
@@ -297,23 +315,31 @@ const AdminDashboard = () => {
     setShowCreateVehicleType(true);
   };
 
-  const handleDeleteUser = async (id: string) => {
+  const [userToDelete, setUserToDelete] = useState<string | null>(null);
+  const handleDeleteUser = (id: string) => {
+    setUserToDelete(id);
+  };
+  const confirmDeleteUser = async () => {
+    if (!userToDelete) return;
     try {
       const { deleteUser } = await import('../../services/userService');
-      await deleteUser(id);
+      await deleteUser(userToDelete);
       toast.success('Utilisateur supprimé du cloud');
     } catch (err) {
       toast.error('Erreur lors de la suppression sur le cloud');
     }
+    setUserToDelete(null);
   };
 
-  const handleDeleteCompany = (id: string) => {
-    deleteCompany(id);
+  const handleDeleteCompany = async (id: string) => {
+    const { deleteCompany } = await import('../../services/companyService');
+    await deleteCompany(id);
     toast.success('Société supprimée et synchronisée');
   };
 
-  const handleDeleteVehicleType = (id: string) => {
-    deleteVehicleType(id);
+  const handleDeleteVehicleType = async (id: string) => {
+    const { deleteVehicleType } = await import('../../services/vehicleTypeService');
+    await deleteVehicleType(id);
     toast.success('Type de véhicule supprimé et synchronisé');
   };
 
@@ -635,6 +661,19 @@ const AdminDashboard = () => {
                               >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
+      {/* Confirmation dialog for user deletion */}
+      <AlertDialog open={!!userToDelete} onOpenChange={open => { if (!open) setUserToDelete(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
+          </AlertDialogHeader>
+          <div>Êtes-vous sûr de vouloir supprimer cet utilisateur ? Cette action est irréversible.</div>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setUserToDelete(null)}>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteUser}>Supprimer</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
                             </div>
                           </TableCell>
                         </TableRow>

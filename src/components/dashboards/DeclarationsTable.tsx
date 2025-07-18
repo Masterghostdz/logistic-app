@@ -14,6 +14,8 @@ interface DeclarationsTableProps {
   onRejectDeclaration: (id: string) => void;
   onEditDeclaration: (declaration: Declaration) => void;
   onDeleteDeclaration: (id: string) => void;
+  selectedDeclarationIds?: string[];
+  setSelectedDeclarationIds?: (ids: string[]) => void;
 }
 
 const DeclarationsTable = ({ 
@@ -21,7 +23,9 @@ const DeclarationsTable = ({
   onValidateDeclaration, 
   onRejectDeclaration, 
   onEditDeclaration, 
-  onDeleteDeclaration 
+  onDeleteDeclaration,
+  selectedDeclarationIds = [],
+  setSelectedDeclarationIds = () => {}
 }: DeclarationsTableProps) => {
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -36,12 +40,30 @@ const DeclarationsTable = ({
     }
   };
 
+  // Gestion du cochage global
+  const allChecked = declarations.length > 0 && declarations.every(d => selectedDeclarationIds.includes(d.id));
+  const someChecked = declarations.some(d => selectedDeclarationIds.includes(d.id));
+
   return (
     <Card>
       <CardContent className="p-0">
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-8 text-xs">
+                <input
+                  type="checkbox"
+                  checked={allChecked}
+                  ref={el => { if (el) el.indeterminate = !allChecked && someChecked; }}
+                  onChange={e => {
+                    if (e.target.checked) {
+                      setSelectedDeclarationIds(declarations.map(d => d.id));
+                    } else {
+                      setSelectedDeclarationIds([]);
+                    }
+                  }}
+                />
+              </TableHead>
               <TableHead className="w-[140px] text-xs">Numéro</TableHead>
               <TableHead className="w-[130px] text-xs">Chauffeur</TableHead>
               <TableHead className="w-[100px] text-xs">Distance (km)</TableHead>
@@ -55,6 +77,19 @@ const DeclarationsTable = ({
           <TableBody>
             {declarations.map((declaration) => (
               <TableRow key={declaration.id}>
+                <TableCell>
+                  <input
+                    type="checkbox"
+                    checked={selectedDeclarationIds.includes(declaration.id)}
+                    onChange={e => {
+                      if (e.target.checked) {
+                        setSelectedDeclarationIds([...selectedDeclarationIds, declaration.id]);
+                      } else {
+                        setSelectedDeclarationIds(selectedDeclarationIds.filter(id => id !== declaration.id));
+                      }
+                    }}
+                  />
+                </TableCell>
                 <TableCell className="font-medium">
                   <div className="truncate text-xs">{declaration.number}</div>
                 </TableCell>

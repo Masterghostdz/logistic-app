@@ -1,3 +1,12 @@
+import { onSnapshot } from 'firebase/firestore';
+
+// Ecoute temps réel des sociétés
+export const listenCompanies = (callback) => {
+  return onSnapshot(companiesCollection, (snapshot) => {
+    const companies = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    callback(companies);
+  });
+};
 import { db } from './firebaseClient';
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
 

@@ -1,3 +1,12 @@
+import { onSnapshot } from 'firebase/firestore';
+
+// Ecoute temps réel des types de véhicules
+export const listenVehicleTypes = (callback) => {
+  return onSnapshot(vehicleTypesCollection, (snapshot) => {
+    const types = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    callback(types);
+  });
+};
 import { db } from './firebaseClient';
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
 

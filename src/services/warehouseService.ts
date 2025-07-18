@@ -1,3 +1,12 @@
+import { onSnapshot } from 'firebase/firestore';
+
+// Ecoute temps réel des entrepôts
+export const listenWarehouses = (callback) => {
+  return onSnapshot(warehousesCollection, (snapshot) => {
+    const warehouses = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    callback(warehouses);
+  });
+};
 import { db } from './firebaseClient';
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
 

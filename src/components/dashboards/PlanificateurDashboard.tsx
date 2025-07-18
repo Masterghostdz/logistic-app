@@ -1,4 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import * as XLSX from 'xlsx';
+import { Warehouse } from '../../types';
+import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from '../ui/alert-dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { toast } from 'sonner';
@@ -17,55 +20,87 @@ import ChauffeursTable from './ChauffeursTable';
 import CreateChauffeurDialog from './CreateChauffeurDialog';
 
 const PlanificateurDashboard = () => {
-  const { declarations, updateDeclaration, deleteDeclaration } = useSharedData();
+  // Synchronisation temps réel des entrepôts depuis Firestore
+  const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
+  useEffect(() => {
+    let unsubscribe: (() => void) | undefined;
+    const listen = async () => {
+      const { listenWarehouses } = await import('../../services/warehouseService');
+      unsubscribe = listenWarehouses((cloudWarehouses) => {
+        setWarehouses(cloudWarehouses);
+      });
+    };
+    listen();
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, []);
+  // Firestore connection status
+  const [isOnline, setIsOnline] = useState(true);
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    const checkConnection = async () => {
+      try {
+        const { getFirestore, collection, getDocs } = await import('firebase/firestore');
+        const { db } = await import('../../services/firebaseClient');
+        // On tente de lire une collection pour vérifier la connexion
+        await getDocs(collection(db, 'chauffeurs'));
+        setIsOnline(true);
+      } catch {
+        setIsOnline(false);
+      }
+    };
+    checkConnection();
+    interval = setInterval(checkConnection, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Synchronisation temps réel des déclarations depuis Firestore
+  const [declarations, setDeclarations] = useState<Declaration[]>([]);
+  useEffect(() => {
+    let unsubscribe: (() => void) | undefined;
+    const listen = async () => {
+      const { listenDeclarations } = await import('../../services/declarationService');
+      unsubscribe = listenDeclarations((cloudDeclarations) => {
+        setDeclarations(cloudDeclarations);
+      });
+    };
+    listen();
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, []);
   const [activeTab, setActiveTab] = useState('dashboard');
 
-  const [chauffeurs, setChauffeurs] = useState<Chauffeur[]>([
-    {
-      id: '1',
-      firstName: 'Ahmed',
-      lastName: 'Benali',
-      fullName: 'Ahmed Benali',
-      username: 'abenali',
-      password: 'demo123',
-      phone: ['+213 55 12 34 56'],
-      vehicleType: 'Camion 3.5T',
-      employeeType: 'interne',
-      isActive: true,
-      createdAt: new Date().toISOString()
-    },
-    {
-      id: '2',
-      firstName: 'Fatima',
-      lastName: 'Said',
-      fullName: 'TP - Fatima Said',
-      username: 'fsaid',
-      password: 'demo123',
-      phone: ['+213 66 98 76 54'],
-      vehicleType: 'Camionnette',
-      employeeType: 'externe',
-      isActive: true,
-      createdAt: new Date().toISOString()
-    },
-    {
-      id: '3',
-      firstName: 'Ali',
-      lastName: 'Hassan',
-      fullName: 'Ali Hassan',
-      username: 'ahassan',
-      password: 'demo123',
-      phone: ['+213 77 55 44 33'],
-      vehicleType: 'Utilitaire',
-      employeeType: 'interne',
-      isActive: false,
-      createdAt: new Date().toISOString()
-    }
-  ]);
+  const [chauffeurs, setChauffeurs] = useState<Chauffeur[]>([]);
+
+  // Synchronisation temps réel des chauffeurs depuis Firestore
+  useEffect(() => {
+    let unsubscribe: (() => void) | undefined;
+    const listen = async () => {
+      const { listenChauffeurs } = await import('../../services/chauffeurService');
+      unsubscribe = listenChauffeurs((cloudChauffeurs) => {
+        setChauffeurs(cloudChauffeurs);
+      });
+    };
+    listen();
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, []);
 
   const [searchValue, setSearchValue] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [showCreateChauffeur, setShowCreateChauffeur] = useState(false);
   const [editingDeclaration, setEditingDeclaration] = useState<Declaration | null>(null);
+  // Export dialog state
+  const [exportDialogOpen, setExportDialogOpen] = useState(false);
+  // Attributs sélectionnés pour l'export
+  const [exportAttributes, setExportAttributes] = useState<string[]>([]);
+  // Format d'export (csv ou excel)
+  const [exportFormat, setExportFormat] = useState<'csv' | 'excel'>('csv');
+  // Lignes sélectionnées pour l'export
+  const [selectedDeclarationIds, setSelectedDeclarationIds] = useState<string[]>([]);
   const [editingChauffeur, setEditingChauffeur] = useState<Chauffeur | null>(null);
   const [newChauffeur, setNewChauffeur] = useState({
     fullName: '',
@@ -114,8 +149,9 @@ const PlanificateurDashboard = () => {
     const firstName = nameParts[0] || '';
     const lastName = nameParts.slice(1).join(' ') || '';
 
+
     if (editingChauffeur) {
-      // Modification d'un chauffeur existant
+      // Modification d'un chauffeur existant (Firestore)
       const updatedChauffeur: Chauffeur = {
         ...editingChauffeur,
         firstName,
@@ -127,14 +163,13 @@ const PlanificateurDashboard = () => {
         vehicleType: newChauffeur.vehicleType,
         employeeType: newChauffeur.employeeType
       };
-
-      setChauffeurs(prev => prev.map(c => c.id === editingChauffeur.id ? updatedChauffeur : c));
+      const { updateChauffeur } = await import('../../services/chauffeurService');
+      await updateChauffeur(editingChauffeur.id, updatedChauffeur);
       setEditingChauffeur(null);
       toast.success('Chauffeur modifié avec succès');
     } else {
-      // Création d'un nouveau chauffeur
-      const chauffeur: Chauffeur = {
-        id: Date.now().toString(),
+      // Création d'un nouveau chauffeur (Firestore)
+      const chauffeur: Omit<Chauffeur, 'id'> = {
         firstName,
         lastName,
         fullName: `${newChauffeur.employeeType === 'externe' ? 'TP - ' : ''}${newChauffeur.fullName}`,
@@ -146,8 +181,29 @@ const PlanificateurDashboard = () => {
         isActive: true,
         createdAt: new Date().toISOString()
       };
-
-      setChauffeurs(prev => [...prev, chauffeur]);
+      const { addChauffeur, updateChauffeur } = await import('../../services/chauffeurService');
+      const docRef = await addChauffeur(chauffeur);
+      // Ajoute l'id Firestore dans le document pour cohérence
+      await updateChauffeur(docRef.id, { id: docRef.id });
+      // Ajout dans la collection users pour l'authentification
+      const { addUser } = await import('../../services/userService');
+      // Génération salt et hash du mot de passe
+      const salt = Math.random().toString(36).substring(2, 15);
+      const passwordHash = await (await import('../../utils/authUtils')).simpleHash(newChauffeur.password, salt);
+      await addUser({
+        username: newChauffeur.username,
+        salt,
+        passwordHash,
+        role: 'chauffeur',
+        firstName,
+        lastName,
+        fullName: `${newChauffeur.employeeType === 'externe' ? 'TP - ' : ''}${newChauffeur.fullName}`,
+        phone: newChauffeur.phone,
+        vehicleType: newChauffeur.vehicleType,
+        employeeType: newChauffeur.employeeType,
+        isActive: true,
+        createdAt: new Date().toISOString()
+      });
       toast.success('Chauffeur créé avec succès');
     }
 
@@ -175,7 +231,7 @@ const PlanificateurDashboard = () => {
     setShowCreateChauffeur(true);
   };
 
-  const handleValidateDeclaration = (id: string) => {
+  const handleValidateDeclaration = async (id: string) => {
     const declaration = declarations.find(d => d.id === id);
     if (declaration) {
       const updatedDeclaration = {
@@ -184,12 +240,13 @@ const PlanificateurDashboard = () => {
         validatedAt: new Date().toISOString(),
         validatedBy: 'Planificateur'
       };
-      updateDeclaration(id, updatedDeclaration);
+      const { updateDeclaration } = await import('../../services/declarationService');
+      await updateDeclaration(id, updatedDeclaration);
       toast.success('Déclaration validée');
     }
   };
 
-  const handleRejectDeclaration = (id: string) => {
+  const handleRejectDeclaration = async (id: string) => {
     const declaration = declarations.find(d => d.id === id);
     if (declaration) {
       const updatedDeclaration = {
@@ -198,7 +255,8 @@ const PlanificateurDashboard = () => {
         validatedAt: new Date().toISOString(),
         validatedBy: 'Planificateur'
       };
-      updateDeclaration(id, updatedDeclaration);
+      const { updateDeclaration } = await import('../../services/declarationService');
+      await updateDeclaration(id, updatedDeclaration);
       toast.success('Déclaration refusée');
     }
   };
@@ -216,20 +274,52 @@ const PlanificateurDashboard = () => {
     setEditingDeclaration(declaration);
   };
 
-  const handleUpdateDeclaration = (updatedDeclaration: Declaration) => {
-    updateDeclaration(updatedDeclaration.id, updatedDeclaration);
+  const handleUpdateDeclaration = async (updatedDeclaration: Declaration) => {
+    const { updateDeclaration } = await import('../../services/declarationService');
+    await updateDeclaration(updatedDeclaration.id, updatedDeclaration);
     setEditingDeclaration(null);
     toast.success('Déclaration mise à jour');
   };
 
-  const handleDeleteDeclaration = (id: string) => {
-    deleteDeclaration(id);
+  const handleDeleteDeclaration = async (id: string) => {
+    const { deleteDeclaration } = await import('../../services/declarationService');
+    await deleteDeclaration(id);
     toast.success('Déclaration supprimée');
   };
 
+  const [chauffeurToDelete, setChauffeurToDelete] = useState<string | null>(null);
   const handleDeleteChauffeur = (id: string) => {
-    setChauffeurs(prev => prev.filter(c => c.id !== id));
-    toast.success('Chauffeur supprimé');
+    setChauffeurToDelete(id);
+  };
+  const confirmDeleteChauffeur = async () => {
+    if (!chauffeurToDelete) return;
+    try {
+      const { deleteChauffeur } = await import('../../services/chauffeurService');
+      const { getUsers, deleteUser } = await import('../../services/userService');
+      const chauffeur = chauffeurs.find(c => c.id === chauffeurToDelete);
+      let chauffeurDeleted = false;
+      let userDeleted = false;
+      if (chauffeur) {
+        await deleteChauffeur(chauffeurToDelete);
+        chauffeurDeleted = true;
+        const users = await getUsers();
+        const user = users.find(u => u.username === chauffeur.username);
+        if (user) {
+          await deleteUser(user.id);
+          userDeleted = true;
+        }
+      }
+      if (chauffeurDeleted && userDeleted) {
+        toast.success('Chauffeur et utilisateur supprimés');
+      } else if (chauffeurDeleted) {
+        toast.success('Chauffeur supprimé (utilisateur non trouvé)');
+      } else {
+        toast.error('Erreur lors de la suppression du chauffeur');
+      }
+    } catch (err) {
+      toast.error('Erreur lors de la suppression');
+    }
+    setChauffeurToDelete(null);
   };
 
   if (activeTab === 'profile') {
@@ -259,9 +349,57 @@ const PlanificateurDashboard = () => {
     );
   }
 
+  // Fonction d'exportation CSV
+  const exportToCSV = (data: any[], columns: string[], filename: string) => {
+    const csvRows = [];
+    csvRows.push(columns.join(','));
+    for (const row of data) {
+      const values = columns.map(col => {
+        let v = row[col];
+        if (typeof v === 'string') {
+          v = v.replace(/"/g, '""');
+          if (v.includes(',') || v.includes('\n')) v = `"${v}"`;
+        }
+        return v ?? '';
+      });
+      csvRows.push(values.join(','));
+    }
+    const csvString = csvRows.join('\n');
+    const blob = new Blob([csvString], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    window.URL.revokeObjectURL(url);
+  };
+
+  // Fonction d'exportation Excel
+  const exportToExcel = (data: any[], columns: string[], filename: string) => {
+    const exportData = data.map(row => {
+      const obj: any = {};
+      columns.forEach(col => {
+        obj[col] = row[col];
+      });
+      return obj;
+    });
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Déclarations');
+    XLSX.writeFile(wb, filename);
+  };
+
+  // Déclarations à exporter selon sélection
+  const declarationsToExport = selectedDeclarationIds.length > 0
+    ? filteredDeclarations.filter(d => selectedDeclarationIds.includes(d.id))
+    : filteredDeclarations;
+
   return (
     <div>
       <Header onProfileClick={handleProfileClick} />
+      <div className="flex justify-end items-center px-6 pt-2">
+        <span className={`text-xs font-semibold ${isOnline ? 'text-green-600' : 'text-red-600'}`}>Système {isOnline ? 'en ligne' : 'hors ligne'}</span>
+      </div>
       <div className="flex h-[calc(100vh-4rem)]">
         <PlanificateurSidebar activeTab={activeTab} onTabChange={setActiveTab} />
 
@@ -302,6 +440,16 @@ const PlanificateurDashboard = () => {
           {activeTab === 'declarations' && (
             <div className="space-y-6">
               <div className="flex items-center justify-between">
+                {/* Bouton Exporter à gauche */}
+                <div className="flex items-center gap-2">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setExportDialogOpen(true)}
+                    disabled={selectedDeclarationIds.length === 0}
+                  >
+                    Exporter
+                  </Button>
+                </div>
                 <h2 className="text-2xl font-bold">Gestion des Déclarations</h2>
               </div>
 
@@ -319,13 +467,109 @@ const PlanificateurDashboard = () => {
                 filterPlaceholder="Filtrer par statut..."
               />
 
+              {/* TODO: Passer selectedDeclarationIds et setSelectedDeclarationIds à DeclarationsTable pour la sélection des lignes */}
               <DeclarationsTable
                 declarations={filteredDeclarations}
                 onValidateDeclaration={handleValidateDeclaration}
                 onRejectDeclaration={handleRejectDeclaration}
                 onEditDeclaration={handleEditDeclaration}
                 onDeleteDeclaration={handleDeleteDeclaration}
+                selectedDeclarationIds={selectedDeclarationIds}
+                setSelectedDeclarationIds={setSelectedDeclarationIds}
               />
+
+              {/* Dialog d'exportation */}
+              <AlertDialog open={exportDialogOpen} onOpenChange={setExportDialogOpen}>
+                <AlertDialogContent style={{ zIndex: 10000, position: 'fixed', maxWidth: 480 }}>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Exporter les déclarations</AlertDialogTitle>
+                  </AlertDialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <div className="font-semibold mb-1">Attributs à exporter :</div>
+                      {/* TODO: Générer dynamiquement la liste des attributs de déclaration */}
+                      <div className="flex flex-wrap gap-2">
+                        {['number','chauffeurName','status','month','year','createdAt','validatedAt','validatedBy'].map(attr => (
+                          <label key={attr} className="flex items-center gap-1">
+                            <input
+                              type="checkbox"
+                              checked={exportAttributes.includes(attr)}
+                              onChange={e => {
+                                setExportAttributes(prev => e.target.checked ? [...prev, attr] : prev.filter(a => a !== attr));
+                              }}
+                            />
+                            <span>{attr}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="font-semibold mb-1">Format :</div>
+                      <label className="mr-4">
+                        <input
+                          type="radio"
+                          name="exportFormat"
+                          value="csv"
+                          checked={exportFormat === 'csv'}
+                          onChange={() => setExportFormat('csv')}
+                        /> CSV
+                      </label>
+                      <label>
+                        <input
+                          type="radio"
+                          name="exportFormat"
+                          value="excel"
+                          checked={exportFormat === 'excel'}
+                          onChange={() => setExportFormat('excel')}
+                        /> Excel
+                      </label>
+                    </div>
+                    <div>
+                      <div className="font-semibold mb-1">Lignes à exporter :</div>
+                      <div>
+                        <label className="mr-4">
+                          <input
+                            type="radio"
+                            name="exportRows"
+                            value="filtered"
+                            checked={selectedDeclarationIds.length === 0}
+                            onChange={() => setSelectedDeclarationIds([])}
+                          />
+                          Toutes les lignes filtrées ({filteredDeclarations.length})
+                        </label>
+                        <label>
+                          <input
+                            type="radio"
+                            name="exportRows"
+                            value="selected"
+                            checked={selectedDeclarationIds.length > 0}
+                            onChange={() => {}}
+                          />
+                          Lignes sélectionnées ({selectedDeclarationIds.length})
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel onClick={() => setExportDialogOpen(false)}>Annuler</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => {
+                        if (exportAttributes.length === 0 || selectedDeclarationIds.length === 0) return;
+                        if (exportFormat === 'csv') {
+                          exportToCSV(declarationsToExport, exportAttributes, 'declarations.csv');
+                        } else {
+                          exportToExcel(declarationsToExport, exportAttributes, 'declarations.xlsx');
+                        }
+                        setExportDialogOpen(false);
+                        toast.success('Exportation terminée');
+                      }}
+                      disabled={exportAttributes.length === 0 || selectedDeclarationIds.length === 0}
+                    >
+                      Exporter
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
           )}
 
@@ -347,6 +591,19 @@ const PlanificateurDashboard = () => {
                 onEditChauffeur={handleEditChauffeur}
                 onDeleteChauffeur={handleDeleteChauffeur}
               />
+              {/* Confirmation dialog for chauffeur deletion */}
+              <AlertDialog open={!!chauffeurToDelete} onOpenChange={open => { if (!open) setChauffeurToDelete(null); }}>
+                <AlertDialogContent style={{ zIndex: 10000, position: 'fixed' }}>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
+                  </AlertDialogHeader>
+                  <div>Êtes-vous sûr de vouloir supprimer ce chauffeur ? Cette action est irréversible.</div>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel onClick={() => setChauffeurToDelete(null)}>Annuler</AlertDialogCancel>
+                    <AlertDialogAction onClick={confirmDeleteChauffeur}>Supprimer</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
           )}
         </div>

@@ -43,7 +43,7 @@ const ChauffeursTable = ({ chauffeurs, onEditChauffeur, onDeleteChauffeur }: Cha
                   <div className="truncate text-sm">{chauffeur.username}</div>
                 </TableCell>
                 <TableCell>
-                  <PasswordField password={chauffeur.password} showLabel={false} />
+                  <span className="font-mono text-sm select-none">••••••••</span>
                 </TableCell>
                 <TableCell>
                   <div className="space-y-1">

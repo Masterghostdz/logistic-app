@@ -1,6 +1,7 @@
 export interface User {
   id: string;
   username: string;
+  password: string;
   role: 'chauffeur' | 'planificateur' | 'financier' | 'financier_unite' | 'admin';
   firstName: string;
   lastName: string;

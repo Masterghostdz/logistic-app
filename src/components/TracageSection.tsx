@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from './ui/alert-dialog';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -7,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Badge } from './ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { toast } from 'sonner';
-import { MapPin, Truck, Plus, Building2 } from 'lucide-react';
+import { MapPin, Truck, Plus, Building2, Edit, Trash2 } from 'lucide-react';
 import OpenStreetMap from './OpenStreetMap';
 import MobileOpenStreetMap from './MobileOpenStreetMap';
 import { Warehouse, Chauffeur } from '../types';
@@ -16,64 +17,43 @@ import { useIsMobile } from '../hooks/use-mobile';
 import PhoneNumbersField from './PhoneNumbersField';
 
 const TracageSection = () => {
-  const { companies } = useSharedData();
   const isMobile = useIsMobile();
-  
-  const [warehouses, setWarehouses] = useState<Warehouse[]>([
-    {
-      id: '1',
-      name: 'Entrepôt Principal Alger',
-      companyId: '1',
-      companyName: 'Logigrine Algérie',
-      phone: ['+213 21 12 34 56'],
-      address: '123 Rue des Entrepreneurs, Alger',
-      coordinates: { lat: 36.7538, lng: 3.0588 },
-      createdAt: new Date().toISOString()
-    },
-    {
-      id: '2',
-      name: 'Entrepôt Oran',
-      companyId: '1',
-      companyName: 'Logigrine Algérie',
-      phone: ['+213 41 98 76 54'],
-      address: '456 Boulevard Commercial, Oran',
-      coordinates: { lat: 35.6969, lng: -0.6331 },
-      createdAt: new Date().toISOString()
-    }
-  ]);
+  // Liste des sociétés synchronisées Firestore
+  const [companies, setCompanies] = useState([]);
+  useEffect(() => {
+    let unsubscribe;
+    const listen = async () => {
+      const { listenCompanies } = await import('../services/companyService');
+      unsubscribe = listenCompanies((cloudCompanies) => {
+        setCompanies(cloudCompanies);
+      });
+    };
+    listen();
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, []);
+  const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
+  useEffect(() => {
+    let unsubscribe;
+    const listen = async () => {
+      const { listenWarehouses } = await import('../services/warehouseService');
+      unsubscribe = listenWarehouses((cloudWarehouses) => {
+        setWarehouses(cloudWarehouses);
+      });
+    };
+    listen();
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, []);
 
-  const [chauffeurs] = useState<Chauffeur[]>([
-    {
-      id: '1',
-      firstName: 'Ahmed',
-      lastName: 'Benali',
-      fullName: 'Ahmed Benali',
-      username: 'abenali',
-      password: 'demo123',
-      phone: ['+213 55 12 34 56'],
-      vehicleType: 'Camion 3.5T',
-      employeeType: 'interne',
-      isActive: true,
-      createdAt: new Date().toISOString(),
-      coordinates: { lat: 36.7750, lng: 3.0594 }
-    },
-    {
-      id: '2',
-      firstName: 'Mohamed',
-      lastName: 'Khedira',
-      fullName: 'Mohamed Khedira',
-      username: 'mkhedira',
-      password: 'demo123',
-      phone: ['+213 66 98 76 54'],
-      vehicleType: 'Camionnette',
-      employeeType: 'externe',
-      isActive: true,
-      createdAt: new Date().toISOString(),
-      coordinates: { lat: 35.7000, lng: -0.6300 }
-    }
-  ]);
+  // Les chauffeurs sont désormais synchronisés depuis Firestore, pas de positions par défaut locales.
 
   const [showCreateWarehouse, setShowCreateWarehouse] = useState(false);
+  const [editingWarehouse, setEditingWarehouse] = useState<Warehouse | null>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [warehouseToDelete, setWarehouseToDelete] = useState<Warehouse | null>(null);
   const [newWarehouse, setNewWarehouse] = useState({
     name: '',
     companyId: '',
@@ -84,22 +64,18 @@ const TracageSection = () => {
     lng: ''
   });
 
-  const handleCreateWarehouse = (e: React.FormEvent) => {
+  const handleCreateOrUpdateWarehouse = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!newWarehouse.name || !newWarehouse.companyId || !newWarehouse.address || !newWarehouse.lat || !newWarehouse.lng) {
       toast.error('Veuillez remplir tous les champs');
       return;
     }
-
     const selectedCompany = companies.find(c => c.id === newWarehouse.companyId);
     if (!selectedCompany) {
       toast.error('Veuillez sélectionner une société');
       return;
     }
-
-    const warehouse: Warehouse = {
-      id: Date.now().toString(),
+    const warehouseData = {
       name: newWarehouse.name,
       companyId: newWarehouse.companyId,
       companyName: selectedCompany.name,
@@ -111,11 +87,54 @@ const TracageSection = () => {
       },
       createdAt: new Date().toISOString()
     };
+    try {
+      if (editingWarehouse) {
+        const { updateWarehouse } = await import('../services/warehouseService');
+        await updateWarehouse(editingWarehouse.id, warehouseData);
+        toast.success('Entrepôt modifié avec succès');
+        setEditingWarehouse(null);
+      } else {
+        const { addWarehouse } = await import('../services/warehouseService');
+        await addWarehouse(warehouseData);
+        toast.success('Entrepôt créé avec succès');
+      }
+      setNewWarehouse({ name: '', companyId: '', companyName: '', phone: [], address: '', lat: '', lng: '' });
+      setShowCreateWarehouse(false);
+    } catch (err) {
+      toast.error("Erreur lors de l'enregistrement de l'entrepôt");
+    }
+  };
 
-    setWarehouses([...warehouses, warehouse]);
-    setNewWarehouse({ name: '', companyId: '', companyName: '', phone: [], address: '', lat: '', lng: '' });
-    setShowCreateWarehouse(false);
-    toast.success('Entrepôt créé avec succès');
+  const handleEditWarehouse = (warehouse: Warehouse) => {
+    setEditingWarehouse(warehouse);
+    setShowCreateWarehouse(true);
+    setNewWarehouse({
+      name: warehouse.name,
+      companyId: warehouse.companyId,
+      companyName: warehouse.companyName,
+      phone: warehouse.phone,
+      address: warehouse.address,
+      lat: warehouse.coordinates?.lat?.toString() || '',
+      lng: warehouse.coordinates?.lng?.toString() || ''
+    });
+  };
+
+  const handleDeleteWarehouse = (warehouse: Warehouse) => {
+    setWarehouseToDelete(warehouse);
+    setShowDeleteDialog(true);
+  };
+
+  const confirmDeleteWarehouse = async () => {
+    if (!warehouseToDelete) return;
+    try {
+      const { deleteWarehouse } = await import('../services/warehouseService');
+      await deleteWarehouse(warehouseToDelete.id);
+      toast.success('Entrepôt supprimé');
+    } catch (err) {
+      toast.error('Erreur lors de la suppression');
+    }
+    setShowDeleteDialog(false);
+    setWarehouseToDelete(null);
   };
 
   const handleCompanyChange = (companyId: string) => {
@@ -126,6 +145,11 @@ const TracageSection = () => {
       companyName: selectedCompany?.name || ''
     });
   };
+
+  // Ne passer à la carte que les entrepôts avec coordonnées valides
+  const validWarehouses = warehouses.filter(
+    w => w.coordinates && typeof w.coordinates.lat === 'number' && typeof w.coordinates.lng === 'number' && !isNaN(w.coordinates.lat) && !isNaN(w.coordinates.lng)
+  );
 
   return (
     <div className="space-y-6 p-2 md:p-6 max-w-full overflow-hidden">
@@ -160,13 +184,13 @@ const TracageSection = () => {
             </Button>
           </div>
 
-          {showCreateWarehouse && (
+          {(showCreateWarehouse || editingWarehouse) && (
             <Card>
               <CardHeader className="pb-4">
-                <CardTitle className="text-base md:text-lg">Créer un nouvel entrepôt</CardTitle>
+                <CardTitle className="text-base md:text-lg">{editingWarehouse ? 'Modifier l\'entrepôt' : 'Créer un nouvel entrepôt'}</CardTitle>
               </CardHeader>
               <CardContent>
-                <form onSubmit={handleCreateWarehouse} className="space-y-4">
+                <form onSubmit={handleCreateOrUpdateWarehouse} className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="name" className="text-sm">Nom de l'entrepôt</Label>
@@ -236,11 +260,11 @@ const TracageSection = () => {
                     </div>
                   </div>
                   <div className="flex flex-col sm:flex-row gap-2">
-                    <Button type="submit" size={isMobile ? "sm" : "default"} className="text-sm">Créer</Button>
+                    <Button type="submit" size={isMobile ? "sm" : "default"} className="text-sm">{editingWarehouse ? 'Enregistrer' : 'Créer'}</Button>
                     <Button 
                       type="button" 
                       variant="outline" 
-                      onClick={() => setShowCreateWarehouse(false)}
+                      onClick={() => { setShowCreateWarehouse(false); setEditingWarehouse(null); setNewWarehouse({ name: '', companyId: '', companyName: '', phone: [], address: '', lat: '', lng: '' }); }}
                       size={isMobile ? "sm" : "default"}
                       className="text-sm"
                     >
@@ -270,14 +294,40 @@ const TracageSection = () => {
                             ))}
                           </div>
                         </div>
-                        <Badge variant="outline" className="bg-green-50 text-green-700 ml-2 flex-shrink-0 text-xs">
-                          <MapPin className="h-3 w-3 mr-1" />
-                          Actif
-                        </Badge>
+                        <div className="flex flex-col gap-2 items-end">
+                          <Badge variant="outline" className="bg-green-50 text-green-700 ml-2 flex-shrink-0 text-xs mb-1">
+                            <MapPin className="h-3 w-3 mr-1" />
+                            Actif
+                          </Badge>
+                          <div className="flex gap-2">
+                            <Button size="icon" variant="outline" onClick={() => handleEditWarehouse(warehouse)} className="text-xs p-2" title="Modifier">
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button size="icon" variant="destructive" onClick={() => handleDeleteWarehouse(warehouse)} className="text-xs p-2" title="Supprimer">
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
                 ))}
+      {/* Dialog de confirmation suppression */}
+      {/* Dialog de confirmation suppression avec z-index élevé */}
+      <div style={{ position: 'relative', zIndex: 9999 }}>
+        <AlertDialog open={showDeleteDialog} onOpenChange={open => { if (!open) setShowDeleteDialog(false); }}>
+          <AlertDialogContent style={{ zIndex: 99999 }}>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
+            </AlertDialogHeader>
+            <div>Êtes-vous sûr de vouloir supprimer cet entrepôt ? Cette action est irréversible.</div>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setShowDeleteDialog(false)}>Annuler</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmDeleteWarehouse}>Supprimer</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
               </div>
             </div>
             
@@ -286,14 +336,14 @@ const TracageSection = () => {
               <div className="h-64 sm:h-80 lg:h-[500px] w-full">
                 {isMobile ? (
                   <MobileOpenStreetMap 
-                    warehouses={warehouses}
-                    chauffeurs={chauffeurs}
+                    warehouses={validWarehouses}
+                    // chauffeurs synchronisés via Firestore, prop supprimée
                     height="100%"
                   />
                 ) : (
                   <OpenStreetMap 
-                    warehouses={warehouses}
-                    chauffeurs={chauffeurs}
+                    warehouses={validWarehouses}
+                    // chauffeurs synchronisés via Firestore, prop supprimée
                     height="100%"
                   />
                 )}

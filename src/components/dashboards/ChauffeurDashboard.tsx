@@ -1,7 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { useSharedData } from '../../contexts/SharedDataContext';
+import { toast } from 'sonner';
+// import { useSharedData } from '../../contexts/SharedDataContext';
 import { useTranslation } from '../../hooks/useTranslation';
 import { useIsMobile } from '../../hooks/use-mobile';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
@@ -24,7 +24,21 @@ import ProfilePage from '../ProfilePage';
 
 const ChauffeurDashboard = () => {
   const { user } = useAuth();
-  const { declarations, addDeclaration, updateDeclaration, deleteDeclaration } = useSharedData();
+  // Synchronisation temps réel des déclarations depuis Firestore
+  const [declarations, setDeclarations] = useState<Declaration[]>([]);
+  useEffect(() => {
+    let unsubscribe: (() => void) | undefined;
+    const listen = async () => {
+      const { listenDeclarations } = await import('../../services/declarationService');
+      unsubscribe = listenDeclarations((cloudDeclarations) => {
+        setDeclarations(cloudDeclarations);
+      });
+    };
+    listen();
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, []);
   const { t } = useTranslation();
   const isMobile = useIsMobile();
   
@@ -97,7 +111,7 @@ const ChauffeurDashboard = () => {
     { value: 'refuse', label: t('dashboard.refused') }
   ];
 
-  const handleCreateDeclaration = () => {
+  const handleCreateDeclaration = async () => {
     // Vérifier que le numéro de programme est complètement rempli (4 chiffres)
     if (!formData.programNumber || formData.programNumber.length !== 4) {
       alert(t('declarations.programNumberRequired'));
@@ -110,23 +124,21 @@ const ChauffeurDashboard = () => {
       return;
     }
 
-    const newDeclaration: Declaration = {
-      id: Date.now().toString(),
+    const { addDeclaration } = await import('../../services/declarationService');
+    const newDeclaration: any = {
       number: formData.number,
       year: formData.year,
       month: formData.month,
       programNumber: formData.programNumber,
       chauffeurId: user!.id,
       chauffeurName: user!.fullName,
-      distance: formData.distance ? parseInt(formData.distance) : undefined,
-      deliveryFees: formData.deliveryFees ? parseInt(formData.deliveryFees) : undefined,
       notes: formData.notes,
       status: 'en_cours',
       createdAt: new Date().toISOString()
     };
-
-    addDeclaration(newDeclaration);
-    
+    if (formData.distance) newDeclaration.distance = parseInt(formData.distance);
+    if (formData.deliveryFees) newDeclaration.deliveryFees = parseInt(formData.deliveryFees);
+    await addDeclaration(newDeclaration);
     // Reset form
     setFormData({
       distance: '',
@@ -138,6 +150,7 @@ const ChauffeurDashboard = () => {
       programNumber: ''
     });
     setIsCreating(false);
+    toast.success('Déclaration créée');
   };
 
   const handleNumberChange = (number: string) => {
@@ -158,15 +171,19 @@ const ChauffeurDashboard = () => {
     setIsEditDialogOpen(true);
   };
 
-  const handleSaveDeclaration = (updatedDeclaration: Declaration) => {
-    updateDeclaration(updatedDeclaration.id, updatedDeclaration);
+  const handleSaveDeclaration = async (updatedDeclaration: Declaration) => {
+    const { updateDeclaration } = await import('../../services/declarationService');
+    await updateDeclaration(updatedDeclaration.id, updatedDeclaration);
     setIsEditDialogOpen(false);
     setEditingDeclaration(null);
+    toast.success('Déclaration modifiée');
   };
 
-  const handleDeleteDeclaration = (id: string) => {
+  const handleDeleteDeclaration = async (id: string) => {
     if (confirm(t('declarations.confirmDelete'))) {
-      deleteDeclaration(id);
+      const { deleteDeclaration } = await import('../../services/declarationService');
+      await deleteDeclaration(id);
+      toast.success('Déclaration supprimée');
     }
   };
 
