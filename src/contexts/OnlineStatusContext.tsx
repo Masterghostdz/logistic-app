@@ -1,6 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { getFirestore, collection, getDocs } from 'firebase/firestore';
-import { db } from '../services/firebaseClient';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 
 interface OnlineStatusContextType {
   isOnline: boolean;
@@ -8,24 +6,18 @@ interface OnlineStatusContextType {
 
 const OnlineStatusContext = createContext<OnlineStatusContextType>({ isOnline: true });
 
-export const useOnlineStatus = () => useContext(OnlineStatusContext);
-
-export const OnlineStatusProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [isOnline, setIsOnline] = useState(true);
+export const OnlineStatusProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
 
   useEffect(() => {
-    let interval: NodeJS.Timeout;
-    const checkConnection = async () => {
-      try {
-        await getDocs(collection(db, 'chauffeurs'));
-        setIsOnline(true);
-      } catch {
-        setIsOnline(false);
-      }
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
     };
-    checkConnection();
-    interval = setInterval(checkConnection, 5000);
-    return () => clearInterval(interval);
   }, []);
 
   return (
@@ -34,3 +26,5 @@ export const OnlineStatusProvider: React.FC<{ children: ReactNode }> = ({ childr
     </OnlineStatusContext.Provider>
   );
 };
+
+export const useOnlineStatus = () => useContext(OnlineStatusContext);

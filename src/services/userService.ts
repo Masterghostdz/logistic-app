@@ -18,7 +18,8 @@ export const listenUsers = (callback: (users: any[]) => void) => {
         isActive: data.isActive !== undefined ? data.isActive : true,
         avatar: data.avatar,
         vehicleType: data.vehicleType,
-        employeeType: data.employeeType
+        employeeType: data.employeeType,
+        theme: data.theme || 'light'
       };
     });
     callback(users);
@@ -45,7 +46,8 @@ export const getUsers = async () => {
       isActive: data.isActive !== undefined ? data.isActive : true,
       avatar: data.avatar,
       vehicleType: data.vehicleType,
-      employeeType: data.employeeType
+      employeeType: data.employeeType,
+      theme: data.theme || 'light'
     };
   });
 };

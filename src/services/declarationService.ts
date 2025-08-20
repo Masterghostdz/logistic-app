@@ -1,3 +1,20 @@
+// Helper to upload photos to Firebase Storage and return URLs
+// Upload photos to local Express server and return URLs
+export async function uploadDeclarationPhotos(files: File[]): Promise<string[]> {
+  const urls: string[] = [];
+  for (const file of files) {
+    const formData = new FormData();
+    formData.append('photo', file);
+    const res = await fetch('http://localhost:3001/upload', {
+      method: 'POST',
+      body: formData
+    });
+    const data = await res.json();
+    // URL locale
+    urls.push(`http://localhost:3001${data.url}`);
+  }
+  return urls;
+}
 import { db } from './firebaseClient';
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, onSnapshot } from 'firebase/firestore';
 

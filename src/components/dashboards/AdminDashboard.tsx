@@ -1,6 +1,7 @@
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from '../ui/alert-dialog';
 
 import React, { useState, useEffect } from 'react';
+import { useSettings } from '../../contexts/SettingsContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
@@ -32,6 +33,8 @@ import PasswordField from '../PasswordField';
 import { simpleHash } from '../../utils/authUtils';
 
 const AdminDashboard = () => {
+  const { settings } = useSettings();
+  const viewMode = settings.viewMode || 'desktop';
   const [activeTab, setActiveTab] = useState('dashboard');
   // --- Synchronisation Firestore pour les sociétés ---
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -391,7 +394,18 @@ const AdminDashboard = () => {
   }
 
   return (
-    <div>
+    <div className={viewMode === 'mobile' ? 'max-w-[430px] mx-auto' : ''}>
+      <style>{viewMode === 'mobile' ? `
+        html, body, .max-w-[430px] {
+          font-size: 15px !important;
+        }
+        .card, .rounded-lg, .p-6, .px-6, .py-1 {
+          padding: 8px !important;
+        }
+        .text-3xl, .text-2xl, .text-lg {
+          font-size: 1.2rem !important;
+        }
+      ` : ''}</style>
       <Header onProfileClick={handleProfileClick} />
       <div className="flex justify-end items-center px-6 pt-2">
         <span

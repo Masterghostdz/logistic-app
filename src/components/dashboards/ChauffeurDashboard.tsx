@@ -1,9 +1,9 @@
+
 import React, { useState, useEffect } from 'react';
-import { useOnlineStatus } from '../../contexts/OnlineStatusContext';
 import { useAuth } from '../../contexts/AuthContext';
-import { toast } from 'sonner';
-// import { useSharedData } from '../../contexts/SharedDataContext';
+import { useSharedData } from '../../contexts/SharedDataContext';
 import { useTranslation } from '../../hooks/useTranslation';
+// ...existing code...
 import { useIsMobile } from '../../hooks/use-mobile';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
@@ -25,23 +25,9 @@ import ProfilePage from '../ProfilePage';
 
 const ChauffeurDashboard = () => {
   const { user } = useAuth();
-  // Synchronisation temps réel des déclarations depuis Firestore
-  const [declarations, setDeclarations] = useState<Declaration[]>([]);
-  useEffect(() => {
-    let unsubscribe: (() => void) | undefined;
-    const listen = async () => {
-      const { listenDeclarations } = await import('../../services/declarationService');
-      unsubscribe = listenDeclarations((cloudDeclarations) => {
-        setDeclarations(cloudDeclarations);
-      });
-    };
-    listen();
-    return () => {
-      if (unsubscribe) unsubscribe();
-    };
-  }, []);
-  const { t } = useTranslation();
-  const isMobile = useIsMobile();
+  const { declarations, addDeclaration, updateDeclaration, deleteDeclaration } = useSharedData();
+  const { t, settings } = useTranslation();
+  const isMobile = settings?.viewMode === 'mobile';
   
   const [isCreating, setIsCreating] = useState(false);
   const [formData, setFormData] = useState({
@@ -53,35 +39,42 @@ const ChauffeurDashboard = () => {
     month: '',
     programNumber: ''
   });
-
-  // Search and filter states
-  const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [editingDeclaration, setEditingDeclaration] = useState<Declaration | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
 
-  // Entrepôts synchronisés Firestore pour la carte
-  const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
-  useEffect(() => {
-    let unsubscribe: (() => void) | undefined;
-    const listen = async () => {
-      const { listenWarehouses } = await import('../../services/warehouseService');
-      unsubscribe = listenWarehouses((cloudWarehouses) => {
-        setWarehouses(cloudWarehouses);
-      });
-    };
-    listen();
-    return () => {
-      if (unsubscribe) unsubscribe();
-    };
-  }, []);
+  // Entrepôts pour la carte
+  const [warehouses] = useState<Warehouse[]>([
+    {
+      id: '1',
+      name: 'Entrepôt Principal Alger',
+      companyId: '1',
+      companyName: 'Logigrine Algérie',
+      phone: ['+213 21 12 34 56'],
+      address: '123 Rue des Entrepreneurs, Alger',
+      coordinates: { lat: 36.7538, lng: 3.0588 },
+      createdAt: new Date().toISOString()
+    },
+    {
+      id: '2',
+      name: 'Entrepôt Oran',
+      companyId: '1',
+      companyName: 'Logigrine Algérie',
+      phone: ['+213 41 98 76 54'],
+      address: '456 Boulevard Commercial, Oran',
+      coordinates: { lat: 35.6969, lng: -0.6331 },
+      createdAt: new Date().toISOString()
+    }
+  ]);
 
   useEffect(() => {
     if (user) {
       // Fetch declarations or perform other initialization logic here
     }
   }, [user]);
+
+  const [searchTerm, setSearchTerm] = useState('');
 
   const chauffeurDeclarations = declarations.filter(
     declaration => declaration.chauffeurId === user?.id
@@ -104,7 +97,7 @@ const ChauffeurDashboard = () => {
     { value: 'refuse', label: t('dashboard.refused') }
   ];
 
-  const handleCreateDeclaration = async () => {
+  const handleCreateDeclaration = () => {
     // Vérifier que le numéro de programme est complètement rempli (4 chiffres)
     if (!formData.programNumber || formData.programNumber.length !== 4) {
       alert(t('declarations.programNumberRequired'));
@@ -117,21 +110,23 @@ const ChauffeurDashboard = () => {
       return;
     }
 
-    const { addDeclaration } = await import('../../services/declarationService');
-    const newDeclaration: any = {
+    const newDeclaration: Declaration = {
+      id: Date.now().toString(),
       number: formData.number,
       year: formData.year,
       month: formData.month,
       programNumber: formData.programNumber,
       chauffeurId: user!.id,
       chauffeurName: user!.fullName,
+      distance: formData.distance ? parseInt(formData.distance) : undefined,
+      deliveryFees: formData.deliveryFees ? parseInt(formData.deliveryFees) : undefined,
       notes: formData.notes,
       status: 'en_cours',
       createdAt: new Date().toISOString()
     };
-    if (formData.distance) newDeclaration.distance = parseInt(formData.distance);
-    if (formData.deliveryFees) newDeclaration.deliveryFees = parseInt(formData.deliveryFees);
-    await addDeclaration(newDeclaration);
+
+    addDeclaration(newDeclaration);
+    
     // Reset form
     setFormData({
       distance: '',
@@ -143,7 +138,6 @@ const ChauffeurDashboard = () => {
       programNumber: ''
     });
     setIsCreating(false);
-    toast.success('Déclaration créée');
   };
 
   const handleNumberChange = (number: string) => {
@@ -164,19 +158,15 @@ const ChauffeurDashboard = () => {
     setIsEditDialogOpen(true);
   };
 
-  const handleSaveDeclaration = async (updatedDeclaration: Declaration) => {
-    const { updateDeclaration } = await import('../../services/declarationService');
-    await updateDeclaration(updatedDeclaration.id, updatedDeclaration);
+  const handleSaveDeclaration = (updatedDeclaration: Declaration) => {
+    updateDeclaration(updatedDeclaration.id, updatedDeclaration);
     setIsEditDialogOpen(false);
     setEditingDeclaration(null);
-    toast.success('Déclaration modifiée');
   };
 
-  const handleDeleteDeclaration = async (id: string) => {
+  const handleDeleteDeclaration = (id: string) => {
     if (confirm(t('declarations.confirmDelete'))) {
-      const { deleteDeclaration } = await import('../../services/declarationService');
-      await deleteDeclaration(id);
-      toast.success('Déclaration supprimée');
+      deleteDeclaration(id);
     }
   };
 
@@ -193,9 +183,6 @@ const ChauffeurDashboard = () => {
     }
   };
 
-  // Online status global
-  const { isOnline } = useOnlineStatus();
-
   // Si on affiche le profil, on rend seulement ProfilePage sans le header du tableau de bord
   if (showProfile) {
     return (
@@ -211,16 +198,19 @@ const ChauffeurDashboard = () => {
   return (
     <div className="min-h-screen bg-background w-full overflow-x-hidden">
       <Header onProfileClick={() => setShowProfile(true)} />
-      <div className="flex justify-end items-center px-6 pt-2">
-        <span
-          className={`flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium ${isOnline ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}
-          title={isOnline ? 'Connecté au cloud' : 'Hors ligne'}
-        >
-          <span className={`inline-block w-2 h-2 rounded-full ${isOnline ? 'bg-green-500' : 'bg-red-500'}`}></span>
-          {isOnline ? 'En ligne' : 'Hors ligne'}
-        </span>
-      </div>
-      <div className="container mx-auto p-2 sm:p-4 md:p-6 space-y-4 md:space-y-6 max-w-full">
+      {isMobile ? (
+        <nav className="flex flex-row gap-4 justify-center items-center mb-4">
+          <Button variant="ghost" size="icon" className="h-12 w-12 flex flex-col items-center justify-center">
+            <Plus className="h-5 w-5" />
+          </Button>
+          <Button variant="ghost" size="icon" className="h-12 w-12 flex flex-col items-center justify-center">
+            <Clock className="h-5 w-5" />
+          </Button>
+          <Button variant="ghost" size="icon" className="h-12 w-12 flex flex-col items-center justify-center">
+            <Search className="h-5 w-5" />
+          </Button>
+        </nav>
+      ) : (
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
           <h1 className="text-2xl md:text-3xl font-bold text-foreground">
             {t('dashboard.chauffeurTitle')}
@@ -229,6 +219,7 @@ const ChauffeurDashboard = () => {
             {user?.fullName}
           </Badge>
         </div>
+      )}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
           {/* Create Declaration Form */}
@@ -478,9 +469,9 @@ const ChauffeurDashboard = () => {
           }}
           onSave={handleSaveDeclaration}
         />
-      </div>
+
     </div>
   );
-};
+}
 
 export default ChauffeurDashboard;

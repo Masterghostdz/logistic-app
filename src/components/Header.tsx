@@ -58,7 +58,8 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle, showMenuButton = false, o
     <>
       <header className="border-b border-border bg-card shadow-sm">
         <div className="flex h-16 items-center justify-between px-4 lg:px-6">
-          <div className="flex items-center gap-4">
+          {/* Logo à gauche */}
+          <div className="flex items-center gap-2">
             {showMenuButton && (
               <Button
                 variant="ghost"
@@ -69,25 +70,19 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle, showMenuButton = false, o
                 <Menu className="h-5 w-5" />
               </Button>
             )}
-            <div className="flex items-center gap-2">
-              <img 
-                src="/lovable-uploads/691c7b4f-298c-4d87-a195-fb432aab8f82.png" 
-                alt="Logigrine Logo" 
-                className="h-8"
-              />
-            </div>
+            <img 
+              src="/lovable-uploads/691c7b4f-298c-4d87-a195-fb432aab8f82.png" 
+              alt="Logigrine Logo" 
+              className="h-8"
+            />
           </div>
 
+          {/* Rôle et photo de profil à droite */}
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">
-                {t('header.welcome')}, {user?.firstName}
-              </span>
-              <Badge className={`border ${getRoleBadgeColor(user?.role || '')}`}>
-                {user?.role}
-              </Badge>
-            </div>
-
+            {/* Message de bienvenue supprimé en mobile */}
+            <Badge className={`border ${getRoleBadgeColor(user?.role || '')}`}>
+              {user?.role}
+            </Badge>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full hover:bg-accent">

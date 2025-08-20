@@ -8,31 +8,27 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { user, isAuthenticated, login, changePassword, logout, restoreSession } = useAuthLogic();
+  const [sessionChecked, setSessionChecked] = React.useState(false);
 
-  useEffect(() => {
-    console.log('AuthProvider initialized with secure session management');
-    
-    // Check for valid session
-    const session = getStoredSession();
-    if (session) {
-      // Supporte restoreSession asynchrone ou synchrone
-      const maybePromise = restoreSession(session.userId);
-      if (maybePromise instanceof Promise) {
-        maybePromise.then((sessionRestored) => {
+  React.useEffect(() => {
+    if (!sessionChecked) {
+      console.log('AuthProvider initialized with secure session management');
+      // Check for valid session
+      const session = getStoredSession();
+      if (session) {
+        restoreSession(session.userId).then((sessionRestored) => {
           if (!sessionRestored) {
             clearSession();
           }
+          setSessionChecked(true);
         });
       } else {
-        if (!maybePromise) {
-          clearSession();
-        }
+        // Session expired or doesn't exist
+        console.log('No valid session found');
+        setSessionChecked(true);
       }
-    } else {
-      // Session expired or doesn't exist
-      console.log('No valid session found');
     }
-  }, []);
+  }, [sessionChecked, restoreSession]);
 
   return (
     <AuthContext.Provider value={{ user, login, logout, changePassword, isAuthenticated }}>

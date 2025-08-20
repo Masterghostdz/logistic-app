@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Company, VehicleType, Declaration } from '../types';
-import { listenVehicleTypes } from '../services/vehicleTypeService';
 
 interface SharedDataContextType {
   companies: Company[];
@@ -54,7 +53,28 @@ const defaultCompanies: Company[] = [
   }
 ];
 
-// plus de valeurs par défaut locales pour les types de véhicule
+const defaultVehicleTypes: VehicleType[] = [
+  {
+    id: '1',
+    name: 'Camion 3.5T',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: '2',
+    name: 'Camionnette',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: '3',
+    name: 'Utilitaire',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: '4',
+    name: 'Poids Lourd',
+    createdAt: new Date().toISOString()
+  }
+];
 
 const defaultDeclarations: Declaration[] = [];
 
@@ -83,15 +103,9 @@ export const SharedDataProvider: React.FC<SharedDataProviderProps> = ({ children
     loadFromStorage('companies', defaultCompanies)
   );
 
-  const [vehicleTypes, setVehicleTypesState] = useState<VehicleType[]>([]);
-
-  // Synchronisation temps réel des types de véhicule depuis Firestore
-  useEffect(() => {
-    const unsubscribe = listenVehicleTypes((types) => {
-      setVehicleTypesState(types);
-    });
-    return () => unsubscribe && unsubscribe();
-  }, []);
+  const [vehicleTypes, setVehicleTypesState] = useState<VehicleType[]>(() => 
+    loadFromStorage('vehicleTypes', defaultVehicleTypes)
+  );
 
   const [declarations, setDeclarationsState] = useState<Declaration[]>(() => 
     loadFromStorage('declarations', defaultDeclarations)
@@ -102,7 +116,9 @@ export const SharedDataProvider: React.FC<SharedDataProviderProps> = ({ children
     saveToStorage('companies', companies);
   }, [companies]);
 
-  // plus de sauvegarde locale pour vehicleTypes
+  useEffect(() => {
+    saveToStorage('vehicleTypes', vehicleTypes);
+  }, [vehicleTypes]);
 
   useEffect(() => {
     saveToStorage('declarations', declarations);

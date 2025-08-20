@@ -17,7 +17,7 @@ export const translations = {
       warehouses: "Entrepôts",
       financial: "Financier",
       users: "Utilisateurs",
-      settings: "Paramètres"
+  // settings key removed (duplicate)
     },
     // Authentication
     auth: {
@@ -137,6 +137,8 @@ export const translations = {
     // Settings
     settings: {
       title: "Paramètres",
+      description: "Personnalisez votre expérience utilisateur et le mode d'affichage.",
+      viewMode: "Mode d'affichage",
       language: "Langue",
       theme: "Thème",
       light: "Clair",
@@ -176,7 +178,7 @@ export const translations = {
       warehouses: "Warehouses",
       financial: "Financial",
       users: "Users",
-      settings: "Settings"
+  // settings key removed (duplicate)
     },
     // Authentication
     auth: {
@@ -335,7 +337,7 @@ export const translations = {
       warehouses: "المستودعات",
       financial: "المالية",
       users: "المستخدمين",
-      settings: "الإعدادات"
+  // settings key removed (duplicate)
     },
     // Authentication
     auth: {
@@ -482,23 +484,50 @@ export const translations = {
 export const getTranslation = (key: string, language: 'fr' | 'en' | 'ar') => {
   const keys = key.split('.');
   let translation: any = translations[language];
-  
+
   for (const k of keys) {
-    translation = translation?.[k];
+    if (translation && typeof translation === 'object' && k in translation) {
+      translation = translation[k];
+    } else {
+      translation = undefined;
+      break;
+    }
   }
-  
-  // Fallback mechanism: FR → EN → AR
+
+  // Fallback mechanism: FR → EN → AR, with recursion protection
+  const tried = new Set<string>();
+  function fallback(lang: 'fr' | 'en' | 'ar') {
+    if (tried.has(lang)) return key;
+    tried.add(lang);
+    const keys = key.split('.');
+    let t: any = translations[lang];
+    for (const k of keys) {
+      if (t && typeof t === 'object' && k in t) {
+        t = t[k];
+      } else {
+        t = undefined;
+        break;
+      }
+    }
+    if (t) return t;
+    // Try other languages
+    if (lang !== 'fr') {
+      const fr = fallback('fr');
+      if (fr !== key) return fr;
+    }
+    if (lang !== 'en') {
+      const en = fallback('en');
+      if (en !== key) return en;
+    }
+    if (lang !== 'ar') {
+      const ar = fallback('ar');
+      if (ar !== key) return ar;
+    }
+    return key;
+  }
+
   if (!translation) {
-    if (language !== 'fr') {
-      translation = getTranslation(key, 'fr');
-    }
-    if (!translation && language !== 'en') {
-      translation = getTranslation(key, 'en');
-    }
-    if (!translation && language !== 'ar') {
-      translation = getTranslation(key, 'ar');
-    }
+    return fallback(language);
   }
-  
   return translation || key;
 };

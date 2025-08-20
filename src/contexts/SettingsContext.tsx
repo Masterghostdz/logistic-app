@@ -12,7 +12,8 @@ const SettingsContext = createContext<SettingsContextType | undefined>(undefined
 export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [settings, setSettings] = useState<Settings>({
     language: 'fr',
-    theme: 'light'
+    theme: 'light',
+    viewMode: 'desktop'
   });
 
   useEffect(() => {

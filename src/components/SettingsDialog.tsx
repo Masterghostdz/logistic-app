@@ -1,6 +1,8 @@
+import { Monitor, Smartphone } from 'lucide-react';
 
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
+import { DialogDescription } from './ui/dialog';
 import { Button } from './ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Label } from './ui/label';
@@ -16,6 +18,10 @@ interface SettingsDialogProps {
 }
 
 const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onOpenChange }) => {
+  const handleViewModeChange = (viewMode: 'desktop' | 'mobile') => {
+    updateSettings({ viewMode });
+    toast.success(t('forms.success'));
+  };
   const { settings, updateSettings } = useSettings();
   const { t } = useTranslation();
 
@@ -43,9 +49,42 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onOpenChange }) =
             <Palette className="h-5 w-5" />
             {t('settings.title')}
           </DialogTitle>
+          <DialogDescription>
+            {t('settings.description') || 'Paramétrez votre expérience utilisateur.'}
+          </DialogDescription>
         </DialogHeader>
         
         <div className="space-y-6">
+        {/* View Mode Settings */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Monitor className="h-4 w-4" />
+              <Smartphone className="h-4 w-4" />
+              {t('settings.viewMode') || 'Mode d’affichage'}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex gap-4">
+              <Button
+                variant={settings.viewMode === 'desktop' ? 'default' : 'outline'}
+                onClick={() => handleViewModeChange('desktop')}
+                className="flex items-center gap-2"
+              >
+                <Monitor className="h-5 w-5" />
+                Desktop
+              </Button>
+              <Button
+                variant={settings.viewMode === 'mobile' ? 'default' : 'outline'}
+                onClick={() => handleViewModeChange('mobile')}
+                className="flex items-center gap-2"
+              >
+                <Smartphone className="h-5 w-5" />
+                Mobile
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
           {/* Language Settings */}
           <Card>
             <CardHeader>

@@ -12,9 +12,9 @@ interface PlanificateurStatsProps {
 
 const PlanificateurStats = ({ stats, onEnAttenteClick }: PlanificateurStatsProps) => {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 justify-center">
       <Card 
-        className="cursor-pointer hover:shadow-md transition-shadow"
+        className="cursor-pointer hover:shadow-md transition-shadow mx-auto w-full max-w-[400px]"
         onClick={onEnAttenteClick}
       >
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

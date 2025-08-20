@@ -1,4 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { useSettings } from '../../contexts/SettingsContext';
+import { Monitor, Smartphone } from 'lucide-react';
 import { useOnlineStatus } from '../../contexts/OnlineStatusContext';
 import * as XLSX from 'xlsx';
 import { Warehouse } from '../../types';
@@ -21,6 +23,10 @@ import ChauffeursTable from './ChauffeursTable';
 import CreateChauffeurDialog from './CreateChauffeurDialog';
 
 const PlanificateurDashboard = () => {
+  // Utilise le mode d'affichage global depuis les settings
+  const { settings } = useSettings();
+  // Le style est sélectionné selon le paramètre settings.viewMode
+  const viewMode = settings.viewMode || 'desktop';
   // Synchronisation temps réel des entrepôts depuis Firestore
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   useEffect(() => {
@@ -37,6 +43,21 @@ const PlanificateurDashboard = () => {
     };
   }, []);
   // Online status global
+  // Fonction pour refuser une déclaration
+  const handleRejectDeclaration = async (id: string) => {
+    const declaration = declarations.find(d => d.id === id);
+    if (declaration) {
+      const updatedDeclaration = {
+        ...declaration,
+        status: 'refuse' as const,
+        validatedAt: new Date().toISOString(),
+        validatedBy: 'Planificateur'
+      };
+      const { updateDeclaration } = await import('../../services/declarationService');
+      await updateDeclaration(id, updatedDeclaration);
+      toast.success('Déclaration refusée');
+    }
+  };
   const { isOnline } = useOnlineStatus();
 
   // Synchronisation temps réel des déclarations depuis Firestore
@@ -225,23 +246,8 @@ const PlanificateurDashboard = () => {
         validatedBy: 'Planificateur'
       };
       const { updateDeclaration } = await import('../../services/declarationService');
-      await updateDeclaration(id, updatedDeclaration);
-      toast.success('Déclaration validée');
-    }
-  };
-
-  const handleRejectDeclaration = async (id: string) => {
-    const declaration = declarations.find(d => d.id === id);
-    if (declaration) {
-      const updatedDeclaration = {
-        ...declaration,
-        status: 'refuse' as const,
-        validatedAt: new Date().toISOString(),
-        validatedBy: 'Planificateur'
-      };
-      const { updateDeclaration } = await import('../../services/declarationService');
-      await updateDeclaration(id, updatedDeclaration);
-      toast.success('Déclaration refusée');
+    await updateDeclaration(id, updatedDeclaration);
+    toast.success('Déclaration validée');
     }
   };
 
@@ -318,19 +324,57 @@ const PlanificateurDashboard = () => {
   }
 
   if (activeTab === 'tracage') {
-    return (
-      <div>
-        <Header onProfileClick={handleProfileClick} />
-        <div className="p-6">
-          <div className="flex items-center gap-4 mb-6">
-            <Button variant="ghost" onClick={() => setActiveTab('dashboard')}>
-              ← Retour au tableau de bord
-            </Button>
+    if (viewMode === 'desktop') {
+      return (
+        <div className="bg-background min-h-screen flex flex-col">
+          <Header onProfileClick={handleProfileClick} />
+          <div className="flex justify-end items-center px-6 pt-2">
+            <span
+              className="flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700 shadow"
+              title={isOnline ? 'Connecté au cloud' : 'Hors ligne'}
+            >
+              <span className="inline-block w-2 h-2 rounded-full bg-green-500"></span>
+              En ligne
+            </span>
           </div>
-          <TracageSection />
+          <div className="flex h-[calc(100vh-4rem)]">
+            <PlanificateurSidebar activeTab={activeTab} onTabChange={setActiveTab} />
+            <div className="flex-1 p-6">
+              <div className="flex items-center gap-4 mb-6">
+                <Button variant="ghost" onClick={() => setActiveTab('dashboard')}>
+                  ← Retour au tableau de bord
+                </Button>
+              </div>
+              <TracageSection />
+            </div>
+          </div>
         </div>
-      </div>
-    );
+      );
+    } else {
+      return (
+        <div className="max-w-[430px] mx-auto bg-background min-h-screen flex flex-col">
+          <Header onProfileClick={handleProfileClick} />
+          <div className="flex px-2 pt-3 mb-2">
+            <span
+              className="flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700 shadow"
+              title={isOnline ? 'Connecté au cloud' : 'Hors ligne'}
+            >
+              <span className="inline-block w-2 h-2 rounded-full bg-green-500"></span>
+              En ligne
+            </span>
+          </div>
+          <PlanificateurSidebar activeTab={activeTab} onTabChange={setActiveTab} />
+          <div className="p-6">
+            <div className="flex items-center gap-4 mb-6">
+              <Button variant="ghost" onClick={() => setActiveTab('dashboard')}>
+                ← Retour au tableau de bord
+              </Button>
+            </div>
+            <TracageSection />
+          </div>
+        </div>
+      );
+    }
   }
 
   // Fonction d'exportation CSV
@@ -379,29 +423,26 @@ const PlanificateurDashboard = () => {
     : filteredDeclarations;
 
   return (
-    <div>
+  <div className={viewMode === 'mobile' ? 'max-w-[430px] mx-auto bg-background min-h-screen flex flex-col' : 'bg-background min-h-screen flex flex-col'}>
       <Header onProfileClick={handleProfileClick} />
-      <div className="flex justify-end items-center px-6 pt-2">
+  <div className={viewMode === 'mobile' ? 'flex px-2 pt-3 mb-2' : 'flex justify-end items-center px-6 pt-2'}>
         <span
-          className={`flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium ${isOnline ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}
+          className="flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700 shadow"
           title={isOnline ? 'Connecté au cloud' : 'Hors ligne'}
         >
-          <span className={`inline-block w-2 h-2 rounded-full ${isOnline ? 'bg-green-500' : 'bg-red-500'}`}></span>
-          {isOnline ? 'En ligne' : 'Hors ligne'}
+          <span className="inline-block w-2 h-2 rounded-full bg-green-500"></span>
+          En ligne
         </span>
       </div>
-      <div className="flex h-[calc(100vh-4rem)]">
+  <div className={viewMode === 'mobile' ? 'flex flex-col h-auto gap-2' : 'flex h-[calc(100vh-4rem)]'}>
         <PlanificateurSidebar activeTab={activeTab} onTabChange={setActiveTab} />
-
-        <div className="flex-1 p-6 overflow-auto">
+        <div className={viewMode === 'mobile' ? 'flex-1 px-2 pb-4 pt-2 overflow-auto' : 'flex-1 p-6 overflow-auto'}>
           {activeTab === 'dashboard' && (
             <div className="space-y-6">
               <div className="flex items-center justify-between">
-                <h1 className="text-3xl font-bold">Tableau de bord - Planificateur</h1>
+                <h1 className="text-xl font-bold">Tableau de bord - Planificateur</h1>
               </div>
-
               <PlanificateurStats stats={stats} onEnAttenteClick={handleEnAttenteClick} />
-
               <Card>
                 <CardHeader>
                   <CardTitle>Déclarations récentes</CardTitle>
@@ -426,38 +467,9 @@ const PlanificateurDashboard = () => {
               </Card>
             </div>
           )}
-
           {activeTab === 'declarations' && (
             <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                {/* Bouton Exporter à gauche */}
-                <div className="flex items-center gap-2">
-                  <Button 
-                    variant="outline" 
-                    onClick={() => setExportDialogOpen(true)}
-                    disabled={selectedDeclarationIds.length === 0}
-                  >
-                    Exporter
-                  </Button>
-                </div>
-                <h2 className="text-2xl font-bold">Gestion des Déclarations</h2>
-              </div>
-
-              <SearchAndFilter
-                searchValue={searchValue}
-                onSearchChange={setSearchValue}
-                filterValue={filterStatus}
-                onFilterChange={setFilterStatus}
-                filterOptions={[
-                  { value: 'en_cours', label: 'En Attente' },
-                  { value: 'valide', label: 'Validé' },
-                  { value: 'refuse', label: 'Refusé' }
-                ]}
-                searchPlaceholder="Rechercher par numéro ou chauffeur..."
-                filterPlaceholder="Filtrer par statut..."
-              />
-
-              {/* TODO: Passer selectedDeclarationIds et setSelectedDeclarationIds à DeclarationsTable pour la sélection des lignes */}
+              {/* ...boutons, filtres, etc. à placer ici si besoin... */}
               <DeclarationsTable
                 declarations={filteredDeclarations}
                 onValidateDeclaration={handleValidateDeclaration}
@@ -467,8 +479,6 @@ const PlanificateurDashboard = () => {
                 selectedDeclarationIds={selectedDeclarationIds}
                 setSelectedDeclarationIds={setSelectedDeclarationIds}
               />
-
-              {/* Dialog d'exportation */}
               <AlertDialog open={exportDialogOpen} onOpenChange={setExportDialogOpen}>
                 <AlertDialogContent style={{ zIndex: 10000, position: 'fixed', maxWidth: 480 }}>
                   <AlertDialogHeader>
@@ -477,7 +487,6 @@ const PlanificateurDashboard = () => {
                   <div className="space-y-4">
                     <div>
                       <div className="font-semibold mb-1">Attributs à exporter :</div>
-                      {/* TODO: Générer dynamiquement la liste des attributs de déclaration */}
                       <div className="flex flex-wrap gap-2">
                         {['number','chauffeurName','status','month','year','createdAt','validatedAt','validatedBy'].map(attr => (
                           <label key={attr} className="flex items-center gap-1">
@@ -562,7 +571,6 @@ const PlanificateurDashboard = () => {
               </AlertDialog>
             </div>
           )}
-
           {activeTab === 'chauffeurs' && (
             <div className="space-y-6">
               <div className="flex items-center justify-between">
@@ -575,13 +583,11 @@ const PlanificateurDashboard = () => {
                   Ajouter un chauffeur
                 </Button>
               </div>
-
               <ChauffeursTable
                 chauffeurs={chauffeurs}
                 onEditChauffeur={handleEditChauffeur}
                 onDeleteChauffeur={handleDeleteChauffeur}
               />
-              {/* Confirmation dialog for chauffeur deletion */}
               <AlertDialog open={!!chauffeurToDelete} onOpenChange={open => { if (!open) setChauffeurToDelete(null); }}>
                 <AlertDialogContent style={{ zIndex: 10000, position: 'fixed' }}>
                   <AlertDialogHeader>
@@ -596,27 +602,25 @@ const PlanificateurDashboard = () => {
               </AlertDialog>
             </div>
           )}
+          <CreateChauffeurDialog
+            isOpen={showCreateChauffeur}
+            onClose={() => {
+              setShowCreateChauffeur(false);
+              setEditingChauffeur(null);
+            }}
+            onSubmit={handleCreateChauffeur}
+            editingChauffeur={editingChauffeur}
+            newChauffeur={newChauffeur}
+            setNewChauffeur={setNewChauffeur}
+          />
+          <EditDeclarationDialog
+            declaration={editingDeclaration}
+            isOpen={!!editingDeclaration}
+            onClose={() => setEditingDeclaration(null)}
+            onSave={handleUpdateDeclaration}
+          />
         </div>
       </div>
-
-      <CreateChauffeurDialog
-        isOpen={showCreateChauffeur}
-        onClose={() => {
-          setShowCreateChauffeur(false);
-          setEditingChauffeur(null);
-        }}
-        onSubmit={handleCreateChauffeur}
-        editingChauffeur={editingChauffeur}
-        newChauffeur={newChauffeur}
-        setNewChauffeur={setNewChauffeur}
-      />
-
-      <EditDeclarationDialog
-        declaration={editingDeclaration}
-        isOpen={!!editingDeclaration}
-        onClose={() => setEditingDeclaration(null)}
-        onSave={handleUpdateDeclaration}
-      />
     </div>
   );
 };

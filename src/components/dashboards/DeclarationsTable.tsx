@@ -25,12 +25,12 @@ const DeclarationsTable = ({
   onEditDeclaration, 
   onDeleteDeclaration,
   selectedDeclarationIds = [],
-  setSelectedDeclarationIds = () => {}
+  setSelectedDeclarationIds
 }: DeclarationsTableProps) => {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'en_cours':
-        return <Badge className="bg-yellow-100 text-yellow-800 text-xs whitespace-nowrap">En Attente</Badge>;
+  return <Badge className="bg-yellow-100 text-yellow-800 text-[11px] px-8 min-w-[140px] flex justify-center mx-auto">En Attente</Badge>;
       case 'valide':
         return <Badge className="bg-green-100 text-green-800 text-xs whitespace-nowrap">Validé</Badge>;
       case 'refuse':
@@ -40,30 +40,27 @@ const DeclarationsTable = ({
     }
   };
 
-  // Gestion du cochage global
-  const allChecked = declarations.length > 0 && declarations.every(d => selectedDeclarationIds.includes(d.id));
-  const someChecked = declarations.some(d => selectedDeclarationIds.includes(d.id));
-
   return (
     <Card>
       <CardContent className="p-0">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-8 text-xs">
-                <input
-                  type="checkbox"
-                  checked={allChecked}
-                  ref={el => { if (el) el.indeterminate = !allChecked && someChecked; }}
-                  onChange={e => {
-                    if (e.target.checked) {
-                      setSelectedDeclarationIds(declarations.map(d => d.id));
-                    } else {
-                      setSelectedDeclarationIds([]);
-                    }
-                  }}
-                />
-              </TableHead>
+              {setSelectedDeclarationIds && (
+                <TableHead className="w-[32px] text-xs text-center">
+                  <input
+                    type="checkbox"
+                    checked={declarations.length > 0 && selectedDeclarationIds.length === declarations.length}
+                    onChange={e => {
+                      if (e.target.checked) {
+                        setSelectedDeclarationIds(declarations.map(d => d.id));
+                      } else {
+                        setSelectedDeclarationIds([]);
+                      }
+                    }}
+                  />
+                </TableHead>
+              )}
               <TableHead className="w-[140px] text-xs">Numéro</TableHead>
               <TableHead className="w-[130px] text-xs">Chauffeur</TableHead>
               <TableHead className="w-[100px] text-xs">Distance (km)</TableHead>
@@ -77,19 +74,21 @@ const DeclarationsTable = ({
           <TableBody>
             {declarations.map((declaration) => (
               <TableRow key={declaration.id}>
-                <TableCell>
-                  <input
-                    type="checkbox"
-                    checked={selectedDeclarationIds.includes(declaration.id)}
-                    onChange={e => {
-                      if (e.target.checked) {
-                        setSelectedDeclarationIds([...selectedDeclarationIds, declaration.id]);
-                      } else {
-                        setSelectedDeclarationIds(selectedDeclarationIds.filter(id => id !== declaration.id));
-                      }
-                    }}
-                  />
-                </TableCell>
+                {setSelectedDeclarationIds && (
+                  <TableCell className="text-center">
+                    <input
+                      type="checkbox"
+                      checked={selectedDeclarationIds.includes(declaration.id)}
+                      onChange={e => {
+                        if (e.target.checked) {
+                          setSelectedDeclarationIds([...selectedDeclarationIds, declaration.id]);
+                        } else {
+                          setSelectedDeclarationIds(selectedDeclarationIds.filter(id => id !== declaration.id));
+                        }
+                      }}
+                    />
+                  </TableCell>
+                )}
                 <TableCell className="font-medium">
                   <div className="truncate text-xs">{declaration.number}</div>
                 </TableCell>
