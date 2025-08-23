@@ -12,14 +12,16 @@ interface EditDeclarationDialogProps {
   declaration: Declaration | null;
   isOpen: boolean;
   onClose: () => void;
-  onSave: (declaration: Declaration) => void;
+  onSave?: (declaration: Declaration) => void;
+  readOnly?: boolean;
 }
 
 const EditDeclarationDialog: React.FC<EditDeclarationDialogProps> = ({
   declaration,
   isOpen,
   onClose,
-  onSave
+  onSave,
+  readOnly = false
 }) => {
   const [formData, setFormData] = useState({
     distance: '',
@@ -91,9 +93,12 @@ const EditDeclarationDialog: React.FC<EditDeclarationDialogProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
+  <DialogContent className="max-w-md" aria-describedby="edit-declaration-description">
+        <div id="edit-declaration-description" className="sr-only">
+          Ce dialogue permet de modifier ou consulter une déclaration. Remplissez les champs requis puis validez.
+        </div>
         <DialogHeader>
-          <DialogTitle>Modifier la déclaration</DialogTitle>
+          <DialogTitle>{readOnly ? 'Consulter la déclaration' : 'Modifier la déclaration'}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           <SimpleDeclarationNumberForm
@@ -102,8 +107,8 @@ const EditDeclarationDialog: React.FC<EditDeclarationDialogProps> = ({
             initialYear={declaration.year}
             initialMonth={declaration.month}
             initialProgramNumber={declaration.programNumber}
+            readOnly={readOnly}
           />
-          
           <div>
             <Label htmlFor="distance">Distance (km)</Label>
             <Input
@@ -111,9 +116,9 @@ const EditDeclarationDialog: React.FC<EditDeclarationDialogProps> = ({
               type="number"
               value={formData.distance}
               onChange={(e) => setFormData({ ...formData, distance: e.target.value })}
+              disabled={readOnly}
             />
           </div>
-          
           <div>
             <Label htmlFor="deliveryFees">Frais de livraison (DZD)</Label>
             <Input
@@ -121,9 +126,9 @@ const EditDeclarationDialog: React.FC<EditDeclarationDialogProps> = ({
               type="number"
               value={formData.deliveryFees}
               onChange={(e) => setFormData({ ...formData, deliveryFees: e.target.value })}
+              disabled={readOnly}
             />
           </div>
-          
           <div>
             <Label htmlFor="notes">Notes</Label>
             <Textarea
@@ -131,15 +136,17 @@ const EditDeclarationDialog: React.FC<EditDeclarationDialogProps> = ({
               value={formData.notes}
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
               rows={3}
+              disabled={readOnly}
             />
           </div>
-          
           <div className="flex gap-2 pt-4">
-            <Button onClick={handleSave} className="flex-1">
-              Sauvegarder
-            </Button>
+            {!readOnly && (
+              <Button onClick={handleSave} className="flex-1">
+                Sauvegarder
+              </Button>
+            )}
             <Button variant="outline" onClick={onClose}>
-              Annuler
+              {readOnly ? 'Fermer' : 'Annuler'}
             </Button>
           </div>
         </div>

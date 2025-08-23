@@ -4,7 +4,7 @@ import { Monitor, Smartphone } from 'lucide-react';
 import { useOnlineStatus } from '../../contexts/OnlineStatusContext';
 import * as XLSX from 'xlsx';
 import { Warehouse } from '../../types';
-import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from '../ui/alert-dialog';
+import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogFooter, AlertDialogCancel, AlertDialogAction, AlertDialogDescription } from '../ui/alert-dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { toast } from 'sonner';
@@ -23,8 +23,10 @@ import ChauffeursTable from './ChauffeursTable';
 import CreateChauffeurDialog from './CreateChauffeurDialog';
 
 const PlanificateurDashboard = () => {
+  // Consultation (read-only) and modification (edit) states
+  const [editingDeclaration, setEditingDeclaration] = useState<Declaration | null>(null);
   // Utilise le mode d'affichage global depuis les settings
-  const { settings } = useSettings();
+  const { settings, updateSettings } = useSettings();
   // Le style est sélectionné selon le paramètre settings.viewMode
   const viewMode = settings.viewMode || 'desktop';
   // Synchronisation temps réel des entrepôts depuis Firestore
@@ -85,7 +87,21 @@ const PlanificateurDashboard = () => {
     const listen = async () => {
       const { listenChauffeurs } = await import('../../services/chauffeurService');
       unsubscribe = listenChauffeurs((cloudChauffeurs) => {
-        setChauffeurs(cloudChauffeurs);
+        // Correction du mapping pour garantir la structure et les valeurs par défaut
+        const mappedChauffeurs = cloudChauffeurs.map((c: any) => ({
+          id: c.id,
+          firstName: c.firstName || '',
+          lastName: c.lastName || '',
+          fullName: c.fullName || '',
+          username: c.username || '',
+          password: c.password || '',
+          phone: Array.isArray(c.phone) ? c.phone : (c.phone ? [c.phone] : []),
+          vehicleType: c.vehicleType || '',
+          employeeType: (c.employeeType === 'externe' ? 'externe' : 'interne') as 'interne' | 'externe',
+          isActive: typeof c.isActive === 'boolean' ? c.isActive : true,
+          createdAt: c.createdAt || '',
+        }));
+        setChauffeurs(mappedChauffeurs);
       });
     };
     listen();
@@ -96,8 +112,10 @@ const PlanificateurDashboard = () => {
 
   const [searchValue, setSearchValue] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [searchColumn, setSearchColumn] = useState<'number' | 'chauffeurName'>('number');
+  const [tableFontSize, setTableFontSize] = useState<'40' | '50' | '60' | '70' | '80' | '90' | '100'>(settings.tableFontSize || '80');
   const [showCreateChauffeur, setShowCreateChauffeur] = useState(false);
-  const [editingDeclaration, setEditingDeclaration] = useState<Declaration | null>(null);
+  const [consultingDeclaration, setConsultingDeclaration] = useState<Declaration | null>(null);
   // Export dialog state
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
   // Attributs sélectionnés pour l'export
@@ -340,11 +358,6 @@ const PlanificateurDashboard = () => {
           <div className="flex h-[calc(100vh-4rem)]">
             <PlanificateurSidebar activeTab={activeTab} onTabChange={setActiveTab} />
             <div className="flex-1 p-6">
-              <div className="flex items-center gap-4 mb-6">
-                <Button variant="ghost" onClick={() => setActiveTab('dashboard')}>
-                  ← Retour au tableau de bord
-                </Button>
-              </div>
               <TracageSection />
             </div>
           </div>
@@ -365,11 +378,7 @@ const PlanificateurDashboard = () => {
           </div>
           <PlanificateurSidebar activeTab={activeTab} onTabChange={setActiveTab} />
           <div className="p-6">
-            <div className="flex items-center gap-4 mb-6">
-              <Button variant="ghost" onClick={() => setActiveTab('dashboard')}>
-                ← Retour au tableau de bord
-              </Button>
-            </div>
+            {/* Carte (map) en premier */}
             <TracageSection />
           </div>
         </div>
@@ -450,7 +459,7 @@ const PlanificateurDashboard = () => {
                 <CardContent>
                   <div className="space-y-4">
                     {declarations.slice(0, 5).map((declaration) => (
-                      <div key={declaration.id} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div key={declaration.id} className="flex items-center justify-between p-3 border rounded-lg cursor-pointer hover:bg-accent" onClick={() => setConsultingDeclaration(declaration)}>
                         <div>
                           <div className="font-medium">{declaration.number}</div>
                           <div className="text-sm text-gray-500">
@@ -469,103 +478,71 @@ const PlanificateurDashboard = () => {
           )}
           {activeTab === 'declarations' && (
             <div className="space-y-6">
-              {/* ...boutons, filtres, etc. à placer ici si besoin... */}
-              <DeclarationsTable
-                declarations={filteredDeclarations}
-                onValidateDeclaration={handleValidateDeclaration}
-                onRejectDeclaration={handleRejectDeclaration}
-                onEditDeclaration={handleEditDeclaration}
-                onDeleteDeclaration={handleDeleteDeclaration}
-                selectedDeclarationIds={selectedDeclarationIds}
-                setSelectedDeclarationIds={setSelectedDeclarationIds}
+              {/* Zoom selector au-dessus du filtre/recherche */}
+              <div className="flex justify-end mb-2">
+                <label className="mr-2 text-xs text-muted-foreground">Zoom tableau :</label>
+                <select
+                  value={tableFontSize}
+                  onChange={e => {
+                    const value = e.target.value as typeof tableFontSize;
+                    setTableFontSize(value);
+                    updateSettings({ tableFontSize: value });
+                  }}
+                  className="border rounded px-2 py-1 text-xs bg-background"
+                  title="Zoom sur la taille d'écriture du tableau"
+                >
+                  <option value="100">100%</option>
+                  <option value="90">90%</option>
+                  <option value="80">80%</option>
+                  <option value="70">70%</option>
+                  <option value="60">60%</option>
+                  <option value="50">50%</option>
+                  <option value="40">40%</option>
+                </select>
+              </div>
+              <SearchAndFilter
+                searchValue={searchValue}
+                onSearchChange={setSearchValue}
+                filterValue={filterStatus}
+                onFilterChange={setFilterStatus}
+                filterOptions={[{ value: 'en_cours', label: 'En Attente' }, { value: 'valide', label: 'Validé' }, { value: 'refuse', label: 'Refusé' }]}
+                searchPlaceholder="Rechercher par numéro ou chauffeur..."
+                filterPlaceholder="Filtrer par état..."
+                searchColumn={searchColumn}
+                onSearchColumnChange={value => setSearchColumn(value as 'number' | 'chauffeurName')}
+                searchColumnOptions={[
+                  { value: 'number', label: 'Numéro' },
+                  { value: 'chauffeurName', label: 'Chauffeur' }
+                ]}
               />
+              {/* Table responsive pour mobile */}
+              <div className={viewMode === 'mobile' ? 'overflow-x-auto' : ''}>
+                <DeclarationsTable
+                  declarations={filteredDeclarations}
+                  onValidateDeclaration={handleValidateDeclaration}
+                  onRejectDeclaration={handleRejectDeclaration}
+                  onEditDeclaration={setEditingDeclaration}
+                  onDeleteDeclaration={handleDeleteDeclaration}
+                  selectedDeclarationIds={selectedDeclarationIds}
+                  setSelectedDeclarationIds={setSelectedDeclarationIds}
+                  mobile={viewMode === 'mobile'}
+                  fontSize={tableFontSize as '40' | '60' | '80' | '100'}
+                  onConsultDeclaration={setConsultingDeclaration}
+                />
+              </div>
               <AlertDialog open={exportDialogOpen} onOpenChange={setExportDialogOpen}>
                 <AlertDialogContent style={{ zIndex: 10000, position: 'fixed', maxWidth: 480 }}>
                   <AlertDialogHeader>
                     <AlertDialogTitle>Exporter les déclarations</AlertDialogTitle>
                   </AlertDialogHeader>
+                  <AlertDialogDescription id="export-dialog-desc">
+                    Sélectionnez les attributs et le format pour exporter les déclarations.
+                  </AlertDialogDescription>
                   <div className="space-y-4">
-                    <div>
-                      <div className="font-semibold mb-1">Attributs à exporter :</div>
-                      <div className="flex flex-wrap gap-2">
-                        {['number','chauffeurName','status','month','year','createdAt','validatedAt','validatedBy'].map(attr => (
-                          <label key={attr} className="flex items-center gap-1">
-                            <input
-                              type="checkbox"
-                              checked={exportAttributes.includes(attr)}
-                              onChange={e => {
-                                setExportAttributes(prev => e.target.checked ? [...prev, attr] : prev.filter(a => a !== attr));
-                              }}
-                            />
-                            <span>{attr}</span>
-                          </label>
-                        ))}
-                      </div>
-                    </div>
-                    <div>
-                      <div className="font-semibold mb-1">Format :</div>
-                      <label className="mr-4">
-                        <input
-                          type="radio"
-                          name="exportFormat"
-                          value="csv"
-                          checked={exportFormat === 'csv'}
-                          onChange={() => setExportFormat('csv')}
-                        /> CSV
-                      </label>
-                      <label>
-                        <input
-                          type="radio"
-                          name="exportFormat"
-                          value="excel"
-                          checked={exportFormat === 'excel'}
-                          onChange={() => setExportFormat('excel')}
-                        /> Excel
-                      </label>
-                    </div>
-                    <div>
-                      <div className="font-semibold mb-1">Lignes à exporter :</div>
-                      <div>
-                        <label className="mr-4">
-                          <input
-                            type="radio"
-                            name="exportRows"
-                            value="filtered"
-                            checked={selectedDeclarationIds.length === 0}
-                            onChange={() => setSelectedDeclarationIds([])}
-                          />
-                          Toutes les lignes filtrées ({filteredDeclarations.length})
-                        </label>
-                        <label>
-                          <input
-                            type="radio"
-                            name="exportRows"
-                            value="selected"
-                            checked={selectedDeclarationIds.length > 0}
-                            onChange={() => {}}
-                          />
-                          Lignes sélectionnées ({selectedDeclarationIds.length})
-                        </label>
-                      </div>
-                    </div>
+                    {/* ...existing code... */}
                   </div>
                   <AlertDialogFooter>
-                    <AlertDialogCancel onClick={() => setExportDialogOpen(false)}>Annuler</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={() => {
-                        if (exportAttributes.length === 0 || selectedDeclarationIds.length === 0) return;
-                        if (exportFormat === 'csv') {
-                          exportToCSV(declarationsToExport, exportAttributes, 'declarations.csv');
-                        } else {
-                          exportToExcel(declarationsToExport, exportAttributes, 'declarations.xlsx');
-                        }
-                        setExportDialogOpen(false);
-                        toast.success('Exportation terminée');
-                      }}
-                      disabled={exportAttributes.length === 0 || selectedDeclarationIds.length === 0}
-                    >
-                      Exporter
-                    </AlertDialogAction>
+                    {/* ...existing code... */}
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
@@ -587,13 +564,16 @@ const PlanificateurDashboard = () => {
                 chauffeurs={chauffeurs}
                 onEditChauffeur={handleEditChauffeur}
                 onDeleteChauffeur={handleDeleteChauffeur}
+                fontSize={tableFontSize as '40' | '50' | '60' | '70' | '80' | '90' | '100'}
               />
               <AlertDialog open={!!chauffeurToDelete} onOpenChange={open => { if (!open) setChauffeurToDelete(null); }}>
-                <AlertDialogContent style={{ zIndex: 10000, position: 'fixed' }}>
+                <AlertDialogContent style={{ zIndex: 10000, position: 'fixed' }} aria-describedby="delete-chauffeur-desc">
                   <AlertDialogHeader>
                     <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
                   </AlertDialogHeader>
-                  <div>Êtes-vous sûr de vouloir supprimer ce chauffeur ? Cette action est irréversible.</div>
+                  <AlertDialogDescription id="delete-chauffeur-desc">
+                    Êtes-vous sûr de vouloir supprimer ce chauffeur ? Cette action est irréversible.
+                  </AlertDialogDescription>
                   <AlertDialogFooter>
                     <AlertDialogCancel onClick={() => setChauffeurToDelete(null)}>Annuler</AlertDialogCancel>
                     <AlertDialogAction onClick={confirmDeleteChauffeur}>Supprimer</AlertDialogAction>
@@ -613,12 +593,23 @@ const PlanificateurDashboard = () => {
             newChauffeur={newChauffeur}
             setNewChauffeur={setNewChauffeur}
           />
-          <EditDeclarationDialog
-            declaration={editingDeclaration}
-            isOpen={!!editingDeclaration}
-            onClose={() => setEditingDeclaration(null)}
-            onSave={handleUpdateDeclaration}
-          />
+          {consultingDeclaration ? (
+            <EditDeclarationDialog
+              declaration={consultingDeclaration}
+              isOpen={!!consultingDeclaration}
+              onClose={() => setConsultingDeclaration(null)}
+              readOnly={true}
+              onSave={() => {}}
+            />
+          ) : null}
+          {editingDeclaration && !consultingDeclaration ? (
+            <EditDeclarationDialog
+              declaration={editingDeclaration}
+              isOpen={!!editingDeclaration}
+              onClose={() => setEditingDeclaration(null)}
+              onSave={handleUpdateDeclaration}
+            />
+          ) : null}
         </div>
       </div>
     </div>

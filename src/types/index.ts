@@ -108,4 +108,5 @@ export interface Settings {
   language: 'fr' | 'en' | 'ar';
   theme: 'light' | 'dark';
   viewMode?: 'mobile' | 'desktop';
+  tableFontSize?: '40' | '50' | '60' | '70' | '80' | '90' | '100';
 }

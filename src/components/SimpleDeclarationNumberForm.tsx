@@ -10,6 +10,7 @@ interface SimpleDeclarationNumberFormProps {
   initialYear?: string;
   initialMonth?: string;
   initialProgramNumber?: string;
+  readOnly?: boolean;
 }
 
 const SimpleDeclarationNumberForm = ({ 
@@ -17,7 +18,8 @@ const SimpleDeclarationNumberForm = ({
   onComponentsChange,
   initialYear = '',
   initialMonth = '',
-  initialProgramNumber = ''
+  initialProgramNumber = '',
+  readOnly = false
 }: SimpleDeclarationNumberFormProps) => {
   // Get current date for defaults
   const now = new Date();
@@ -79,9 +81,8 @@ const SimpleDeclarationNumberForm = ({
       <Label>Programme de Livraison</Label>
       <div className="flex items-center gap-1 p-3 bg-gray-50 rounded-md border">
         <span className="text-gray-500 font-mono text-sm">DCP/</span>
-        
-        <Select value={year} onValueChange={setYear}>
-          <SelectTrigger className="w-16 h-8 px-2 py-1 text-sm">
+        <Select value={year} onValueChange={setYear} disabled={readOnly}>
+          <SelectTrigger className="w-16 h-8 px-2 py-1 text-sm" disabled={readOnly}>
             <SelectValue placeholder="YY" />
           </SelectTrigger>
           <SelectContent>
@@ -90,11 +91,9 @@ const SimpleDeclarationNumberForm = ({
             ))}
           </SelectContent>
         </Select>
-        
         <span className="text-gray-500 font-mono text-sm">/</span>
-        
-        <Select value={month} onValueChange={setMonth}>
-          <SelectTrigger className="w-16 h-8 px-2 py-1 text-sm">
+        <Select value={month} onValueChange={setMonth} disabled={readOnly}>
+          <SelectTrigger className="w-16 h-8 px-2 py-1 text-sm" disabled={readOnly}>
             <SelectValue placeholder="MM" />
           </SelectTrigger>
           <SelectContent>
@@ -103,9 +102,7 @@ const SimpleDeclarationNumberForm = ({
             ))}
           </SelectContent>
         </Select>
-        
         <span className="text-gray-500 font-mono text-sm">/</span>
-        
         <Input
           type="text"
           value={programNumber}
@@ -113,6 +110,7 @@ const SimpleDeclarationNumberForm = ({
           placeholder="XXXX"
           className="w-16 h-8 px-2 py-1 text-center text-sm"
           maxLength={4}
+          disabled={readOnly}
         />
       </div>
     </div>

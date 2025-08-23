@@ -13,7 +13,8 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
   const [settings, setSettings] = useState<Settings>({
     language: 'fr',
     theme: 'light',
-    viewMode: 'desktop'
+    viewMode: 'desktop',
+    tableFontSize: '80'
   });
 
   useEffect(() => {
@@ -22,15 +23,18 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
     if (savedSettings) {
       try {
         const parsedSettings = JSON.parse(savedSettings);
-        setSettings(parsedSettings);
-        
+        setSettings({
+          language: parsedSettings.language || 'fr',
+          theme: parsedSettings.theme || 'light',
+          viewMode: parsedSettings.viewMode || 'desktop',
+          tableFontSize: parsedSettings.tableFontSize || '80'
+        });
         // Appliquer le thème
         if (parsedSettings.theme === 'dark') {
           document.documentElement.classList.add('dark');
         } else {
           document.documentElement.classList.remove('dark');
         }
-        
         // Appliquer la direction RTL pour l'arabe
         if (parsedSettings.language === 'ar') {
           document.documentElement.dir = 'rtl';
