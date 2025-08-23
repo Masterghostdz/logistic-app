@@ -14,6 +14,7 @@ import { useSharedData } from '../../contexts/SharedDataContext';
 import SearchAndFilter from '../SearchAndFilter';
 import ProfilePage from '../ProfilePage';
 import TracageSection from '../TracageSection';
+import WarehouseTable from './WarehouseTable';
 import Header from '../Header';
 import EditDeclarationDialog from '../EditDeclarationDialog';
 import PlanificateurStats from './PlanificateurStats';
@@ -478,27 +479,9 @@ const PlanificateurDashboard = () => {
           )}
           {activeTab === 'declarations' && (
             <div className="space-y-6">
-              {/* Zoom selector au-dessus du filtre/recherche */}
-              <div className="flex justify-end mb-2">
-                <label className="mr-2 text-xs text-muted-foreground">Zoom tableau :</label>
-                <select
-                  value={tableFontSize}
-                  onChange={e => {
-                    const value = e.target.value as typeof tableFontSize;
-                    setTableFontSize(value);
-                    updateSettings({ tableFontSize: value });
-                  }}
-                  className="border rounded px-2 py-1 text-xs bg-background"
-                  title="Zoom sur la taille d'écriture du tableau"
-                >
-                  <option value="100">100%</option>
-                  <option value="90">90%</option>
-                  <option value="80">80%</option>
-                  <option value="70">70%</option>
-                  <option value="60">60%</option>
-                  <option value="50">50%</option>
-                  <option value="40">40%</option>
-                </select>
+              {/* Titre au-dessus de la barre de recherche */}
+              <div className="flex items-center justify-between mb-2">
+                <h2 className="text-2xl font-bold">Gestion des Déclarations</h2>
               </div>
               <SearchAndFilter
                 searchValue={searchValue}
@@ -515,20 +498,27 @@ const PlanificateurDashboard = () => {
                   { value: 'chauffeurName', label: 'Chauffeur' }
                 ]}
               />
-              {/* Table responsive pour mobile */}
+              {/* Table responsive pour mobile, zoom intégré dans le CardHeader */}
               <div className={viewMode === 'mobile' ? 'overflow-x-auto' : ''}>
-                <DeclarationsTable
-                  declarations={filteredDeclarations}
-                  onValidateDeclaration={handleValidateDeclaration}
-                  onRejectDeclaration={handleRejectDeclaration}
-                  onEditDeclaration={setEditingDeclaration}
-                  onDeleteDeclaration={handleDeleteDeclaration}
-                  selectedDeclarationIds={selectedDeclarationIds}
-                  setSelectedDeclarationIds={setSelectedDeclarationIds}
-                  mobile={viewMode === 'mobile'}
-                  fontSize={tableFontSize as '40' | '60' | '80' | '100'}
-                  onConsultDeclaration={setConsultingDeclaration}
-                />
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-end">
+                    {/* Titre supprimé, header vide ou controls externes */}
+                  </CardHeader>
+                  <CardContent>
+                    <DeclarationsTable
+                      declarations={filteredDeclarations}
+                      onValidateDeclaration={handleValidateDeclaration}
+                      onRejectDeclaration={handleRejectDeclaration}
+                      onEditDeclaration={setEditingDeclaration}
+                      onDeleteDeclaration={handleDeleteDeclaration}
+                      selectedDeclarationIds={selectedDeclarationIds}
+                      setSelectedDeclarationIds={setSelectedDeclarationIds}
+                      mobile={viewMode === 'mobile'}
+                      fontSize={tableFontSize as '40' | '60' | '80' | '100'}
+                      onConsultDeclaration={setConsultingDeclaration}
+                    />
+                  </CardContent>
+                </Card>
               </div>
               <AlertDialog open={exportDialogOpen} onOpenChange={setExportDialogOpen}>
                 <AlertDialogContent style={{ zIndex: 10000, position: 'fixed', maxWidth: 480 }}>
@@ -548,9 +538,56 @@ const PlanificateurDashboard = () => {
               </AlertDialog>
             </div>
           )}
+          {activeTab === 'entrepots' && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between mb-2">
+                <h2 className="text-2xl font-bold">Gestion des Entrepôts</h2>
+                <Button
+                  className="flex items-center gap-2"
+                  onClick={() => {/* TODO: ouvrir modal de création d'entrepôt */}}
+                >
+                  <Plus className="h-4 w-4" />
+                  Ajouter un entrepôt
+                </Button>
+              </div>
+              {/* Barre de recherche/filtre pour entrepôts hors du Card/table */}
+              <SearchAndFilter
+                searchValue={searchValue}
+                onSearchChange={setSearchValue}
+                filterValue={filterStatus}
+                onFilterChange={setFilterStatus}
+                filterOptions={[{ value: 'actif', label: 'Actif' }, { value: 'inactif', label: 'Inactif' }]}
+                searchPlaceholder="Rechercher par nom ou ville..."
+                filterPlaceholder="Filtrer..."
+                searchColumn={searchColumn}
+                onSearchColumnChange={value => setSearchColumn(value as 'number' | 'chauffeurName')}
+                searchColumnOptions={[
+                  { value: 'number', label: 'Numéro' },
+                  { value: 'warehouseName', label: 'Entrepôt' }
+                ]}
+              />
+              <div className={viewMode === 'mobile' ? 'overflow-x-auto' : ''}>
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-end">
+                    {/* Zoom et titre supprimés, header vide ou controls externes */}
+                  </CardHeader>
+                  <CardContent>
+                    <WarehouseTable
+                      warehouses={warehouses}
+                      onCreate={() => {/* TODO: ouvrir modal de création d'entrepôt */}}
+                      onEdit={wh => {/* TODO: ouvrir modal d'édition */}}
+                      onDelete={wh => {/* TODO: ouvrir confirmation suppression */}}
+                      onConsult={wh => {/* TODO: ouvrir consultation */}}
+                      fontSize={tableFontSize as '40' | '50' | '60' | '70' | '80' | '90' | '100'}
+                    />
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          )}
           {activeTab === 'chauffeurs' && (
             <div className="space-y-6">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between mb-2">
                 <h2 className="text-2xl font-bold">Gestion des Chauffeurs</h2>
                 <Button 
                   className="flex items-center gap-2"
@@ -560,6 +597,22 @@ const PlanificateurDashboard = () => {
                   Ajouter un chauffeur
                 </Button>
               </div>
+              {/* Barre de recherche/filtre pour chauffeurs */}
+              <SearchAndFilter
+                searchValue={searchValue}
+                onSearchChange={setSearchValue}
+                filterValue={filterStatus}
+                onFilterChange={setFilterStatus}
+                filterOptions={[{ value: 'actif', label: 'Actif' }, { value: 'inactif', label: 'Inactif' }]}
+                searchPlaceholder="Rechercher par nom ou téléphone..."
+                filterPlaceholder="Filtrer..."
+                searchColumn={searchColumn}
+                onSearchColumnChange={value => setSearchColumn(value as 'number' | 'chauffeurName')}
+                searchColumnOptions={[
+                  { value: 'number', label: 'Numéro' },
+                  { value: 'chauffeurName', label: 'Chauffeur' }
+                ]}
+              />
               <ChauffeursTable
                 chauffeurs={chauffeurs}
                 onEditChauffeur={handleEditChauffeur}

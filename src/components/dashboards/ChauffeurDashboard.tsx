@@ -92,6 +92,7 @@ const ChauffeurDashboard = () => {
   });
 
   const filterOptions = [
+    { value: 'all', label: t('declarations.filterAll') },
     { value: 'en_cours', label: t('dashboard.pending') },
     { value: 'valide', label: t('dashboard.validated') },
     { value: 'refuse', label: t('dashboard.refused') }
@@ -355,7 +356,10 @@ const ChauffeurDashboard = () => {
                 onFilterChange={setStatusFilter}
                 filterOptions={filterOptions}
                 searchPlaceholder={t('declarations.searchPlaceholder')}
-                filterPlaceholder={t('declarations.filterPlaceholder')}
+                filterPlaceholder={t('declarations.filterPlaceholder') || 'Filtrer...'}
+                searchColumn={"number"}
+                onSearchColumnChange={() => {}}
+                searchColumnOptions={[{ value: 'number', label: t('declarations.number') }, { value: 'chauffeurName', label: t('dashboard.chauffeurTitle') }]}
               />
 
               {filteredDeclarations.length === 0 ? (

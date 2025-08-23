@@ -73,6 +73,15 @@ const PlanificateurSidebar = ({ activeTab, onTabChange }: PlanificateurSidebarPr
           Déclarations
         </Button>
         <Button
+          variant={activeTab === 'entrepots' ? 'default' : 'ghost'}
+          className="w-full justify-start"
+          onClick={() => onTabChange('entrepots')}
+        >
+          {/* Icone d'entrepot (warehouse) Lucide: Package */}
+          <svg xmlns="http://www.w3.org/2000/svg" className="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><rect x="3" y="7" width="18" height="13" rx="2" strokeWidth="2" /><path d="M3 7l9-4 9 4" strokeWidth="2" /></svg>
+          Entrepôts
+        </Button>
+        <Button
           variant={activeTab === 'chauffeurs' ? 'default' : 'ghost'}
           className="w-full justify-start"
           onClick={() => onTabChange('chauffeurs')}

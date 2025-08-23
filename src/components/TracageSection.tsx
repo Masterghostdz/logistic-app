@@ -1,3 +1,4 @@
+import WarehouseTable from "./dashboards/WarehouseTable";
 
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
@@ -120,130 +121,62 @@ const TracageSection = () => {
             </CardHeader>
             <CardContent>
               <form onSubmit={handleCreateWarehouse} className="space-y-4">
-                <div>
-                  <Label>Nom de l'entrepôt</Label>
-                  <Input
-                    type="text"
-                    value={newWarehouse.name}
-                    onChange={e => setNewWarehouse({ ...newWarehouse, name: e.target.value })}
-                    placeholder="Nom de l'entrepôt"
-                    required
-                  />
-                </div>
-                <div>
-                  <Label>Société</Label>
-                  <Select value={newWarehouse.companyId} onValueChange={handleCompanyChange} required={true}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Sélectionner une société" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {companies.map(company => (
-                        <SelectItem key={company.id} value={company.id}>{company.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label>Adresse</Label>
-                  <Input
-                    type="text"
-                    value={newWarehouse.address}
-                    onChange={e => setNewWarehouse({ ...newWarehouse, address: e.target.value })}
-                    placeholder="Adresse"
-                    required
-                  />
-                </div>
-                <div>
-                  <Label>Téléphones</Label>
-                  <PhoneNumbersField
-                    phones={newWarehouse.phone}
-                    onChange={phones => setNewWarehouse({ ...newWarehouse, phone: phones })}
-                  />
-                </div>
-                <div className="flex gap-2">
-                  <div className="flex-1">
-                    <Label>Latitude</Label>
-                    <Input
-                      type="number"
-                      value={newWarehouse.lat}
-                      onChange={e => setNewWarehouse({ ...newWarehouse, lat: e.target.value })}
-                      placeholder="Latitude"
-                      required
-                    />
-                  </div>
-                  <div className="flex-1">
-                    <Label>Longitude</Label>
-                    <Input
-                      type="number"
-                      value={newWarehouse.lng}
-                      onChange={e => setNewWarehouse({ ...newWarehouse, lng: e.target.value })}
-                      placeholder="Longitude"
-                      required
-                    />
-                  </div>
-                </div>
-                <div className="flex justify-end gap-2 pt-2">
-                  <Button type="button" variant="outline" onClick={() => setShowCreateWarehouse(false)}>
-                    Annuler
-                  </Button>
-                  <Button type="submit">
-                    Enregistrer
-                  </Button>
-                </div>
+                {/* ...existing code... */}
               </form>
             </CardContent>
           </div>
         </div>
       )}
+      {/* Section Tracage classique, vertical pour tous les modes */}
       <div className="space-y-6 p-2 md:p-6 max-w-full overflow-hidden flex flex-col justify-center">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl md:text-2xl font-bold text-center w-full">Traçage</h2>
+        <div className="w-full">
+          <h2 className="text-xl md:text-2xl font-bold mb-4">Liste des Entrepôts</h2>
+          <div className="flex flex-row justify-between items-center mb-4">
+            <Button 
+              onClick={() => setShowCreateWarehouse(!showCreateWarehouse)} 
+              className="flex items-center gap-2 text-xs md:text-sm"
+              size={isMobile ? "sm" : "default"}
+            >
+              <Plus className="h-4 w-4" />
+              <span className="hidden sm:inline">Créer un entrepôt</span>
+              <span className="sm:hidden">Nouveau</span>
+            </Button>
+          </div>
+          <div className="space-y-2">
+            {warehouses.length === 0 ? (
+              <div className="text-muted-foreground text-sm">Aucun entrepôt synchronisé.</div>
+            ) : (
+              warehouses.map(wh => (
+                <Card key={wh.id} className="p-2">
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center justify-between font-semibold whitespace-nowrap">
+                      <span className="text-[10px] md:text-xs">{wh.name}</span>
+                      {wh.isActive ? (
+                        <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold bg-green-100 text-green-700 border border-green-300 shadow">Actif</span>
+                      ) : (
+                        <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold bg-red-100 text-red-700 border border-red-300 shadow">Inactif</span>
+                      )}
+                    </div>
+                    <div className="flex gap-2 text-xs items-center mt-1">
+                      <Badge className="bg-blue-100 text-blue-800 border-blue-200 px-2 py-1 rounded">{wh.companyName}</Badge>
+                    </div>
+                    {wh.phone && wh.phone.length > 0 && (
+                      <div className="text-xs font-mono text-gray-700 mt-1">{wh.phone[0]}</div>
+                    )}
+                  </div>
+                </Card>
+              ))
+            )}
+          </div>
         </div>
-        {/* Responsive layout: always stacked on mobile, side by side on desktop */}
-        <div className={isMobile ? "flex flex-col gap-6 w-full" : "flex flex-row gap-6 w-full"}>
-          {/* Map section */}
-          <div className={isMobile ? "w-full" : "w-1/2"}>
+        <div className="w-full mt-8">
+          <h2 className="text-xl md:text-2xl font-bold mb-4">Carte des Entrepôts</h2>
+          <div className="w-full h-[400px] mb-6">
             {isMobile ? (
               <MobileOpenStreetMap warehouses={warehouses} />
             ) : (
               <OpenStreetMap warehouses={warehouses} />
             )}
-          </div>
-          {/* Warehouse list section */}
-          <div className={isMobile ? "w-full" : "w-1/2"}>
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4">
-              <h3 className="text-base md:text-lg font-semibold text-center w-full">Entrepôts synchronisés</h3>
-              <Button 
-                onClick={() => setShowCreateWarehouse(!showCreateWarehouse)} 
-                className="flex items-center gap-2 text-xs md:text-sm w-full sm:w-auto justify-center"
-                size={isMobile ? "sm" : "default"}
-              >
-                <Plus className="h-4 w-4" />
-                <span className="hidden sm:inline">Créer un entrepôt</span>
-                <span className="sm:hidden">Nouveau</span>
-              </Button>
-            </div>
-            <div className="space-y-2">
-              {warehouses.length === 0 ? (
-                <div className="text-muted-foreground text-sm">Aucun entrepôt synchronisé.</div>
-              ) : (
-                warehouses.map(wh => (
-                  <Card key={wh.id} className="p-2">
-                    <div className="flex flex-col gap-1">
-                      <div className="font-semibold">{wh.name}</div>
-                      <div className="text-xs text-muted-foreground">{wh.address}</div>
-                      <div className="flex gap-2 text-xs">
-                        <Badge>{wh.companyName}</Badge>
-                        <span>Lat: {wh.coordinates.lat}</span>
-                        <span>Lng: {wh.coordinates.lng}</span>
-                      </div>
-                      <div className="text-xs">Téléphones: {wh.phone?.join(', ')}</div>
-                      <div className="text-xs">Créé le: {new Date(wh.createdAt).toLocaleString()}</div>
-                    </div>
-                  </Card>
-                ))
-              )}
-            </div>
           </div>
         </div>
       </div>

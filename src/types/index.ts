@@ -64,6 +64,7 @@ export interface Warehouse {
     lng: number;
   };
   createdAt: string;
+  isActive?: boolean;
 }
 
 export interface Company {
