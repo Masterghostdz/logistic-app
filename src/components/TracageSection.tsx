@@ -132,15 +132,7 @@ const TracageSection = () => {
         <div className="w-full">
           <h2 className="text-xl md:text-2xl font-bold mb-4">Liste des Entrepôts</h2>
           <div className="flex flex-row justify-between items-center mb-4">
-            <Button 
-              onClick={() => setShowCreateWarehouse(!showCreateWarehouse)} 
-              className="flex items-center gap-2 text-xs md:text-sm"
-              size={isMobile ? "sm" : "default"}
-            >
-              <Plus className="h-4 w-4" />
-              <span className="hidden sm:inline">Créer un entrepôt</span>
-              <span className="sm:hidden">Nouveau</span>
-            </Button>
+            {/* Bouton de création d'entrepôt supprimé */}
           </div>
           <div className="space-y-2">
             {warehouses.length === 0 ? (

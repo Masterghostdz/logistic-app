@@ -22,6 +22,7 @@ import PlanificateurSidebar from './PlanificateurSidebar';
 import DeclarationsTable from './DeclarationsTable';
 import ChauffeursTable from './ChauffeursTable';
 import CreateChauffeurDialog from './CreateChauffeurDialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
 
 const PlanificateurDashboard = () => {
   // Consultation (read-only) and modification (edit) states
@@ -134,6 +135,34 @@ const PlanificateurDashboard = () => {
     vehicleType: '',
     employeeType: 'interne' as 'interne' | 'externe'
   });
+  const [showCreateWarehouse, setShowCreateWarehouse] = useState(false);
+  const [newWarehouse, setNewWarehouse] = useState({
+    name: '',
+    companyName: '',
+    phone: [],
+    address: '',
+  });
+
+  const handleCreateWarehouse = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newWarehouse.name || !newWarehouse.companyName || !newWarehouse.address) return;
+    setWarehouses(prev => [
+      ...prev,
+      {
+        id: Date.now().toString(),
+        name: newWarehouse.name,
+        companyId: '',
+        companyName: newWarehouse.companyName,
+        phone: newWarehouse.phone,
+        address: newWarehouse.address,
+        isActive: true,
+        createdAt: new Date().toISOString(),
+        coordinates: { lat: 0, lng: 0 },
+      } as Warehouse
+    ]);
+    setNewWarehouse({ name: '', companyName: '', phone: [], address: '' });
+    setShowCreateWarehouse(false);
+  };
 
   const stats = useMemo(() => {
     const enAttente = declarations.filter(d => d.status === 'en_cours').length;
@@ -542,13 +571,52 @@ const PlanificateurDashboard = () => {
             <div className="space-y-6">
               <div className="flex items-center justify-between mb-2">
                 <h2 className="text-2xl font-bold">Gestion des Entrepôts</h2>
-                <Button
-                  className="flex items-center gap-2"
-                  onClick={() => {/* TODO: ouvrir modal de création d'entrepôt */}}
-                >
-                  <Plus className="h-4 w-4" />
-                  Ajouter un entrepôt
-                </Button>
+                <Dialog open={showCreateWarehouse} onOpenChange={setShowCreateWarehouse}>
+                  <DialogTrigger asChild>
+                    <Button className="flex items-center gap-2" onClick={() => setShowCreateWarehouse(true)}>
+                      <Plus className="h-4 w-4" />
+                      Ajouter un entrepôt
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Créer un nouvel entrepôt</DialogTitle>
+                    </DialogHeader>
+                    <form onSubmit={handleCreateWarehouse} className="space-y-4">
+                      <input
+                        className="border rounded px-2 py-1 w-full"
+                        placeholder="Nom de l'entrepôt"
+                        value={newWarehouse.name}
+                        onChange={e => setNewWarehouse({ ...newWarehouse, name: e.target.value })}
+                        required
+                      />
+                      <input
+                        className="border rounded px-2 py-1 w-full"
+                        placeholder="Société"
+                        value={newWarehouse.companyName}
+                        onChange={e => setNewWarehouse({ ...newWarehouse, companyName: e.target.value })}
+                        required
+                      />
+                      <input
+                        className="border rounded px-2 py-1 w-full"
+                        placeholder="Téléphone"
+                        value={newWarehouse.phone[0] || ''}
+                        onChange={e => setNewWarehouse({ ...newWarehouse, phone: [e.target.value] })}
+                      />
+                      <input
+                        className="border rounded px-2 py-1 w-full"
+                        placeholder="Adresse"
+                        value={newWarehouse.address}
+                        onChange={e => setNewWarehouse({ ...newWarehouse, address: e.target.value })}
+                        required
+                      />
+                      <div className="flex gap-2 pt-2">
+                        <Button type="submit" className="flex-1">Créer</Button>
+                        <Button type="button" variant="outline" onClick={() => setShowCreateWarehouse(false)}>Annuler</Button>
+                      </div>
+                    </form>
+                  </DialogContent>
+                </Dialog>
               </div>
               {/* Barre de recherche/filtre pour entrepôts hors du Card/table */}
               <SearchAndFilter

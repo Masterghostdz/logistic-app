@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
@@ -16,22 +15,36 @@ interface ChauffeursTableProps {
 }
 
 const ChauffeursTable = ({ chauffeurs, onEditChauffeur, onDeleteChauffeur, fontSize = '100' }: ChauffeursTableProps) => {
-  // Système de zoom comme DeclarationsTable
+  const [localFontSize, setLocalFontSize] = useState(fontSize);
   const zoomLevels: Record<string, number> = {
-    '40': 0.7,
-    '50': 0.8,
-    '60': 0.85,
-    '70': 0.9,
-    '80': 0.95,
-    '90': 1.0,
-    '100': 1.05
+    '50': 0.5,
+    '60': 0.6,
+    '80': 0.8,
+    '90': 0.9,
+    '100': 1.0
   };
-    const zoom = zoomLevels[String(fontSize)] ?? 1.0; // Correction : fontSize est bien reçu en paramètre
+  const zoom = zoomLevels[localFontSize];
   const fontSizeStyle = { fontSize: `${Math.round(14 * zoom)}px` };
   const rowHeight = `h-[${Math.round(40 * zoom)}px]`;
   return (
     <Card>
       <CardContent className="p-0">
+        {/* Sélecteur de zoom */}
+        <div className="flex items-center justify-end mb-2">
+          <label className="mr-2 text-xs text-muted-foreground">Zoom :</label>
+          <select
+            value={localFontSize}
+            onChange={e => setLocalFontSize(e.target.value as typeof fontSize)}
+            className="border rounded px-2 py-1 text-xs bg-background"
+            title="Zoom sur la taille d'écriture du tableau"
+          >
+            <option value="100">100%</option>
+            <option value="90">90%</option>
+            <option value="80">80%</option>
+            <option value="60">60%</option>
+            <option value="50">50%</option>
+          </select>
+        </div>
         <Table>
           <TableHeader>
             <TableRow style={fontSizeStyle}>
