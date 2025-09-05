@@ -46,7 +46,7 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onOpenChange }) =
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Palette className="h-5 w-5" />
+            <span className="material-icons text-xl text-primary">settings</span>
             {t('settings.title')}
           </DialogTitle>
           <DialogDescription>

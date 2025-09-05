@@ -79,50 +79,24 @@ const defaultVehicleTypes: VehicleType[] = [
 const defaultDeclarations: Declaration[] = [];
 
 export const SharedDataProvider: React.FC<SharedDataProviderProps> = ({ children }) => {
-  // Fonction pour charger les données depuis localStorage
-  const loadFromStorage = <T,>(key: string, defaultData: T): T => {
-    try {
-      const stored = localStorage.getItem(key);
-      return stored ? JSON.parse(stored) : defaultData;
-    } catch (error) {
-      console.error(`Error loading ${key} from localStorage:`, error);
-      return defaultData;
-    }
-  };
+  const [companies, setCompaniesState] = useState<Company[]>([]);
 
-  // Fonction pour sauvegarder dans localStorage
-  const saveToStorage = <T,>(key: string, data: T) => {
-    try {
-      localStorage.setItem(key, JSON.stringify(data));
-    } catch (error) {
-      console.error(`Error saving ${key} to localStorage:`, error);
-    }
-  };
-
-  const [companies, setCompaniesState] = useState<Company[]>(() => 
-    loadFromStorage('companies', defaultCompanies)
-  );
-
-  const [vehicleTypes, setVehicleTypesState] = useState<VehicleType[]>(() => 
-    loadFromStorage('vehicleTypes', defaultVehicleTypes)
-  );
-
-  const [declarations, setDeclarationsState] = useState<Declaration[]>(() => 
-    loadFromStorage('declarations', defaultDeclarations)
-  );
-
-  // Sauvegarder automatiquement quand les données changent
+  // Synchronisation Firestore pour les sociétés (exactement comme AdminDashboard)
   useEffect(() => {
-    saveToStorage('companies', companies);
-  }, [companies]);
+    let unsubscribe: any;
+    const listen = async () => {
+      const { listenCompanies } = await import('../services/companyService');
+      unsubscribe = listenCompanies((cloudCompanies: Company[]) => {
+        setCompaniesState(cloudCompanies);
+      });
+    };
+    listen();
+    return () => { if (unsubscribe) unsubscribe(); };
+  }, []);
 
-  useEffect(() => {
-    saveToStorage('vehicleTypes', vehicleTypes);
-  }, [vehicleTypes]);
+  const [vehicleTypes, setVehicleTypesState] = useState<VehicleType[]>(defaultVehicleTypes);
 
-  useEffect(() => {
-    saveToStorage('declarations', declarations);
-  }, [declarations]);
+  const [declarations, setDeclarationsState] = useState<Declaration[]>(defaultDeclarations);
 
   const setCompanies = (newCompanies: Company[]) => {
     setCompaniesState(newCompanies);

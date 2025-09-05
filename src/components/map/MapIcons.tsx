@@ -4,22 +4,23 @@ import L from 'leaflet';
 // Desktop-optimized icons (smaller)
 export const desktopWarehouseIcon = L.divIcon({
   html: `<div style="
-    background-color: rgba(0, 0, 0, 0.8); 
-    color: white; 
-    width: 28px; 
-    height: 28px; 
-    border-radius: 4px; 
-    display: flex; 
-    align-items: center; 
-    justify-content: center; 
-    border: 2px solid rgba(255, 255, 255, 0.9); 
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3); 
-    font-size: 14px; 
-    font-weight: bold;
-  ">⌂</div>`,
+    width: 49px;
+    height: 49px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+  ">
+    <svg width="38" height="38" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <polygon points="24,8 8,22 12,22 12,36 36,36 36,22 40,22" fill="black"/>
+      <rect x="18" y="28" width="6" height="8" rx="1.5" fill="white" fill-opacity="0"/>
+      <rect x="26" y="28" width="4" height="4" rx="1" fill="white" fill-opacity="0"/>
+      <rect x="18" y="24" width="4" height="4" rx="1" fill="white" fill-opacity="0"/>
+    </svg>
+  </div>`,
   className: 'custom-div-icon',
-  iconSize: [28, 28],
-  iconAnchor: [14, 14]
+  iconSize: [49, 49],
+  iconAnchor: [24.5, 24.5]
 });
 
 export const desktopChauffeurIcon = L.divIcon({
@@ -32,22 +33,23 @@ export const desktopChauffeurIcon = L.divIcon({
 // Mobile-optimized icons (larger)
 export const warehouseIcon = L.divIcon({
   html: `<div style="
-    background-color: rgba(0, 0, 0, 0.8); 
-    color: white; 
-    width: 32px; 
-    height: 32px; 
-    border-radius: 4px; 
-    display: flex; 
-    align-items: center; 
-    justify-content: center; 
-    border: 2px solid rgba(255, 255, 255, 0.9); 
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3); 
-    font-size: 16px; 
-    font-weight: bold;
-  ">⌂</div>`,
+    width: 56px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+  ">
+    <svg width="44" height="44" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <polygon points="24,8 8,22 12,22 12,36 36,36 36,22 40,22" fill="black"/>
+      <rect x="18" y="28" width="6" height="8" rx="1.5" fill="white" fill-opacity="0"/>
+      <rect x="26" y="28" width="4" height="4" rx="1" fill="white" fill-opacity="0"/>
+      <rect x="18" y="24" width="4" height="4" rx="1" fill="white" fill-opacity="0"/>
+    </svg>
+  </div>`,
   className: 'custom-div-icon',
-  iconSize: [32, 32],
-  iconAnchor: [16, 16]
+  iconSize: [56, 56],
+  iconAnchor: [28, 28]
 });
 
 export const chauffeurIcon = L.divIcon({

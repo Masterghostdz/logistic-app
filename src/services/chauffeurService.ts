@@ -34,11 +34,29 @@ export const addChauffeur = async (chauffeur) => {
 };
 
 export const updateChauffeur = async (id, updates) => {
+  // Met à jour la collection users (Admin)
+  const userRef = doc(db, 'users', id);
+  // Met à jour la collection chauffeurs (Firebase)
   const chauffeurRef = doc(db, 'chauffeurs', id);
-  return await updateDoc(chauffeurRef, updates);
+  try {
+    await updateDoc(userRef, updates);
+  } catch (e) {
+    // Si l'utilisateur n'existe pas, ignorer l'erreur ou log
+  }
+  try {
+    await updateDoc(chauffeurRef, updates);
+  } catch (e) {
+    // Si le chauffeur n'existe pas, ignorer l'erreur ou log
+  }
 };
 
 export const deleteChauffeur = async (id) => {
   const chauffeurRef = doc(db, 'chauffeurs', id);
-  return await deleteDoc(chauffeurRef);
+  const userRef = doc(db, 'users', id);
+  try {
+    await deleteDoc(chauffeurRef);
+  } catch (e) {}
+  try {
+    await deleteDoc(userRef);
+  } catch (e) {}
 };

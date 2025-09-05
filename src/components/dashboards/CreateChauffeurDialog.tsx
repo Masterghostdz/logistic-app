@@ -4,7 +4,7 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog';
 import { Chauffeur } from '../../types';
 import { useSharedData } from '../../contexts/SharedDataContext';
 import PhoneNumbersField from '../PhoneNumbersField';
@@ -54,6 +54,11 @@ const CreateChauffeurDialog = ({
           <DialogTitle>
             {editingChauffeur ? 'Modifier le chauffeur' : 'Créer un nouveau chauffeur'}
           </DialogTitle>
+          <DialogDescription>
+            {editingChauffeur
+              ? "Modifiez les informations du chauffeur sélectionné."
+              : "Remplissez le formulaire pour créer un nouveau chauffeur."}
+          </DialogDescription>
         </DialogHeader>
         <form onSubmit={onSubmit} className="space-y-4">
           <div>

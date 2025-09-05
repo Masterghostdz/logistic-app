@@ -1,5 +1,7 @@
 
+
 import React, { useState } from 'react';
+import { useSettings } from '../contexts/SettingsContext';
 import { Button } from './ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu';
@@ -21,6 +23,11 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle, showMenuButton = false, o
   const { t } = useTranslation();
   const [showSettings, setShowSettings] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
+
+
+
+  // Détection du mode mobile via hook partagé
+  const { settings } = useSettings();
 
   const getRoleBadgeColor = (role: string) => {
     switch (role) {
@@ -57,7 +64,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle, showMenuButton = false, o
   return (
     <>
       <header className="border-b border-border bg-card shadow-sm">
-        <div className="flex h-16 items-center justify-between px-4 lg:px-6">
+  <div className="flex h-16 items-center justify-between pl-1 pr-4 lg:pl-3 lg:pr-6">
           {/* Logo à gauche */}
           <div className="flex items-center gap-2">
             {showMenuButton && (
@@ -73,12 +80,14 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle, showMenuButton = false, o
             <img 
               src="/lovable-uploads/691c7b4f-298c-4d87-a195-fb432aab8f82.png" 
               alt="Logigrine Logo" 
-              className="h-8"
+              className={settings.viewMode === 'mobile' ? 'h-8 -ml-0' : 'h-10 -ml-1'}
+              style={settings.viewMode === 'mobile' ? { width: 'auto', maxHeight: '32px' } : { width: 'auto', maxHeight: '40px' }}
             />
           </div>
 
           {/* Rôle et photo de profil à droite */}
           <div className="flex items-center gap-4">
+            {/* DEBUG supprimé */}
             {/* Message de bienvenue supprimé en mobile */}
             <Badge className={`border ${getRoleBadgeColor(user?.role || '')}`}>
               {user?.role}
@@ -86,7 +95,17 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle, showMenuButton = false, o
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full hover:bg-accent">
-                  <Avatar className="h-8 w-8">
+                  {user?.role === 'chauffeur' && user?.employeeType === 'interne' && (
+                    <span
+                      className="absolute inset-0 rounded-full pointer-events-none animate-glow-flicker"
+                      style={{
+                        boxShadow: '0 0 0 2px #FFD700, 0 0 12px 6px #FFD700cc',
+                        zIndex: 20,
+                        transition: 'box-shadow 0.3s',
+                      }}
+                    />
+                  )}
+                  <Avatar className="h-8 w-8 relative z-30">
                     <AvatarImage src={user?.avatar} alt={user?.firstName} />
                     <AvatarFallback className="bg-muted text-muted-foreground">
                       {getInitials(user?.firstName || '', user?.lastName || '')}

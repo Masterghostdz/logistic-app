@@ -32,6 +32,17 @@ const WarehouseTable: React.FC<WarehouseTableProps> = ({ warehouses, onCreate, o
   // Le parent gère la recherche et le filtre, ici on affiche tout
   const filtered = warehouses;
 
+  // iconSize dynamique comme dans DeclarationsTable
+  const baseIcon = 18;
+  const zoomLevelsGlobal = {
+    '50': 0.5,
+    '60': 0.6,
+    '80': 0.8,
+    '90': 0.9,
+    '100': 1.0
+  };
+  const zoomGlobal = zoomLevelsGlobal[String(localFontSize)] ?? 1.0;
+  const iconSize = `h-[${Math.round(baseIcon * zoomGlobal)}px] w-[${Math.round(baseIcon * zoomGlobal)}px]`;
   return (
     <>
       <div className="flex items-center justify-end mb-2">
@@ -85,10 +96,18 @@ const WarehouseTable: React.FC<WarehouseTableProps> = ({ warehouses, onCreate, o
                       <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold bg-red-100 text-red-700 border border-red-300 shadow">Inactif</span>
                     )}
                   </TableCell>
-                  <TableCell className="flex gap-2" style={fontSizeStyle}>
-                    <Button size="sm" variant="outline" onClick={() => onConsult(wh)} title="Consulter"><Eye className="h-4 w-4" /></Button>
-                    <Button size="sm" variant="outline" onClick={() => onEdit(wh)} title="Modifier"><Pencil className="h-4 w-4" /></Button>
-                    <Button size="sm" variant="destructive" onClick={() => onDelete(wh)} title="Supprimer"><Trash2 className="h-4 w-4" /></Button>
+                  <TableCell style={fontSizeStyle}>
+                    <div className="flex gap-1" style={fontSizeStyle}>
+                      <Button size="sm" variant="outline" className={`p-0 ${iconSize} min-w-0`} onClick={() => onConsult(wh)} title="Consulter">
+                        <Eye className={`${iconSize} min-w-0`} />
+                      </Button>
+                      <Button size="sm" variant="outline" className={`p-0 ${iconSize} min-w-0`} onClick={() => onEdit(wh)} title="Modifier">
+                        <Pencil className={`${iconSize} min-w-0`} />
+                      </Button>
+                      <Button size="sm" variant="outline" className={`p-0 ${iconSize} min-w-0 text-red-600 hover:text-red-700`} onClick={() => onDelete(wh)} title="Supprimer">
+                        <Trash2 className={`${iconSize} min-w-0`} />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))

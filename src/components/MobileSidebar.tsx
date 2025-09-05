@@ -8,7 +8,8 @@ import {
   User,
   MapPin,
   Home,
-  X
+  X,
+  Package
 } from 'lucide-react';
 
 interface MobileSidebarProps {
@@ -35,6 +36,7 @@ const MobileSidebar = ({ isOpen, onClose, activeTab, onTabChange, userRole }: Mo
         return [
           ...commonItems,
           { id: 'declarations', label: 'Déclarations', icon: FileText },
+          { id: 'entrepots', label: 'Entrepôts', icon: Package },
           { id: 'chauffeurs', label: 'Chauffeurs', icon: User },
           { id: 'tracage', label: 'Traçage', icon: MapPin }
         ];

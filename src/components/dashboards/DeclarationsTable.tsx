@@ -238,7 +238,7 @@ const DeclarationsTable = ({
                       <Button 
                         size="sm" 
                         variant="outline"
-                        className={`p-0 ${iconSize}`}
+                        className={`p-0 ${iconSize} text-red-600 hover:text-red-700`}
                         onClick={() => onDeleteDeclaration(declaration.id)}
                       >
                         <Trash2 className={`${iconSize} min-w-0`} />

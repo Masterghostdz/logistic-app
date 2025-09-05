@@ -11,6 +11,7 @@ interface CreateMarkersOptions {
   onWarehouseClick?: (warehouse: Warehouse) => void;
   onChauffeurClick?: (chauffeur: Chauffeur) => void;
   isMobile?: boolean;
+  highlightedWarehouseId?: string | null;
 }
 
 // Cache pour éviter la recréation des marqueurs
@@ -28,7 +29,8 @@ export const createMarkers = ({
   t,
   onWarehouseClick,
   onChauffeurClick,
-  isMobile = false
+  isMobile = false,
+  highlightedWarehouseId
 }: CreateMarkersOptions): L.Marker[] => {
   const markers: L.Marker[] = [];
   const currentMarkerIds = new Set<string>();
@@ -52,10 +54,58 @@ export const createMarkers = ({
     currentMarkerIds.add(markerId);
     
     let marker = markerCache.get(markerId);
-    
+    // Icône animée si highlighted
+    let iconToUse = warehouseIconToUse;
+    if (highlightedWarehouseId && warehouse.id === highlightedWarehouseId) {
+      iconToUse = L.divIcon({
+        html: `<div style="position:relative;display:flex;align-items:center;justify-content:center;width:${isMobile ? 56 : 49}px;height:${isMobile ? 56 : 49}px;">
+          <span class='warehouse-glow'></span>
+          <svg width="${isMobile ? 44 : 38}" height="${isMobile ? 44 : 38}" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" style="z-index:2;">
+            <polygon class="warehouse-polygon-anim" points="24,8 8,22 12,22 12,36 36,36 36,22 40,22" fill="#2563eb"/>
+            <rect x="18" y="28" width="6" height="8" rx="1.5" fill="white" fill-opacity="0"/>
+            <rect x="26" y="28" width="4" height="4" rx="1" fill="white" fill-opacity="0"/>
+            <rect x="18" y="24" width="4" height="4" rx="1" fill="white" fill-opacity="0"/>
+          </svg>
+          <style>
+          .warehouse-glow {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            width: ${isMobile ? 60 : 54}px;
+            height: ${isMobile ? 60 : 54}px;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            background: radial-gradient(circle, #2563eb 0%, #60a5fa 60%, #dbeafe 100%);
+            filter: blur(2px);
+            opacity: 0;
+            z-index: 1;
+            animation: warehouse-glow-blink 1.2s infinite;
+          }
+          .warehouse-polygon-anim {
+            animation: warehouse-polygon-blink 1.2s infinite;
+          }
+          @keyframes warehouse-glow-blink {
+            0% { opacity: 0; filter: blur(2px); }
+            40% { opacity: 0; filter: blur(2px); }
+            50% { opacity: 0.7; filter: blur(10px); }
+            100% { opacity: 0.7; filter: blur(10px); }
+          }
+          @keyframes warehouse-polygon-blink {
+            0% { fill: #2563eb; }
+            40% { fill: #2563eb; }
+            50% { fill: #e0edfa; }
+            100% { fill: #e0edfa; }
+          }
+          </style>
+        </div>`,
+        className: 'custom-div-icon',
+        iconSize: [isMobile ? 56 : 49, isMobile ? 56 : 49],
+        iconAnchor: [isMobile ? 28 : 24.5, isMobile ? 28 : 24.5]
+      });
+    }
     if (!marker) {
       marker = L.marker([warehouse.coordinates.lat, warehouse.coordinates.lng], {
-        icon: warehouseIconToUse
+        icon: iconToUse
       });
 
       const googleMapsUrl = createGoogleMapsLink(
@@ -95,6 +145,8 @@ export const createMarkers = ({
 
       // Cache the marker
       markerCache.set(markerId, marker);
+    } else {
+      marker.setIcon(iconToUse);
     }
 
     // Only add to map if not already added

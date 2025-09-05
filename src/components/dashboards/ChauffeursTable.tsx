@@ -26,6 +26,17 @@ const ChauffeursTable = ({ chauffeurs, onEditChauffeur, onDeleteChauffeur, fontS
   const zoom = zoomLevels[localFontSize];
   const fontSizeStyle = { fontSize: `${Math.round(14 * zoom)}px` };
   const rowHeight = `h-[${Math.round(40 * zoom)}px]`;
+  // iconSize dynamique comme dans DeclarationsTable
+  const baseIcon = 18;
+  const zoomLevelsGlobal = {
+    '50': 0.5,
+    '60': 0.6,
+    '80': 0.8,
+    '90': 0.9,
+    '100': 1.0
+  };
+  const zoomGlobal = zoomLevelsGlobal[String(localFontSize)] ?? 1.0;
+  const iconSize = `h-[${Math.round(baseIcon * zoomGlobal)}px] w-[${Math.round(baseIcon * zoomGlobal)}px]`;
   return (
     <Card>
       <CardContent className="p-0">
@@ -105,18 +116,20 @@ const ChauffeursTable = ({ chauffeurs, onEditChauffeur, onDeleteChauffeur, fontS
                     <Button 
                       size="sm" 
                       variant="outline"
-                      className="h-7 w-7 p-0"
+                      className={`p-0 ${iconSize} min-w-0`}
                       onClick={() => onEditChauffeur(chauffeur)}
+                      title="Modifier"
                     >
-                      <Edit className="h-4 w-4" />
+                      <Edit className={`${iconSize} min-w-0`} />
                     </Button>
                     <Button 
                       size="sm" 
-                      variant="destructive"
-                      className="h-7 w-7 p-0"
+                      variant="outline"
+                      className={`p-0 ${iconSize} min-w-0 text-red-600 hover:text-red-700`}
                       onClick={() => onDeleteChauffeur(chauffeur.id)}
+                      title="Supprimer"
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 className={`${iconSize} min-w-0`} />
                     </Button>
                   </div>
                 </TableCell>

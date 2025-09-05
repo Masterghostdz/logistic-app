@@ -36,6 +36,14 @@ const PlanificateurSidebar = ({ activeTab, onTabChange }: PlanificateurSidebarPr
           <FileText className="h-[22px] w-[22px]" />
         </button>
         <button
+          aria-label="Entrepôts"
+          onClick={() => onTabChange('entrepots')}
+          className={`rounded-full p-2 transition-all ${activeTab === 'entrepots' ? 'bg-blue-600 text-white shadow-lg scale-110' : 'bg-gray-100 text-gray-600'} flex items-center justify-center h-10 w-10`}
+        >
+          {/* Icone d'entrepot (warehouse) Lucide: Package */}
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-[22px] w-[22px]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><rect x="3" y="7" width="18" height="13" rx="2" strokeWidth="2" /><path d="M3 7l9-4 9 4" strokeWidth="2" /></svg>
+        </button>
+        <button
           aria-label="Chauffeurs"
           onClick={() => onTabChange('chauffeurs')}
           className={`rounded-full p-2 transition-all ${activeTab === 'chauffeurs' ? 'bg-blue-600 text-white shadow-lg scale-110' : 'bg-gray-100 text-gray-600'} flex items-center justify-center h-10 w-10`}

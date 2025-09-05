@@ -7,6 +7,11 @@ import { Warehouse } from '../../types';
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogFooter, AlertDialogCancel, AlertDialogAction, AlertDialogDescription } from '../ui/alert-dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
+import { Label } from '../ui/label';
+import { Input } from '../ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { Textarea } from '../ui/textarea';
+import PhoneNumbersField from '../PhoneNumbersField';
 import { toast } from 'sonner';
 import { Plus } from 'lucide-react';
 import { Declaration, Chauffeur } from '../../types';
@@ -25,6 +30,7 @@ import CreateChauffeurDialog from './CreateChauffeurDialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
 
 const PlanificateurDashboard = () => {
+  const { companies } = useSharedData();
   // Consultation (read-only) and modification (edit) states
   const [editingDeclaration, setEditingDeclaration] = useState<Declaration | null>(null);
   // Utilise le mode d'affichage global depuis les settings
@@ -138,30 +144,37 @@ const PlanificateurDashboard = () => {
   const [showCreateWarehouse, setShowCreateWarehouse] = useState(false);
   const [newWarehouse, setNewWarehouse] = useState({
     name: '',
+    companyId: '',
     companyName: '',
     phone: [],
     address: '',
+    status: 'active',
+    lat: '',
+    lng: '',
   });
 
   const handleCreateWarehouse = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newWarehouse.name || !newWarehouse.companyName || !newWarehouse.address) return;
-    setWarehouses(prev => [
-      ...prev,
-      {
-        id: Date.now().toString(),
-        name: newWarehouse.name,
-        companyId: '',
-        companyName: newWarehouse.companyName,
-        phone: newWarehouse.phone,
-        address: newWarehouse.address,
-        isActive: true,
-        createdAt: new Date().toISOString(),
-        coordinates: { lat: 0, lng: 0 },
-      } as Warehouse
-    ]);
-    setNewWarehouse({ name: '', companyName: '', phone: [], address: '' });
-    setShowCreateWarehouse(false);
+    if (!newWarehouse.name || !newWarehouse.companyId || !newWarehouse.companyName || !newWarehouse.address) return;
+    const warehouse = {
+      name: newWarehouse.name,
+      companyId: newWarehouse.companyId,
+      companyName: newWarehouse.companyName,
+      phone: newWarehouse.phone,
+      address: newWarehouse.address,
+      isActive: newWarehouse.status === 'active',
+      createdAt: new Date().toISOString(),
+      coordinates: {
+        lat: parseFloat(newWarehouse.lat),
+        lng: parseFloat(newWarehouse.lng)
+      },
+    };
+    import('../../services/warehouseService').then(mod => {
+      mod.addWarehouse(warehouse).then(() => {
+  setNewWarehouse({ name: '', companyId: '', companyName: '', phone: [], address: '', status: 'active', lat: '', lng: '' });
+        setShowCreateWarehouse(false);
+      });
+    });
   };
 
   const stats = useMemo(() => {
@@ -234,16 +247,11 @@ const PlanificateurDashboard = () => {
         isActive: true,
         createdAt: new Date().toISOString()
       };
-      const { addChauffeur, updateChauffeur } = await import('../../services/chauffeurService');
-      const docRef = await addChauffeur(chauffeur);
-      // Ajoute l'id Firestore dans le document pour cohérence
-      await updateChauffeur(docRef.id, { id: docRef.id });
-      // Ajout dans la collection users pour l'authentification
+      // Ajout dans la collection users pour l'authentification (en premier)
       const { addUser } = await import('../../services/userService');
-      // Génération salt et hash du mot de passe
       const salt = Math.random().toString(36).substring(2, 15);
       const passwordHash = await (await import('../../utils/authUtils')).simpleHash(newChauffeur.password, salt);
-      await addUser({
+      const userDoc = await addUser({
         username: newChauffeur.username,
         salt,
         passwordHash,
@@ -251,6 +259,22 @@ const PlanificateurDashboard = () => {
         firstName,
         lastName,
         fullName: `${newChauffeur.employeeType === 'externe' ? 'TP - ' : ''}${newChauffeur.fullName}`,
+        phone: newChauffeur.phone,
+        vehicleType: newChauffeur.vehicleType,
+        employeeType: newChauffeur.employeeType,
+        isActive: true,
+        createdAt: new Date().toISOString()
+      });
+      // Ajout dans la collection chauffeurs avec le même ID que dans users
+      const { setDoc, doc: firestoreDoc } = await import('firebase/firestore');
+      const { db } = await import('../../services/firebaseClient');
+      await setDoc(firestoreDoc(db, 'chauffeurs', userDoc.id), {
+        id: userDoc.id,
+        firstName,
+        lastName,
+        fullName: `${newChauffeur.employeeType === 'externe' ? 'TP - ' : ''}${newChauffeur.fullName}`,
+        username: newChauffeur.username,
+        password: passwordHash,
         phone: newChauffeur.phone,
         vehicleType: newChauffeur.vehicleType,
         employeeType: newChauffeur.employeeType,
@@ -376,18 +400,17 @@ const PlanificateurDashboard = () => {
       return (
         <div className="bg-background min-h-screen flex flex-col">
           <Header onProfileClick={handleProfileClick} />
-          <div className="flex justify-end items-center px-6 pt-2">
+          <div className="flex h-[calc(100vh-4rem)] relative">
+            {/* Badge en ligne en haut à droite, desktop uniquement */}
             <span
-              className="flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700 shadow"
+              className="absolute top-0 right-0 m-2 z-10 flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700 shadow"
               title={isOnline ? 'Connecté au cloud' : 'Hors ligne'}
             >
               <span className="inline-block w-2 h-2 rounded-full bg-green-500"></span>
               En ligne
             </span>
-          </div>
-          <div className="flex h-[calc(100vh-4rem)]">
             <PlanificateurSidebar activeTab={activeTab} onTabChange={setActiveTab} />
-            <div className="flex-1 p-6">
+            <div className="flex-1 p-6 pt-16">
               <TracageSection />
             </div>
           </div>
@@ -397,6 +420,7 @@ const PlanificateurDashboard = () => {
       return (
         <div className="max-w-[430px] mx-auto bg-background min-h-screen flex flex-col">
           <Header onProfileClick={handleProfileClick} />
+          {/* Badge en ligne mobile : juste sous le header */}
           <div className="flex px-2 pt-3 mb-2">
             <span
               className="flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700 shadow"
@@ -462,275 +486,346 @@ const PlanificateurDashboard = () => {
     : filteredDeclarations;
 
   return (
-  <div className={viewMode === 'mobile' ? 'max-w-[430px] mx-auto bg-background min-h-screen flex flex-col' : 'bg-background min-h-screen flex flex-col'}>
+    <div className={viewMode === 'mobile' ? 'max-w-[430px] mx-auto bg-background min-h-screen flex flex-col' : 'bg-background min-h-screen flex flex-col'}>
       <Header onProfileClick={handleProfileClick} />
-  <div className={viewMode === 'mobile' ? 'flex px-2 pt-3 mb-2' : 'flex justify-end items-center px-6 pt-2'}>
-        <span
-          className="flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700 shadow"
-          title={isOnline ? 'Connecté au cloud' : 'Hors ligne'}
-        >
-          <span className="inline-block w-2 h-2 rounded-full bg-green-500"></span>
-          En ligne
-        </span>
-      </div>
-  <div className={viewMode === 'mobile' ? 'flex flex-col h-auto gap-2' : 'flex h-[calc(100vh-4rem)]'}>
+      {/* Badge en ligne : mobile sous le header, desktop à droite de la sidebar, sous le header */}
+      {viewMode === 'mobile' ? (
+        <div className="flex px-2 pt-3 mb-2">
+          <span
+            className="flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700 shadow"
+            title={isOnline ? 'Connecté au cloud' : 'Hors ligne'}
+          >
+            <span className="inline-block w-2 h-2 rounded-full bg-green-500"></span>
+            En ligne
+          </span>
+        </div>
+      ) : null}
+      <div className={viewMode === 'mobile' ? 'flex flex-col h-auto gap-2' : 'flex flex-row h-[calc(100vh-4rem)] relative'}>
         <PlanificateurSidebar activeTab={activeTab} onTabChange={setActiveTab} />
-        <div className={viewMode === 'mobile' ? 'flex-1 px-2 pb-4 pt-2 overflow-auto' : 'flex-1 p-6 overflow-auto'}>
-          {activeTab === 'dashboard' && (
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <h1 className="text-xl font-bold">Tableau de bord - Planificateur</h1>
-              </div>
-              <PlanificateurStats stats={stats} onEnAttenteClick={handleEnAttenteClick} />
-              <Card>
-                <CardHeader>
-                  <CardTitle>Déclarations récentes</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {declarations.slice(0, 5).map((declaration) => (
-                      <div key={declaration.id} className="flex items-center justify-between p-3 border rounded-lg cursor-pointer hover:bg-accent" onClick={() => setConsultingDeclaration(declaration)}>
-                        <div>
-                          <div className="font-medium">{declaration.number}</div>
-                          <div className="text-sm text-gray-500">
-                            {declaration.chauffeurName} - {declaration.month}/{declaration.year}
+        <div className="relative flex-1">
+          {/* Badge En ligne en haut à droite du bloc content, sous le header, à l'intérieur mais hors de la sidebar (desktop uniquement) */}
+          {viewMode !== 'mobile' && (
+            <span
+              className="absolute top-0 right-0 m-2 z-10 flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700 shadow"
+              title={isOnline ? 'Connecté au cloud' : 'Hors ligne'}
+            >
+              <span className="inline-block w-2 h-2 rounded-full bg-green-500"></span>
+              En ligne
+            </span>
+          )}
+          <div className="p-6 pt-16 overflow-auto">
+            {/* ...existing code for tabs and content... */}
+            {activeTab === 'dashboard' && (
+              <div className="space-y-6">
+                <div className="mb-4">
+                  <h1 className="text-2xl font-bold text-foreground text-left">Tableau de bord - Planificateur</h1>
+                </div>
+                {/* Toujours aligné à gauche pour En Attente, Déclarations récentes prend toute la largeur */}
+                <div className="w-full max-w-xl">
+                  <PlanificateurStats stats={stats} onEnAttenteClick={handleEnAttenteClick} />
+                </div>
+                <Card className="w-full">
+                  <CardHeader>
+                    <CardTitle>Déclarations récentes</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {declarations.slice(0, 5).map((declaration) => (
+                        <div key={declaration.id} className="flex items-center justify-between p-3 border rounded-lg cursor-pointer hover:bg-accent" onClick={() => setConsultingDeclaration(declaration)}>
+                          <div>
+                            <div className="font-medium">{declaration.number}</div>
+                            <div className="text-sm text-gray-500">
+                              {declaration.chauffeurName} - {declaration.month}/{declaration.year}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {/* Status badge logic moved to DeclarationsTable */}
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          {/* Status badge logic moved to DeclarationsTable */}
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+            {activeTab === 'declarations' && (
+              <div className="space-y-6">
+                {/* Titre au-dessus de la barre de recherche */}
+                <div className="flex items-center justify-between mb-2">
+                  <h2 className="text-2xl font-bold">Gestion des Déclarations</h2>
+                </div>
+                <SearchAndFilter
+                  searchValue={searchValue}
+                  onSearchChange={setSearchValue}
+                  filterValue={filterStatus}
+                  onFilterChange={setFilterStatus}
+                  filterOptions={[{ value: 'en_cours', label: 'En Attente' }, { value: 'valide', label: 'Validé' }, { value: 'refuse', label: 'Refusé' }]}
+                  searchPlaceholder="Rechercher par numéro ou chauffeur..."
+                  filterPlaceholder="Filtrer par état..."
+                  searchColumn={searchColumn}
+                  onSearchColumnChange={value => setSearchColumn(value as 'number' | 'chauffeurName')}
+                  searchColumnOptions={[
+                    { value: 'number', label: 'Numéro' },
+                    { value: 'chauffeurName', label: 'Chauffeur' }
+                  ]}
+                />
+                {/* Table responsive pour mobile, zoom intégré dans le CardHeader */}
+                <div className={(viewMode === 'mobile' ? 'overflow-x-auto ' : '') + 'mb-2'}>
+                  <Card>
+                    <CardContent className="p-0">
+                      <DeclarationsTable
+                        declarations={filteredDeclarations}
+                        onValidateDeclaration={handleValidateDeclaration}
+                        onRejectDeclaration={handleRejectDeclaration}
+                        onEditDeclaration={setEditingDeclaration}
+                        onDeleteDeclaration={handleDeleteDeclaration}
+                        selectedDeclarationIds={selectedDeclarationIds}
+                        setSelectedDeclarationIds={setSelectedDeclarationIds}
+                        mobile={viewMode === 'mobile'}
+                        fontSize={tableFontSize as '40' | '60' | '80' | '100'}
+                        onConsultDeclaration={setConsultingDeclaration}
+                      />
+                    </CardContent>
+                  </Card>
+                </div>
+                <AlertDialog open={exportDialogOpen} onOpenChange={setExportDialogOpen}>
+                  <AlertDialogContent style={{ zIndex: 10000, position: 'fixed', maxWidth: 480 }}>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Exporter les déclarations</AlertDialogTitle>
+                    </AlertDialogHeader>
+                    <AlertDialogDescription id="export-dialog-desc">
+                      Sélectionnez les attributs et le format pour exporter les déclarations.
+                    </AlertDialogDescription>
+                    <div className="space-y-4">
+                      {/* ...existing code... */}
+                    </div>
+                    <AlertDialogFooter>
+                      {/* ...existing code... */}
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+            )}
+            {activeTab === 'entrepots' && (
+              <div className="space-y-6">
+                <div className="flex items-center justify-between mb-2">
+                  <h2 className="text-2xl font-bold">Gestion des Entrepôts</h2>
+                  <Dialog open={showCreateWarehouse} onOpenChange={setShowCreateWarehouse}>
+                    <DialogTrigger asChild>
+                      <Button className="flex items-center gap-2" onClick={() => setShowCreateWarehouse(true)}>
+                        <Plus className="h-4 w-4" />
+                        Ajouter
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Créer un nouvel entrepôt</DialogTitle>
+                      </DialogHeader>
+                      <form onSubmit={handleCreateWarehouse} className="space-y-4">
+                        <div>
+                          <Label htmlFor="warehouseName">Nom de l'entrepôt *</Label>
+                          <Input
+                            id="warehouseName"
+                            value={newWarehouse.name}
+                            onChange={e => setNewWarehouse({ ...newWarehouse, name: e.target.value })}
+                            required
+                          />
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          )}
-          {activeTab === 'declarations' && (
-            <div className="space-y-6">
-              {/* Titre au-dessus de la barre de recherche */}
-              <div className="flex items-center justify-between mb-2">
-                <h2 className="text-2xl font-bold">Gestion des Déclarations</h2>
-              </div>
-              <SearchAndFilter
-                searchValue={searchValue}
-                onSearchChange={setSearchValue}
-                filterValue={filterStatus}
-                onFilterChange={setFilterStatus}
-                filterOptions={[{ value: 'en_cours', label: 'En Attente' }, { value: 'valide', label: 'Validé' }, { value: 'refuse', label: 'Refusé' }]}
-                searchPlaceholder="Rechercher par numéro ou chauffeur..."
-                filterPlaceholder="Filtrer par état..."
-                searchColumn={searchColumn}
-                onSearchColumnChange={value => setSearchColumn(value as 'number' | 'chauffeurName')}
-                searchColumnOptions={[
-                  { value: 'number', label: 'Numéro' },
-                  { value: 'chauffeurName', label: 'Chauffeur' }
-                ]}
-              />
-              {/* Table responsive pour mobile, zoom intégré dans le CardHeader */}
-              <div className={viewMode === 'mobile' ? 'overflow-x-auto' : ''}>
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-end">
-                    {/* Titre supprimé, header vide ou controls externes */}
-                  </CardHeader>
-                  <CardContent>
-                    <DeclarationsTable
-                      declarations={filteredDeclarations}
-                      onValidateDeclaration={handleValidateDeclaration}
-                      onRejectDeclaration={handleRejectDeclaration}
-                      onEditDeclaration={setEditingDeclaration}
-                      onDeleteDeclaration={handleDeleteDeclaration}
-                      selectedDeclarationIds={selectedDeclarationIds}
-                      setSelectedDeclarationIds={setSelectedDeclarationIds}
-                      mobile={viewMode === 'mobile'}
-                      fontSize={tableFontSize as '40' | '60' | '80' | '100'}
-                      onConsultDeclaration={setConsultingDeclaration}
-                    />
-                  </CardContent>
-                </Card>
-              </div>
-              <AlertDialog open={exportDialogOpen} onOpenChange={setExportDialogOpen}>
-                <AlertDialogContent style={{ zIndex: 10000, position: 'fixed', maxWidth: 480 }}>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Exporter les déclarations</AlertDialogTitle>
-                  </AlertDialogHeader>
-                  <AlertDialogDescription id="export-dialog-desc">
-                    Sélectionnez les attributs et le format pour exporter les déclarations.
-                  </AlertDialogDescription>
-                  <div className="space-y-4">
-                    {/* ...existing code... */}
-                  </div>
-                  <AlertDialogFooter>
-                    {/* ...existing code... */}
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </div>
-          )}
-          {activeTab === 'entrepots' && (
-            <div className="space-y-6">
-              <div className="flex items-center justify-between mb-2">
-                <h2 className="text-2xl font-bold">Gestion des Entrepôts</h2>
-                <Dialog open={showCreateWarehouse} onOpenChange={setShowCreateWarehouse}>
-                  <DialogTrigger asChild>
-                    <Button className="flex items-center gap-2" onClick={() => setShowCreateWarehouse(true)}>
-                      <Plus className="h-4 w-4" />
-                      Ajouter un entrepôt
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Créer un nouvel entrepôt</DialogTitle>
-                    </DialogHeader>
-                    <form onSubmit={handleCreateWarehouse} className="space-y-4">
-                      <input
-                        className="border rounded px-2 py-1 w-full"
-                        placeholder="Nom de l'entrepôt"
-                        value={newWarehouse.name}
-                        onChange={e => setNewWarehouse({ ...newWarehouse, name: e.target.value })}
-                        required
+                        <div>
+                          <Label htmlFor="companyId">Société *</Label>
+                          <Select
+                            value={newWarehouse.companyId || ''}
+                            onValueChange={value => {
+                              const selected = companies.find(c => c.id === value);
+                              setNewWarehouse({ ...newWarehouse, companyId: value, companyName: selected ? selected.name : '' });
+                            }}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Sélectionner une société" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {companies.map(company => (
+                                <SelectItem key={company.id} value={company.id}>{company.name}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <PhoneNumbersField
+                            phones={newWarehouse.phone}
+                            onChange={phones => setNewWarehouse({ ...newWarehouse, phone: phones })}
+                            label="Numéros de téléphone"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="warehouseStatus">Statut *</Label>
+                          <Select
+                            value={newWarehouse.status || 'active'}
+                            onValueChange={value => setNewWarehouse({ ...newWarehouse, status: value })}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Sélectionner le statut" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="active">Actif</SelectItem>
+                              <SelectItem value="inactive">Inactif</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label htmlFor="warehouseAddress">Adresse *</Label>
+                          <Textarea
+                            id="warehouseAddress"
+                            value={newWarehouse.address}
+                            onChange={e => setNewWarehouse({ ...newWarehouse, address: e.target.value })}
+                            rows={3}
+                            required
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="warehouseLat">Latitude *</Label>
+                          <Input
+                            id="warehouseLat"
+                            type="number"
+                            step="any"
+                            value={newWarehouse.lat}
+                            onChange={e => setNewWarehouse({ ...newWarehouse, lat: e.target.value })}
+                            required
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="warehouseLng">Longitude *</Label>
+                          <Input
+                            id="warehouseLng"
+                            type="number"
+                            step="any"
+                            value={newWarehouse.lng}
+                            onChange={e => setNewWarehouse({ ...newWarehouse, lng: e.target.value })}
+                            required
+                          />
+                        </div>
+                        <div className="flex gap-2 pt-4">
+                          <Button type="submit" className="flex-1">Créer</Button>
+                          <Button type="button" variant="outline" onClick={() => setShowCreateWarehouse(false)}>
+                            Annuler
+                          </Button>
+                        </div>
+                      </form>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+                {/* Barre de recherche/filtre pour entrepôts hors du Card/table */}
+                <SearchAndFilter
+                  searchValue={searchValue}
+                  onSearchChange={setSearchValue}
+                  filterValue={filterStatus}
+                  onFilterChange={setFilterStatus}
+                  filterOptions={[{ value: 'actif', label: 'Actif' }, { value: 'inactif', label: 'Inactif' }]}
+                  searchPlaceholder="Rechercher par nom ou ville..."
+                  filterPlaceholder="Filtrer..."
+                  searchColumn={searchColumn}
+                  onSearchColumnChange={value => setSearchColumn(value as 'number' | 'chauffeurName')}
+                  searchColumnOptions={[
+                    { value: 'number', label: 'Numéro' },
+                    { value: 'warehouseName', label: 'Entrepôt' }
+                  ]}
+                />
+                <div className={(viewMode === 'mobile' ? 'overflow-x-auto ' : '') + 'mb-2'}>
+                  <Card>
+                    <CardContent className="p-0">
+                      <WarehouseTable
+                        warehouses={warehouses}
+                        onCreate={() => {/* TODO: ouvrir modal de création d'entrepôt */}}
+                        onEdit={wh => {/* TODO: ouvrir modal d'édition */}}
+                        onDelete={wh => {/* TODO: ouvrir confirmation suppression */}}
+                        onConsult={wh => {/* TODO: ouvrir consultation */}}
+                        fontSize={tableFontSize as '40' | '50' | '60' | '70' | '80' | '90' | '100'}
                       />
-                      <input
-                        className="border rounded px-2 py-1 w-full"
-                        placeholder="Société"
-                        value={newWarehouse.companyName}
-                        onChange={e => setNewWarehouse({ ...newWarehouse, companyName: e.target.value })}
-                        required
-                      />
-                      <input
-                        className="border rounded px-2 py-1 w-full"
-                        placeholder="Téléphone"
-                        value={newWarehouse.phone[0] || ''}
-                        onChange={e => setNewWarehouse({ ...newWarehouse, phone: [e.target.value] })}
-                      />
-                      <input
-                        className="border rounded px-2 py-1 w-full"
-                        placeholder="Adresse"
-                        value={newWarehouse.address}
-                        onChange={e => setNewWarehouse({ ...newWarehouse, address: e.target.value })}
-                        required
-                      />
-                      <div className="flex gap-2 pt-2">
-                        <Button type="submit" className="flex-1">Créer</Button>
-                        <Button type="button" variant="outline" onClick={() => setShowCreateWarehouse(false)}>Annuler</Button>
-                      </div>
-                    </form>
-                  </DialogContent>
-                </Dialog>
+                    </CardContent>
+                  </Card>
+                </div>
               </div>
-              {/* Barre de recherche/filtre pour entrepôts hors du Card/table */}
-              <SearchAndFilter
-                searchValue={searchValue}
-                onSearchChange={setSearchValue}
-                filterValue={filterStatus}
-                onFilterChange={setFilterStatus}
-                filterOptions={[{ value: 'actif', label: 'Actif' }, { value: 'inactif', label: 'Inactif' }]}
-                searchPlaceholder="Rechercher par nom ou ville..."
-                filterPlaceholder="Filtrer..."
-                searchColumn={searchColumn}
-                onSearchColumnChange={value => setSearchColumn(value as 'number' | 'chauffeurName')}
-                searchColumnOptions={[
-                  { value: 'number', label: 'Numéro' },
-                  { value: 'warehouseName', label: 'Entrepôt' }
-                ]}
-              />
-              <div className={viewMode === 'mobile' ? 'overflow-x-auto' : ''}>
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-end">
-                    {/* Zoom et titre supprimés, header vide ou controls externes */}
-                  </CardHeader>
-                  <CardContent>
-                    <WarehouseTable
-                      warehouses={warehouses}
-                      onCreate={() => {/* TODO: ouvrir modal de création d'entrepôt */}}
-                      onEdit={wh => {/* TODO: ouvrir modal d'édition */}}
-                      onDelete={wh => {/* TODO: ouvrir confirmation suppression */}}
-                      onConsult={wh => {/* TODO: ouvrir consultation */}}
-                      fontSize={tableFontSize as '40' | '50' | '60' | '70' | '80' | '90' | '100'}
-                    />
-                  </CardContent>
-                </Card>
+            )}
+            {activeTab === 'chauffeurs' && (
+              <div className="space-y-6">
+                <div className="flex items-center justify-between mb-2">
+                  <h2 className="text-2xl font-bold">Gestion des Chauffeurs</h2>
+                  <Button 
+                    className="flex items-center gap-2"
+                    onClick={() => setShowCreateChauffeur(true)}
+                  >
+                    <Plus className="h-4 w-4" />
+                    Ajouter
+                  </Button>
+                </div>
+                {/* Barre de recherche/filtre pour chauffeurs */}
+                <SearchAndFilter
+                  searchValue={searchValue}
+                  onSearchChange={setSearchValue}
+                  filterValue={filterStatus}
+                  onFilterChange={setFilterStatus}
+                  filterOptions={[{ value: 'actif', label: 'Actif' }, { value: 'inactif', label: 'Inactif' }]}
+                  searchPlaceholder="Rechercher par nom ou téléphone..."
+                  filterPlaceholder="Filtrer..."
+                  searchColumn={searchColumn}
+                  onSearchColumnChange={value => setSearchColumn(value as 'number' | 'chauffeurName')}
+                  searchColumnOptions={[
+                    { value: 'number', label: 'Numéro' },
+                    { value: 'chauffeurName', label: 'Chauffeur' }
+                  ]}
+                />
+                <ChauffeursTable
+                  chauffeurs={chauffeurs}
+                  onEditChauffeur={handleEditChauffeur}
+                  onDeleteChauffeur={handleDeleteChauffeur}
+                  fontSize={tableFontSize as '40' | '50' | '60' | '70' | '80' | '90' | '100'}
+                />
+                <AlertDialog open={!!chauffeurToDelete} onOpenChange={open => { if (!open) setChauffeurToDelete(null); }}>
+                  <AlertDialogContent style={{ zIndex: 10000, position: 'fixed' }} aria-describedby="delete-chauffeur-desc">
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
+                    </AlertDialogHeader>
+                    <AlertDialogDescription id="delete-chauffeur-desc">
+                      Êtes-vous sûr de vouloir supprimer ce chauffeur ? Cette action est irréversible.
+                    </AlertDialogDescription>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel onClick={() => setChauffeurToDelete(null)}>Annuler</AlertDialogCancel>
+                      <AlertDialogAction onClick={confirmDeleteChauffeur}>Supprimer</AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
-            </div>
-          )}
-          {activeTab === 'chauffeurs' && (
-            <div className="space-y-6">
-              <div className="flex items-center justify-between mb-2">
-                <h2 className="text-2xl font-bold">Gestion des Chauffeurs</h2>
-                <Button 
-                  className="flex items-center gap-2"
-                  onClick={() => setShowCreateChauffeur(true)}
-                >
-                  <Plus className="h-4 w-4" />
-                  Ajouter un chauffeur
-                </Button>
-              </div>
-              {/* Barre de recherche/filtre pour chauffeurs */}
-              <SearchAndFilter
-                searchValue={searchValue}
-                onSearchChange={setSearchValue}
-                filterValue={filterStatus}
-                onFilterChange={setFilterStatus}
-                filterOptions={[{ value: 'actif', label: 'Actif' }, { value: 'inactif', label: 'Inactif' }]}
-                searchPlaceholder="Rechercher par nom ou téléphone..."
-                filterPlaceholder="Filtrer..."
-                searchColumn={searchColumn}
-                onSearchColumnChange={value => setSearchColumn(value as 'number' | 'chauffeurName')}
-                searchColumnOptions={[
-                  { value: 'number', label: 'Numéro' },
-                  { value: 'chauffeurName', label: 'Chauffeur' }
-                ]}
-              />
-              <ChauffeursTable
-                chauffeurs={chauffeurs}
-                onEditChauffeur={handleEditChauffeur}
-                onDeleteChauffeur={handleDeleteChauffeur}
-                fontSize={tableFontSize as '40' | '50' | '60' | '70' | '80' | '90' | '100'}
-              />
-              <AlertDialog open={!!chauffeurToDelete} onOpenChange={open => { if (!open) setChauffeurToDelete(null); }}>
-                <AlertDialogContent style={{ zIndex: 10000, position: 'fixed' }} aria-describedby="delete-chauffeur-desc">
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
-                  </AlertDialogHeader>
-                  <AlertDialogDescription id="delete-chauffeur-desc">
-                    Êtes-vous sûr de vouloir supprimer ce chauffeur ? Cette action est irréversible.
-                  </AlertDialogDescription>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel onClick={() => setChauffeurToDelete(null)}>Annuler</AlertDialogCancel>
-                    <AlertDialogAction onClick={confirmDeleteChauffeur}>Supprimer</AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </div>
-          )}
-          <CreateChauffeurDialog
-            isOpen={showCreateChauffeur}
-            onClose={() => {
-              setShowCreateChauffeur(false);
-              setEditingChauffeur(null);
-            }}
-            onSubmit={handleCreateChauffeur}
-            editingChauffeur={editingChauffeur}
-            newChauffeur={newChauffeur}
-            setNewChauffeur={setNewChauffeur}
-          />
-          {consultingDeclaration ? (
-            <EditDeclarationDialog
-              declaration={consultingDeclaration}
-              isOpen={!!consultingDeclaration}
-              onClose={() => setConsultingDeclaration(null)}
-              readOnly={true}
-              onSave={() => {}}
+            )}
+            {/* ...dialogs and modals... */}
+            <CreateChauffeurDialog
+              isOpen={showCreateChauffeur}
+              onClose={() => {
+                setShowCreateChauffeur(false);
+                setEditingChauffeur(null);
+              }}
+              onSubmit={handleCreateChauffeur}
+              editingChauffeur={editingChauffeur}
+              newChauffeur={newChauffeur}
+              setNewChauffeur={setNewChauffeur}
             />
-          ) : null}
-          {editingDeclaration && !consultingDeclaration ? (
-            <EditDeclarationDialog
-              declaration={editingDeclaration}
-              isOpen={!!editingDeclaration}
-              onClose={() => setEditingDeclaration(null)}
-              onSave={handleUpdateDeclaration}
-            />
-          ) : null}
+            {consultingDeclaration ? (
+              <EditDeclarationDialog
+                declaration={consultingDeclaration}
+                isOpen={!!consultingDeclaration}
+                onClose={() => setConsultingDeclaration(null)}
+                readOnly={true}
+                onSave={() => {}}
+              />
+            ) : null}
+            {editingDeclaration && !consultingDeclaration ? (
+              <EditDeclarationDialog
+                declaration={editingDeclaration}
+                isOpen={!!editingDeclaration}
+                onClose={() => setEditingDeclaration(null)}
+                onSave={handleUpdateDeclaration}
+              />
+            ) : null}
+          </div>
         </div>
       </div>
     </div>

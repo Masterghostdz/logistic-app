@@ -9,12 +9,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Badge } from './ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { toast } from 'sonner';
-import { MapPin, Truck, Plus, Building2 } from 'lucide-react';
+import { MapPin, Truck, Plus, Building2, Layers } from 'lucide-react';
 import OpenStreetMap from './OpenStreetMap';
 import MobileOpenStreetMap from './MobileOpenStreetMap';
+import html2canvas from 'html2canvas';
 import { Warehouse, Chauffeur } from '../types';
 import { useSharedData } from '../contexts/SharedDataContext';
 import { useIsMobile } from '../hooks/use-mobile';
+
 import PhoneNumbersField from './PhoneNumbersField';
 
 const TracageSection = () => {
@@ -24,6 +26,94 @@ const TracageSection = () => {
   const [showSettings, setShowSettings] = useState(false);
   const [showMapModal, setShowMapModal] = useState(false);
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
+  // Sélecteur de calque (fond de carte)
+  const [layerType, setLayerType] = useState('osm');
+  const [showLayerMenu, setShowLayerMenu] = useState(false);
+
+  // Affiche un toast si le calque Traffic est sélectionné (non adapté dark/clair)
+  useEffect(() => {
+    if (layerType === 'traffic') {
+      toast.warning('Le mode Traffic peut ne pas être adapté au thème clair/sombre de l\'application.');
+    }
+  }, [layerType]);
+  const mapRef = React.useRef<any>(null);
+  const [mapInstance, setMapInstance] = useState<any>(null);
+  const [userPosition, setUserPosition] = useState<{lat: number, lng: number} | null>(null);
+  const [gpsActive, setGpsActive] = useState(false);
+  // Fonctions pour les boutons overlay
+  const handleZoomIn = () => {
+    if (mapInstance && mapInstance.setZoom) {
+      mapInstance.setZoom(mapInstance.getZoom() + 1);
+    }
+  };
+  const handleZoomOut = () => {
+    if (mapInstance && mapInstance.setZoom) {
+      mapInstance.setZoom(mapInstance.getZoom() - 1);
+    }
+  };
+  const handleCenterMap = () => {
+    if (mapInstance && warehouses.length > 0) {
+      // Centre sur l'Algérie ou sur le premier entrepôt
+      const wh = focusedWarehouseId ? warehouses.find(w => w.id === focusedWarehouseId) : warehouses[0];
+      if (wh) {
+        mapInstance.setView([wh.coordinates.lat, wh.coordinates.lng], 13, { animate: true });
+      } else {
+        mapInstance.setView([28.0339, 1.6596], 6, { animate: true });
+      }
+    }
+  };
+  const handleGps = () => {
+    if (gpsActive) {
+      setUserPosition(null);
+      setGpsActive(false);
+    } else {
+      if (!mapInstance) {
+        toast.error("La carte n'est pas encore prête.");
+        return;
+      }
+      if (!navigator.geolocation) {
+        toast.error("La géolocalisation n'est pas supportée par ce navigateur.");
+        return;
+      }
+      // Désélectionne tout entrepôt
+      setFocusedWarehouseId(null);
+      navigator.geolocation.getCurrentPosition(
+        pos => {
+          setUserPosition({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+          setGpsActive(true);
+          mapInstance.setView([pos.coords.latitude, pos.coords.longitude], 15, { animate: true });
+        },
+        err => {
+          if (err.code === 1) {
+            toast.error("Accès à la position refusé. Veuillez autoriser la géolocalisation.");
+          } else if (err.code === 2) {
+            toast.error("Position non disponible.");
+          } else {
+            toast.error("Erreur lors de la récupération de la position.");
+          }
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      );
+    }
+  };
+  const handleScreenshot = async () => {
+    if (mapRef.current) {
+      // Utilise html2canvas avec options pour forcer le rendu complet
+      const canvas = await html2canvas(mapRef.current, {
+        useCORS: true,
+        backgroundColor: null,
+        logging: false,
+        allowTaint: true,
+        windowWidth: mapRef.current.scrollWidth,
+        windowHeight: mapRef.current.scrollHeight
+      });
+      const link = document.createElement('a');
+      link.download = 'carte-logigrine.png';
+      link.href = canvas.toDataURL();
+      link.click();
+    }
+  };
+  const [focusedWarehouseId, setFocusedWarehouseId] = useState<string | null>(null);
   useEffect(() => {
     import('../services/warehouseService').then(mod => {
       mod.getWarehouses().then((data: Warehouse[]) => setWarehouses(data));
@@ -109,6 +199,12 @@ const TracageSection = () => {
     });
   };
 
+  // Detect if used in Chauffeur desktop context (by checking window.location)
+  const isChauffeurDesktop = typeof window !== 'undefined' && !isMobile && window.location.pathname.includes('chauffeur');
+  const mapHeight = isMobile ? 350 : isChauffeurDesktop ? 320 : 700;
+  const mapMaxWidth = isMobile ? '100%' : isChauffeurDesktop ? '600px' : '100%';
+  const listMaxWidth = isMobile ? '100%' : isChauffeurDesktop ? '600px' : '100%';
+  // Plus de titre ici, il sera géré par le parent (ChauffeurDashboard)
   return (
     <>
       {/* Modal/Dialog pour le formulaire de création d'entrepôt */}
@@ -127,47 +223,181 @@ const TracageSection = () => {
           </div>
         </div>
       )}
-      {/* Section Tracage classique, vertical pour tous les modes */}
-      <div className="space-y-6 p-2 md:p-6 max-w-full overflow-hidden flex flex-col justify-center">
-        <div className="w-full">
-          <h2 className="text-xl md:text-2xl font-bold mb-4">Liste des Entrepôts</h2>
-          <div className="flex flex-row justify-between items-center mb-4">
-            {/* Bouton de création d'entrepôt supprimé */}
+
+      {/* Nouvelle disposition : Carte immersive en haut, liste en dessous */}
+  <div className="space-y-6 p-0 md:p-0 max-w-full overflow-hidden flex flex-col justify-center">
+        {/* Titre section toujours visible au-dessus de la carte */}
+        <div className="w-full flex flex-col">
+
+          <div
+            className="relative w-full rounded-xl shadow-2xl bg-transparent"
+            style={{ height: mapHeight, minHeight: mapHeight, maxWidth: mapMaxWidth, background: 'transparent', padding: 0, margin: 0 }}
+          >
+            {/* Overlay boutons flottants */}
+            <div className="absolute z-20 top-4 left-4 flex flex-col gap-2">
+              <div className="bg-white/80 dark:bg-muted/80 rounded-lg shadow p-1 flex flex-row gap-1">
+                <Button size="icon" variant="ghost" className="text-primary" title="Mode liste" onClick={() => toast.info('Mode liste à implémenter')}> 
+                  <span className="material-icons">list_alt</span>
+                </Button>
+                <Button size="icon" variant="ghost" className="text-dark dark:text-white" title="Mode carte" onClick={() => toast.info('Mode carte à implémenter')}> 
+                  <span className="material-icons">map</span>
+                </Button>
+                <Button size="icon" variant="ghost" className="text-dark dark:text-white" title="Zoom avant" onClick={handleZoomIn}>
+                  <span className="material-icons">zoom_in</span>
+                </Button>
+                <Button size="icon" variant="ghost" className="text-dark dark:text-white" title="Zoom arrière" onClick={handleZoomOut}>
+                  <span className="material-icons">zoom_out</span>
+                </Button>
+              </div>
+            </div>
+            {/* Bouton calques à l'intérieur de la map, fixé en bas droite */}
+            <div className="pointer-events-none absolute z-30 bottom-6 right-6 w-auto h-auto">
+              <div className="relative flex flex-col items-end">
+                <div className="pointer-events-auto">
+                  <Button size="icon" variant="ghost" className="bg-white/90 dark:bg-muted/90 text-dark dark:text-white rounded-full shadow-lg border border-gray-300" title="Changer le fond de carte" onClick={() => setShowLayerMenu(v => !v)}>
+                    <Layers className="w-6 h-6" />
+                  </Button>
+                </div>
+                {showLayerMenu && (
+                  <div className="pointer-events-auto mb-2 bg-white dark:bg-muted rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-2 flex flex-col gap-1 animate-fade-in z-40" style={{position:'absolute', bottom:'100%', right:0}}>
+                    <button className={`px-3 py-1 rounded text-left text-xs ${layerType==='osm' ? 'bg-primary/10 font-bold' : ''}`} onClick={() => { setLayerType('osm'); setShowLayerMenu(false); }}>OpenStreetMap</button>
+                    <button className={`px-3 py-1 rounded text-left text-xs ${layerType==='google' ? 'bg-primary/10 font-bold' : ''}`} onClick={() => { setLayerType('google'); setShowLayerMenu(false); }}>Google Maps</button>
+                    <button className={`px-3 py-1 rounded text-left text-xs ${layerType==='satellite' ? 'bg-primary/10 font-bold' : ''}`} onClick={() => { setLayerType('satellite'); setShowLayerMenu(false); }}>Satellite</button>
+                    <button className={`px-3 py-1 rounded text-left text-xs ${layerType==='hybrid' ? 'bg-primary/10 font-bold' : ''}`} onClick={() => { setLayerType('hybrid'); setShowLayerMenu(false); }}>Hybride</button>
+                    <button className={`px-3 py-1 rounded text-left text-xs ${layerType==='terrain' ? 'bg-primary/10 font-bold' : ''}`} onClick={() => { setLayerType('terrain'); setShowLayerMenu(false); }}>Terrain</button>
+                    <button className={`px-3 py-1 rounded text-left text-xs ${layerType==='traffic' ? 'bg-primary/10 font-bold' : ''}`} onClick={() => { setLayerType('traffic'); setShowLayerMenu(false); }}>Traffic</button>
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="absolute z-20 top-4 right-4 flex flex-col gap-2">
+              <Button size="icon" variant="ghost" className="bg-white/80 dark:bg-muted/80 text-dark dark:text-white rounded-lg shadow" title="Paramètres" onClick={() => setShowSettings(true)}>
+                <span className="material-icons">settings</span>
+              </Button>
+              <Button size="icon" variant="ghost" className="bg-white/80 dark:bg-muted/80 text-dark dark:text-white rounded-lg shadow" title="Centrer la carte" onClick={handleCenterMap}>
+                <span className="material-icons">center_focus_strong</span>
+              </Button>
+              <Button
+                size="icon"
+                variant={gpsActive ? "default" : "ghost"}
+                className={`bg-white/80 dark:bg-muted/80 text-dark dark:text-white rounded-lg shadow ${gpsActive ? "ring-2 ring-primary" : ""}`}
+                title="GPS"
+                onClick={handleGps}
+              >
+                <span className="material-icons">gps_fixed</span>
+              </Button>
+              <Button size="icon" variant="ghost" className="bg-white/80 dark:bg-muted/80 text-dark dark:text-white rounded-lg shadow" title="Screenshot" onClick={handleScreenshot}>
+                <span className="material-icons">photo_camera</span>
+              </Button>
+            </div>
+            <div
+              ref={mapRef}
+              className="vue2leaflet-map leaflet-container leaflet-touch leaflet-fade-anim leaflet-grab leaflet-touch-drag leaflet-touch-zoom w-full h-full rounded-xl overflow-hidden"
+              style={{ height: '100%', width: '100%', minHeight: 700, position: 'relative', zIndex: 10, background: 'transparent', padding: 0, margin: 0 }}
+            >
+              {/* Carte */}
+              {isMobile ? (
+                <MobileOpenStreetMap
+                  warehouses={warehouses}
+                  focusedWarehouseId={focusedWarehouseId}
+                  setMapInstance={setMapInstance}
+                  layerType={layerType}
+                  height="350px"
+                  userPosition={userPosition}
+                  highlightedWarehouseId={focusedWarehouseId}
+                />
+              ) : (
+                <OpenStreetMap
+                  warehouses={warehouses}
+                  focusedWarehouseId={focusedWarehouseId}
+                  setMapInstance={setMapInstance}
+                  layerType={layerType}
+                  height="100%"
+                  userPosition={userPosition}
+                  highlightedWarehouseId={focusedWarehouseId}
+                />
+              )}
+              {/* Bouton calques à l'intérieur de la carte, fixé en bas droite */}
+              <div className="pointer-events-none absolute z-30 bottom-6 right-6 w-auto h-auto">
+                <div className="relative flex flex-col items-end">
+                  <div className="pointer-events-auto">
+                    <Button size="icon" variant="ghost" className="bg-white/90 dark:bg-muted/90 text-dark dark:text-white rounded-full shadow-lg border border-gray-300" title="Changer le fond de carte" onClick={() => setShowLayerMenu(v => !v)}>
+                      <Layers className="w-6 h-6" />
+                    </Button>
+                  </div>
+                  {showLayerMenu && (
+                    <div className="pointer-events-auto mb-2 bg-white dark:bg-muted rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-2 flex flex-col gap-1 animate-fade-in z-40" style={{position:'absolute', bottom:'100%', right:0}}>
+                      <button className={`px-3 py-1 rounded text-left text-xs ${layerType==='osm' ? 'bg-primary/10 font-bold' : ''}`} onClick={() => { setLayerType('osm'); setShowLayerMenu(false); }}>OpenStreetMap</button>
+                      <button className={`px-3 py-1 rounded text-left text-xs ${layerType==='google' ? 'bg-primary/10 font-bold' : ''}`} onClick={() => { setLayerType('google'); setShowLayerMenu(false); }}>Google Maps</button>
+                      <button className={`px-3 py-1 rounded text-left text-xs ${layerType==='satellite' ? 'bg-primary/10 font-bold' : ''}`} onClick={() => { setLayerType('satellite'); setShowLayerMenu(false); }}>Satellite</button>
+                      <button className={`px-3 py-1 rounded text-left text-xs ${layerType==='hybrid' ? 'bg-primary/10 font-bold' : ''}`} onClick={() => { setLayerType('hybrid'); setShowLayerMenu(false); }}>Hybride</button>
+                      <button className={`px-3 py-1 rounded text-left text-xs ${layerType==='terrain' ? 'bg-primary/10 font-bold' : ''}`} onClick={() => { setLayerType('terrain'); setShowLayerMenu(false); }}>Terrain</button>
+                      <button className={`px-3 py-1 rounded text-left text-xs ${layerType==='traffic' ? 'bg-primary/10 font-bold' : ''}`} onClick={() => { setLayerType('traffic'); setShowLayerMenu(false); }}>Traffic</button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
+          {/* Bouton accès liste entrepôts en mobile, superposé en bas-centre de la map */}
+          {isMobile && (
+            <div className="absolute left-1/2 bottom-4 -translate-x-1/2 z-30 flex justify-center w-full pointer-events-none">
+              <div className="w-11/12 md:w-1/2 pointer-events-auto flex justify-center">
+                <Button
+                  variant="default"
+                  size="lg"
+                  className="w-full rounded-full shadow-lg text-base font-semibold"
+                  onClick={() => {
+                    const listSection = document.getElementById('entrepot-list-section');
+                    if (listSection) {
+                      listSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                  }}
+                >
+                  <span className="material-icons align-middle mr-2">list_alt</span>
+                  Voir la liste des entrepôts
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Liste des entrepôts en dessous */}
+  <div id="entrepot-list-section" className="w-full mt-8" style={{ maxWidth: listMaxWidth }}>
+          <h2 className="text-xl md:text-2xl font-bold mb-4">Liste des Entrepôts</h2>
           <div className="space-y-2">
             {warehouses.length === 0 ? (
               <div className="text-muted-foreground text-sm">Aucun entrepôt synchronisé.</div>
             ) : (
-              warehouses.map(wh => (
-                <Card key={wh.id} className="p-2">
-                  <div className="flex flex-col gap-1">
-                    <div className="flex items-center justify-between font-semibold whitespace-nowrap">
-                      <span className="text-[10px] md:text-xs">{wh.name}</span>
-                      {wh.isActive ? (
-                        <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold bg-green-100 text-green-700 border border-green-300 shadow">Actif</span>
-                      ) : (
-                        <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold bg-red-100 text-red-700 border border-red-300 shadow">Inactif</span>
-                      )}
-                    </div>
-                    <div className="flex gap-2 text-xs items-center mt-1">
-                      <Badge className="bg-blue-100 text-blue-800 border-blue-200 px-2 py-1 rounded">{wh.companyName}</Badge>
-                    </div>
-                    {wh.phone && wh.phone.length > 0 && (
-                      <div className="text-xs font-mono text-gray-700 mt-1">{wh.phone[0]}</div>
-                    )}
+              warehouses.map(wh => {
+                const isSelected = focusedWarehouseId === wh.id;
+                return (
+                  <div key={wh.id} className="my-2 mx-1">
+                    <Card
+                      className={`p-2 cursor-pointer transition-all ${isSelected ? 'ring-2 ring-primary' : ''}`}
+                      onClick={() => setFocusedWarehouseId(isSelected ? null : wh.id)}
+                      title={isSelected ? "Désélectionner" : "Afficher sur la carte"}
+                    >
+                      <div className="flex flex-col gap-1">
+                        <div className="flex items-center justify-between whitespace-nowrap">
+                          <span className="text-xs md:text-sm font-extrabold bg-blue-100 text-blue-500 rounded px-2 py-0.5 border border-blue-200 shadow-sm leading-tight">{wh.name}</span>
+                          {wh.isActive ? (
+                            <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold bg-green-100 text-green-700 border border-green-300 shadow">Actif</span>
+                          ) : (
+                            <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold bg-red-100 text-red-700 border border-red-300 shadow">Inactif</span>
+                          )}
+                        </div>
+                        <div className="flex gap-2 text-xs items-center mt-1">
+                          <span className="font-bold text-gray-900 dark:text-white">{wh.companyName}</span>
+                        </div>
+                        {wh.phone && wh.phone.length > 0 && (
+                          <div className="text-xs font-mono text-gray-700 mt-1">{wh.phone[0]}</div>
+                        )}
+                      </div>
+                    </Card>
                   </div>
-                </Card>
-              ))
-            )}
-          </div>
-        </div>
-        <div className="w-full mt-8">
-          <h2 className="text-xl md:text-2xl font-bold mb-4">Carte des Entrepôts</h2>
-          <div className="w-full h-[400px] mb-6">
-            {isMobile ? (
-              <MobileOpenStreetMap warehouses={warehouses} />
-            ) : (
-              <OpenStreetMap warehouses={warehouses} />
+                );
+              })
             )}
           </div>
         </div>

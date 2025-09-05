@@ -63,5 +63,11 @@ export const updateUser = async (id, updates) => {
 
 export const deleteUser = async (id) => {
   const userRef = doc(db, 'users', id);
-  return await deleteDoc(userRef);
+  const chauffeurRef = doc(db, 'chauffeurs', id);
+  try {
+    await deleteDoc(userRef);
+  } catch (e) {}
+  try {
+    await deleteDoc(chauffeurRef);
+  } catch (e) {}
 };
