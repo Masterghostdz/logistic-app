@@ -45,7 +45,7 @@ export interface Declaration {
   deliveryFees?: number;
   notes?: string;
   photos?: string[];
-  status: 'en_cours' | 'valide' | 'refuse';
+  status: 'en_cours' | 'valide' | 'refuse' | 'en_route' | 'en_panne';
   createdAt: string;
   validatedAt?: string;
   validatedBy?: string;

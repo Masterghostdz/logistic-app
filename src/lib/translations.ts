@@ -31,26 +31,53 @@ export const translations = {
     },
     // Dashboard
     dashboard: {
-      overview: "Vue d'ensemble",
-      statistics: "Statistiques",
-      recentActivity: "Activité récente",
-      totalDeclarations: "Total déclarations",
-      pendingValidations: "Validations en attente",
-      totalChauffeurs: "Total chauffeurs",
-      totalWarehouses: "Total entrepôts",
-      monthlyStats: "Statistiques mensuelles",
-      chauffeurTitle: "Tableau de bord - Chauffeur",
-      newDeclaration: "Nouvelle Déclaration",
-      createNewDeclaration: "Créer une nouvelle déclaration",
-      myDeclarationsSummary: "Résumé de mes Déclarations",
-      myDeclarations: "Mes Déclarations",
-      warehouseMap: "Carte des Entrepôts",
-      pending: "En Attente",
-      validated: "Validées",
-      refused: "Refusées"
+  overview: "Vue d'ensemble",
+  statistics: "Statistiques",
+  recentActivity: "Activité récente",
+  totalDeclarations: "Total déclarations",
+  pendingValidations: "Validations en attente",
+  totalChauffeurs: "Total chauffeurs",
+  totalWarehouses: "Total entrepôts",
+  monthlyStats: "Statistiques mensuelles",
+  chauffeurTitle: "Tableau de bord - Chauffeur",
+  newDeclaration: "Nouvelle Déclaration",
+  createNewDeclaration: "Créer une nouvelle déclaration",
+  myDeclarationsSummary: "Résumé de mes Déclarations",
+  myDeclarations: "Mes Déclarations",
+  warehouseMap: "Carte des Entrepôts",
+  onRoad: "En Route",
+  pending: "En Attente",
+  validated: "Validées",
+  refused: "Refusées"
     },
     // Declarations
     declarations: {
+      confirmCancelTitle: "Confirmer l’annulation",
+      confirmCancelDescription: "Êtes-vous sûr de vouloir annuler la création de cette déclaration ? Les informations saisies seront perdues.",
+      confirmDeleteTitle: "Confirmer la suppression",
+      confirmDeleteDescription: "Êtes-vous sûr de vouloir supprimer cette déclaration ? Cette action est irréversible.",
+  en: {
+    // ...existing code...
+    declarations: {
+      confirmCancelTitle: "Confirm cancellation",
+      confirmCancelDescription: "Are you sure you want to cancel the creation of this declaration? Entered information will be lost.",
+      confirmDeleteTitle: "Confirm deletion",
+      confirmDeleteDescription: "Are you sure you want to delete this declaration? This action is irreversible.",
+      // ...existing keys...
+    },
+    // ...existing code...
+  },
+  ar: {
+    // ...existing code...
+    declarations: {
+      confirmCancelTitle: "تأكيد الإلغاء",
+      confirmCancelDescription: "هل أنت متأكد أنك تريد إلغاء إنشاء هذا التصريح؟ سيتم فقدان المعلومات المدخلة.",
+      confirmDeleteTitle: "تأكيد الحذف",
+      confirmDeleteDescription: "هل أنت متأكد أنك تريد حذف هذا التصريح؟ هذا الإجراء لا يمكن التراجع عنه.",
+      // ...existing keys...
+    },
+    // ...existing code...
+  },
       title: "Mes déclarations",
       new: "Nouvelle déclaration",
       number: "Numéro",
@@ -65,6 +92,7 @@ export const translations = {
       delete: "Supprimer",
       validate: "Valider",
       refuse: "Refuser",
+    declare: "Déclarer",
       pending: "En cours",
       validated: "Validé",
       refused: "Refusé",
@@ -125,14 +153,16 @@ export const translations = {
     },
     // Forms
     forms: {
-      save: "Enregistrer",
-      cancel: "Annuler",
-      edit: "Modifier",
-      delete: "Supprimer",
-      confirm: "Confirmer",
-      required: "Champ requis",
-      success: "Opération réussie",
-      error: "Erreur lors de l'opération"
+  save: "Enregistrer",
+  cancel: "Annuler",
+  edit: "Modifier",
+  delete: "Supprimer",
+  confirm: "Confirmer",
+  yes: "Oui",
+  no: "Non",
+  required: "Champ requis",
+  success: "Opération réussie",
+  error: "Erreur lors de l'opération"
     },
     // Settings
     settings: {
@@ -192,23 +222,24 @@ export const translations = {
     },
     // Dashboard
     dashboard: {
-      overview: "Overview",
-      statistics: "Statistics",
-      recentActivity: "Recent Activity",
-      totalDeclarations: "Total Declarations",
-      pendingValidations: "Pending Validations",
-      totalChauffeurs: "Total Drivers",
-      totalWarehouses: "Total Warehouses",
-      monthlyStats: "Monthly Statistics",
-      chauffeurTitle: "Driver Dashboard",
-      newDeclaration: "New Declaration",
-      createNewDeclaration: "Create a new declaration",
-      myDeclarationsSummary: "My Declarations Summary",
-      myDeclarations: "My Declarations",
-      warehouseMap: "Warehouse Map",
-      pending: "Pending",
-      validated: "Validated",
-      refused: "Refused"
+  overview: "Overview",
+  statistics: "Statistics",
+  recentActivity: "Recent Activity",
+  totalDeclarations: "Total Declarations",
+  pendingValidations: "Pending Validations",
+  totalChauffeurs: "Total Drivers",
+  totalWarehouses: "Total Warehouses",
+  monthlyStats: "Monthly Statistics",
+  chauffeurTitle: "Driver Dashboard",
+  newDeclaration: "New Declaration",
+  createNewDeclaration: "Create a new declaration",
+  myDeclarationsSummary: "My Declarations Summary",
+  myDeclarations: "My Declarations",
+  warehouseMap: "Warehouse Map",
+  onRoad: "On Road",
+  pending: "Pending",
+  validated: "Validated",
+  refused: "Refused"
     },
     // Declarations
     declarations: {
@@ -226,6 +257,7 @@ export const translations = {
       delete: "Delete",
       validate: "Validate",
       refuse: "Refuse",
+    declare: "Declare",
       pending: "Pending",
       validated: "Validated",
       refused: "Refused",
@@ -286,14 +318,16 @@ export const translations = {
     },
     // Forms
     forms: {
-      save: "Save",
-      cancel: "Cancel",
-      edit: "Edit",
-      delete: "Delete",
-      confirm: "Confirm",
-      required: "Required field",
-      success: "Operation successful",
-      error: "Operation error"
+  save: "Save",
+  cancel: "Cancel",
+  edit: "Edit",
+  delete: "Delete",
+  confirm: "Confirm",
+  yes: "Yes",
+  no: "No",
+  required: "Required field",
+  success: "Operation successful",
+  error: "Operation error"
     },
     // Settings
     settings: {
@@ -351,23 +385,24 @@ export const translations = {
     },
     // Dashboard
     dashboard: {
-      overview: "نظرة عامة",
-      statistics: "الإحصائيات",
-      recentActivity: "النشاط الأخير",
-      totalDeclarations: "إجمالي التصريحات",
-      pendingValidations: "التحقق المعلق",
-      totalChauffeurs: "إجمالي السائقين",
-      totalWarehouses: "إجمالي المستودعات",
-      monthlyStats: "الإحصائيات الشهرية",
-      chauffeurTitle: "لوحة تحكم السائق",
-      newDeclaration: "تصريح جديد",
-      createNewDeclaration: "إنشاء تصريح جديد",
-      myDeclarationsSummary: "ملخص تصريحاتي",
-      myDeclarations: "تصريحاتي",
-      warehouseMap: "خريطة المستودعات",
-      pending: "معلق",
-      validated: "مؤكد",
-      refused: "مرفوض"
+  overview: "نظرة عامة",
+  statistics: "الإحصائيات",
+  recentActivity: "النشاط الأخير",
+  totalDeclarations: "إجمالي التصريحات",
+  pendingValidations: "التحقق المعلق",
+  totalChauffeurs: "إجمالي السائقين",
+  totalWarehouses: "إجمالي المستودعات",
+  monthlyStats: "الإحصائيات الشهرية",
+  chauffeurTitle: "لوحة تحكم السائق",
+  newDeclaration: "تصريح جديد",
+  createNewDeclaration: "إنشاء تصريح جديد",
+  myDeclarationsSummary: "ملخص تصريحاتي",
+  myDeclarations: "تصريحاتي",
+  warehouseMap: "خريطة المستودعات",
+  onRoad: "في الطريق",
+  pending: "معلق",
+  validated: "مؤكد",
+  refused: "مرفوض"
     },
     // Declarations
     declarations: {
@@ -385,6 +420,7 @@ export const translations = {
       delete: "حذف",
       validate: "تأكيد",
       refuse: "رفض",
+    declare: "تصريح",
       pending: "معلق",
       validated: "مؤكد",
       refused: "مرفوض",
@@ -445,14 +481,16 @@ export const translations = {
     },
     // Forms
     forms: {
-      save: "حفظ",
-      cancel: "إلغاء",
-      edit: "تعديل",
-      delete: "حذف",
-      confirm: "تأكيد",
-      required: "حقل مطلوب",
-      success: "نجحت العملية",
-      error: "خطأ في العملية"
+  save: "حفظ",
+  cancel: "إلغاء",
+  edit: "تعديل",
+  delete: "حذف",
+  confirm: "تأكيد",
+  yes: "نعم",
+  no: "لا",
+  required: "حقل مطلوب",
+  success: "نجحت العملية",
+  error: "خطأ في العملية"
     },
     // Settings
     settings: {

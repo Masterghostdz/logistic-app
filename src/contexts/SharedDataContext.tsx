@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+
 import { Company, VehicleType, Declaration } from '../types';
+import * as declarationService from '../services/declarationService';
 
 interface SharedDataContextType {
   companies: Company[];
@@ -10,13 +12,13 @@ interface SharedDataContextType {
   setDeclarations: (declarations: Declaration[]) => void;
   addCompany: (company: Company) => void;
   addVehicleType: (vehicleType: VehicleType) => void;
-  addDeclaration: (declaration: Declaration) => void;
+  addDeclaration: (declaration: Declaration) => Promise<string | undefined>;
   updateCompany: (id: string, company: Company) => void;
   updateVehicleType: (id: string, vehicleType: VehicleType) => void;
-  updateDeclaration: (id: string, declaration: Declaration) => void;
+  updateDeclaration: (id: string, declaration: Declaration) => Promise<void>;
   deleteCompany: (id: string) => void;
   deleteVehicleType: (id: string) => void;
-  deleteDeclaration: (id: string) => void;
+  deleteDeclaration: (id: string) => Promise<void>;
 }
 
 const SharedDataContext = createContext<SharedDataContextType | undefined>(undefined);
@@ -96,7 +98,22 @@ export const SharedDataProvider: React.FC<SharedDataProviderProps> = ({ children
 
   const [vehicleTypes, setVehicleTypesState] = useState<VehicleType[]>(defaultVehicleTypes);
 
+
   const [declarations, setDeclarationsState] = useState<Declaration[]>(defaultDeclarations);
+
+  // Synchronisation Firestore pour les déclarations (temps réel)
+  useEffect(() => {
+    let unsubscribe: any;
+    const listen = async () => {
+      if (declarationService.listenDeclarations) {
+        unsubscribe = declarationService.listenDeclarations((cloudDeclarations: Declaration[]) => {
+          setDeclarationsState(cloudDeclarations);
+        });
+      }
+    };
+    listen();
+    return () => { if (unsubscribe) unsubscribe(); };
+  }, []);
 
   const setCompanies = (newCompanies: Company[]) => {
     setCompaniesState(newCompanies);
@@ -118,8 +135,17 @@ export const SharedDataProvider: React.FC<SharedDataProviderProps> = ({ children
     setVehicleTypesState(prev => [...prev, vehicleType]);
   };
 
-  const addDeclaration = (declaration: Declaration) => {
-    setDeclarationsState(prev => [...prev, declaration]);
+  const addDeclaration = async (declaration: Declaration) => {
+    // Ajout Firestore, puis retour de l'ID généré pour cohérence
+    try {
+      const docRef = await declarationService.addDeclaration(declaration);
+      // On ne modifie pas l'état local ici, la synchro temps réel s'en charge
+      return docRef.id;
+    } catch (error) {
+      console.error('Erreur lors de l\'ajout de la déclaration dans Firestore:', error);
+      // Optionnel: afficher une notification d'erreur
+      return undefined;
+    }
   };
 
   const updateCompany = (id: string, updatedCompany: Company) => {
@@ -130,8 +156,13 @@ export const SharedDataProvider: React.FC<SharedDataProviderProps> = ({ children
     setVehicleTypesState(prev => prev.map(vt => vt.id === id ? updatedVehicleType : vt));
   };
 
-  const updateDeclaration = (id: string, updatedDeclaration: Declaration) => {
-    setDeclarationsState(prev => prev.map(d => d.id === id ? updatedDeclaration : d));
+  const updateDeclaration = async (id: string, updatedDeclaration: Declaration) => {
+    try {
+      await declarationService.updateDeclaration(id, updatedDeclaration);
+      // L'état local sera mis à jour par la synchro temps réel
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour de la déclaration dans Firestore:', error);
+    }
   };
 
   const deleteCompany = (id: string) => {
@@ -142,8 +173,14 @@ export const SharedDataProvider: React.FC<SharedDataProviderProps> = ({ children
     setVehicleTypesState(prev => prev.filter(vt => vt.id !== id));
   };
 
-  const deleteDeclaration = (id: string) => {
-    setDeclarationsState(prev => prev.filter(d => d.id !== id));
+  const deleteDeclaration = async (id: string) => {
+    try {
+      await declarationService.deleteDeclaration(id);
+      setDeclarationsState(prev => prev.filter(d => d.id !== id));
+    } catch (error) {
+      console.error("Erreur lors de la suppression de la déclaration dans Firestore:", error);
+      // Optionnel: afficher une notification d'erreur
+    }
   };
 
   const value = {
