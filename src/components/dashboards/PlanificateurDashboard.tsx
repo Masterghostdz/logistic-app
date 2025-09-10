@@ -25,11 +25,16 @@ import EditDeclarationDialog from '../EditDeclarationDialog';
 import PlanificateurStats from './PlanificateurStats';
 import PlanificateurSidebar from './PlanificateurSidebar';
 import DeclarationsTable from './DeclarationsTable';
+import RefusalReasonDialog from '../RefusalReasonDialog';
 import ChauffeursTable from './ChauffeursTable';
 import CreateChauffeurDialog from './CreateChauffeurDialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
+import { useAuth } from '../../contexts/AuthContext';
+import { useTranslation } from '../../hooks/useTranslation';
 
 const PlanificateurDashboard = () => {
+  const { user } = useAuth();
+  const { t } = useTranslation();
   const { companies } = useSharedData();
   // Consultation (read-only) and modification (edit) states
   const [editingDeclaration, setEditingDeclaration] = useState<Declaration | null>(null);
@@ -53,21 +58,52 @@ const PlanificateurDashboard = () => {
     };
   }, []);
   // Online status global
-  // Fonction pour refuser une déclaration
-  const handleRejectDeclaration = async (id: string) => {
-    const declaration = declarations.find(d => d.id === id);
+  // Refusal reason dialog state
+  const [refusalDialogOpen, setRefusalDialogOpen] = useState(false);
+  const [refusalDeclarationId, setRefusalDeclarationId] = useState<string | null>(null);
+  const [pendingRefusalReason, setPendingRefusalReason] = useState<any>(null);
+
+  // Open dialog when rejecting
+  const handleRejectDeclaration = (id: string) => {
+    setRefusalDeclarationId(id);
+    setRefusalDialogOpen(true);
+  };
+
+  // Confirm refusal with reason
+  const handleConfirmRefusal = async (reason) => {
+    if (!refusalDeclarationId) return;
+    const declaration = declarations.find(d => d.id === refusalDeclarationId);
     if (declaration) {
+      const traceEntry = {
+        userId: user?.id || '',
+        userName: user?.fullName || user?.username || '',
+        action: t('traceability.refused').replace('{reason}', reason.label || reason.id), // Ex: "Déclaration refusée (Motif)"
+        date: new Date().toISOString(),
+      };
       const updatedDeclaration = {
         ...declaration,
         status: 'refuse' as const,
+        refusalReason: reason.id,
         validatedAt: new Date().toISOString(),
-        validatedBy: 'Planificateur'
+        validatedBy: 'Planificateur',
+        traceability: [...(declaration.traceability || []), traceEntry],
       };
       const { updateDeclaration } = await import('../../services/declarationService');
-      await updateDeclaration(id, updatedDeclaration);
+      await updateDeclaration(refusalDeclarationId, updatedDeclaration);
       toast.success('Déclaration refusée');
     }
+    setRefusalDialogOpen(false);
+    setRefusalDeclarationId(null);
+    setPendingRefusalReason(null);
   };
+        {/* ...existing code... */}
+        {/* Refusal Reason Dialog toujours monté à la fin du return principal */}
+        <RefusalReasonDialog
+          isOpen={refusalDialogOpen}
+          onClose={() => { setRefusalDialogOpen(false); setRefusalDeclarationId(null); }}
+          onConfirm={handleConfirmRefusal}
+          language={settings.language || 'fr'}
+        />
   const { isOnline } = useOnlineStatus();
 
   // Synchronisation temps réel des déclarations depuis Firestore
@@ -87,7 +123,8 @@ const PlanificateurDashboard = () => {
   }, []);
   const [activeTab, setActiveTab] = useState('dashboard');
 
-  const [chauffeurs, setChauffeurs] = useState<Chauffeur[]>([]);
+  // Ajout d'un statut enrichi pour chaque chauffeur (en_panne si au moins une déclaration en panne)
+  const [chauffeurs, setChauffeurs] = useState<(Chauffeur & { isEnPanne?: boolean })[]>([]);
 
   // Synchronisation temps réel des chauffeurs depuis Firestore
   useEffect(() => {
@@ -95,20 +132,28 @@ const PlanificateurDashboard = () => {
     const listen = async () => {
       const { listenChauffeurs } = await import('../../services/chauffeurService');
       unsubscribe = listenChauffeurs((cloudChauffeurs) => {
-        // Correction du mapping pour garantir la structure et les valeurs par défaut
-        const mappedChauffeurs = cloudChauffeurs.map((c: any) => ({
-          id: c.id,
-          firstName: c.firstName || '',
-          lastName: c.lastName || '',
-          fullName: c.fullName || '',
-          username: c.username || '',
-          password: c.password || '',
-          phone: Array.isArray(c.phone) ? c.phone : (c.phone ? [c.phone] : []),
-          vehicleType: c.vehicleType || '',
-          employeeType: (c.employeeType === 'externe' ? 'externe' : 'interne') as 'interne' | 'externe',
-          isActive: typeof c.isActive === 'boolean' ? c.isActive : true,
-          createdAt: c.createdAt || '',
-        }));
+        // Pour chaque chauffeur, on vérifie s'il a une déclaration en panne
+        const mappedChauffeurs = cloudChauffeurs.map((c: any) => {
+          const chauffeurId = c.id;
+          // On cherche une déclaration en panne pour ce chauffeur
+          const hasPanne = declarations.some(
+            (d) => d.chauffeurName && d.chauffeurName.toLowerCase().includes((c.fullName || '').toLowerCase()) && d.status === 'en_panne'
+          );
+          return {
+            id: c.id,
+            firstName: c.firstName || '',
+            lastName: c.lastName || '',
+            fullName: c.fullName || '',
+            username: c.username || '',
+            password: c.password || '',
+            phone: Array.isArray(c.phone) ? c.phone : (c.phone ? [c.phone] : []),
+            vehicleType: c.vehicleType || '',
+            employeeType: (c.employeeType === 'externe' ? 'externe' : 'interne') as 'interne' | 'externe',
+            isActive: typeof c.isActive === 'boolean' ? c.isActive : true,
+            createdAt: c.createdAt || '',
+            isEnPanne: hasPanne,
+          };
+        });
         setChauffeurs(mappedChauffeurs);
       });
     };
@@ -179,9 +224,12 @@ const PlanificateurDashboard = () => {
 
   const stats = useMemo(() => {
     const enAttente = declarations.filter(d => d.status === 'en_cours').length;
-    
+    const enRoute = declarations.filter(d => d.status === 'en_route').length;
+    const enPanne = declarations.filter(d => d.status === 'en_panne').length;
     return {
-      enAttente
+      enAttente,
+      enRoute,
+      enPanne
     };
   }, [declarations]);
 
@@ -311,11 +359,18 @@ const PlanificateurDashboard = () => {
   const handleValidateDeclaration = async (id: string) => {
     const declaration = declarations.find(d => d.id === id);
     if (declaration) {
+      const traceEntry = {
+        userId: user?.id || '',
+        userName: user?.fullName || user?.username || '',
+        action: t('traceability.validated'), // Ex: "Déclaration validée"
+        date: new Date().toISOString(),
+      };
       const updatedDeclaration = {
         ...declaration,
         status: 'valide' as const,
         validatedAt: new Date().toISOString(),
-        validatedBy: 'Planificateur'
+        validatedBy: 'Planificateur',
+        traceability: [...(declaration.traceability || []), traceEntry],
       };
       const { updateDeclaration } = await import('../../services/declarationService');
     await updateDeclaration(id, updatedDeclaration);
@@ -337,16 +392,37 @@ const PlanificateurDashboard = () => {
   };
 
   const handleUpdateDeclaration = async (updatedDeclaration: Declaration) => {
+    const traceEntry = {
+      userId: user?.id || '',
+      userName: user?.fullName || user?.username || '',
+      action: t('traceability.modified'), // Ex: "Déclaration modifiée"
+      date: new Date().toISOString(),
+    };
+    const newDeclaration = {
+      ...updatedDeclaration,
+      traceability: [...(updatedDeclaration.traceability || []), traceEntry],
+    };
     const { updateDeclaration } = await import('../../services/declarationService');
-    await updateDeclaration(updatedDeclaration.id, updatedDeclaration);
+    await updateDeclaration(updatedDeclaration.id, newDeclaration);
     setEditingDeclaration(null);
     toast.success('Déclaration mise à jour');
   };
 
-  const handleDeleteDeclaration = async (id: string) => {
-    const { deleteDeclaration } = await import('../../services/declarationService');
-    await deleteDeclaration(id);
-    toast.success('Déclaration supprimée');
+  // Gestion suppression programme (déclaration) avec confirmation
+  const [declarationToDelete, setDeclarationToDelete] = useState<string | null>(null);
+  const handleDeleteDeclaration = (id: string) => {
+    setDeclarationToDelete(id);
+  };
+  const confirmDeleteDeclaration = async () => {
+    if (!declarationToDelete) return;
+    try {
+      const { deleteDeclaration } = await import('../../services/declarationService');
+      await deleteDeclaration(declarationToDelete);
+      toast.success('Déclaration supprimée');
+    } catch (err) {
+      toast.error('Erreur lors de la suppression');
+    }
+    setDeclarationToDelete(null);
   };
 
   const [chauffeurToDelete, setChauffeurToDelete] = useState<string | null>(null);
@@ -385,6 +461,11 @@ const PlanificateurDashboard = () => {
   };
 
   if (activeTab === 'profile') {
+    if (viewMode === 'mobile') {
+      // En mobile, header mobile natif du profil
+      return <ProfilePage onBack={() => setActiveTab('dashboard')} />;
+    }
+    // Desktop : Header global + contenu profil centré
     return (
       <div>
         <Header onProfileClick={handleProfileClick} />
@@ -522,7 +603,18 @@ const PlanificateurDashboard = () => {
                 </div>
                 {/* Toujours aligné à gauche pour En Attente, Déclarations récentes prend toute la largeur */}
                 <div className="w-full max-w-xl">
-                  <PlanificateurStats stats={stats} onEnAttenteClick={handleEnAttenteClick} />
+                  <PlanificateurStats
+                    stats={stats}
+                    onEnAttenteClick={handleEnAttenteClick}
+                    onEnRouteClick={() => {
+                      setFilterStatus('en_route');
+                      setActiveTab('declarations');
+                    }}
+                    onEnPanneClick={() => {
+                      setFilterStatus('en_panne');
+                      setActiveTab('declarations');
+                    }}
+                  />
                 </div>
                 <Card className="w-full">
                   <CardHeader>
@@ -559,7 +651,12 @@ const PlanificateurDashboard = () => {
                   onSearchChange={setSearchValue}
                   filterValue={filterStatus}
                   onFilterChange={setFilterStatus}
-                  filterOptions={[{ value: 'en_cours', label: 'En Attente' }, { value: 'valide', label: 'Validé' }, { value: 'refuse', label: 'Refusé' }]}
+                  filterOptions={[ 
+                    { value: 'en_route', label: 'En Route' },
+                    { value: 'en_cours', label: 'En Attente' },
+                    { value: 'valide', label: 'Validé' },
+                    { value: 'refuse', label: 'Refusé' }
+                  ]}
                   searchPlaceholder="Rechercher par numéro ou chauffeur..."
                   filterPlaceholder="Filtrer par état..."
                   searchColumn={searchColumn}
@@ -585,6 +682,21 @@ const PlanificateurDashboard = () => {
                         fontSize={tableFontSize as '40' | '60' | '80' | '100'}
                         onConsultDeclaration={setConsultingDeclaration}
                       />
+                    {/* Confirmation suppression programme (déclaration) */}
+                    <AlertDialog open={!!declarationToDelete} onOpenChange={open => { if (!open) setDeclarationToDelete(null); }}>
+                      <AlertDialogContent style={{ zIndex: 10000, position: 'fixed' }} aria-describedby="delete-declaration-desc">
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
+                        </AlertDialogHeader>
+                        <AlertDialogDescription id="delete-declaration-desc">
+                          Êtes-vous sûr de vouloir supprimer ce programme ? Cette action est irréversible.
+                        </AlertDialogDescription>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel onClick={() => setDeclarationToDelete(null)}>Annuler</AlertDialogCancel>
+                          <AlertDialogAction onClick={confirmDeleteDeclaration}>Supprimer</AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                     </CardContent>
                   </Card>
                 </div>
@@ -825,11 +937,18 @@ const PlanificateurDashboard = () => {
                 onSave={handleUpdateDeclaration}
               />
             ) : null}
+            {/* Refusal Reason Dialog toujours monté à la fin du return principal */}
+            <RefusalReasonDialog
+              isOpen={refusalDialogOpen}
+              onClose={() => { setRefusalDialogOpen(false); setRefusalDeclarationId(null); }}
+              onConfirm={handleConfirmRefusal}
+              language={settings.language || 'fr'}
+            />
+
           </div>
         </div>
       </div>
     </div>
   );
-};
-
+}
 export default PlanificateurDashboard;

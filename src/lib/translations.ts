@@ -1,4 +1,3 @@
-
 export const translations = {
   fr: {
     // Header
@@ -31,6 +30,8 @@ export const translations = {
     },
     // Dashboard
     dashboard: {
+      selectRefusalReason: "Sélectionner un motif de refus",
+      selectReasonPlaceholder: "Choisir un motif...",
   overview: "Vue d'ensemble",
   statistics: "Statistiques",
   recentActivity: "Activité récente",
@@ -45,35 +46,41 @@ export const translations = {
   myDeclarationsSummary: "Résumé de mes Déclarations",
   myDeclarations: "Mes Déclarations",
   warehouseMap: "Carte des Entrepôts",
-  onRoad: "En Route",
-  pending: "En Attente",
-  validated: "Validées",
-  refused: "Refusées"
+  onRoad: "En route",
+  pending: "En Attent",
+  validated: "Validé",
+  refused: "Refusé"
     },
     // Declarations
-    declarations: {
+  declarations: {
       confirmCancelTitle: "Confirmer l’annulation",
       confirmCancelDescription: "Êtes-vous sûr de vouloir annuler la création de cette déclaration ? Les informations saisies seront perdues.",
       confirmDeleteTitle: "Confirmer la suppression",
-      confirmDeleteDescription: "Êtes-vous sûr de vouloir supprimer cette déclaration ? Cette action est irréversible.",
+  confirmDeleteDescription: "Êtes-vous sûr de vouloir supprimer cette déclaration ? Cette action est irréversible.",
+  paymentReceipts: "Reçus de paiement (photos)",
+  noPaymentReceipts: "Aucun reçu de paiement",
   en: {
     // ...existing code...
-    declarations: {
+  declarations: {
       confirmCancelTitle: "Confirm cancellation",
       confirmCancelDescription: "Are you sure you want to cancel the creation of this declaration? Entered information will be lost.",
       confirmDeleteTitle: "Confirm deletion",
-      confirmDeleteDescription: "Are you sure you want to delete this declaration? This action is irreversible.",
+  confirmDeleteDescription: "Are you sure you want to delete this declaration? This action is irreversible.",
+  paymentReceipts: "Payment receipts (photos)",
+  noPaymentReceipts: "No payment receipt",
       // ...existing keys...
     },
     // ...existing code...
   },
   ar: {
     // ...existing code...
-    declarations: {
+  declarations: {
       confirmCancelTitle: "تأكيد الإلغاء",
       confirmCancelDescription: "هل أنت متأكد أنك تريد إلغاء إنشاء هذا التصريح؟ سيتم فقدان المعلومات المدخلة.",
       confirmDeleteTitle: "تأكيد الحذف",
-      confirmDeleteDescription: "هل أنت متأكد أنك تريد حذف هذا التصريح؟ هذا الإجراء لا يمكن التراجع عنه.",
+  confirmDeleteDescription: "هل أنت متأكد أنك تريد حذف هذا التصريح؟ هذا الإجراء لا يمكن التراجع عنه.",
+  paymentReceipts: "إيصالات الدفع (صور)",
+  noPaymentReceipts: "لا يوجد إيصال دفع",
       // ...existing keys...
     },
     // ...existing code...
@@ -93,17 +100,23 @@ export const translations = {
       validate: "Valider",
       refuse: "Refuser",
     declare: "Déclarer",
-      pending: "En cours",
-      validated: "Validé",
-      refused: "Refusé",
+  pending: "En Attent",
+  validated: "Validé",
+  refused: "Refusé",
+  onRoad: "En route",
+  breakdown: "En panne",
+  breakdownButton: "Signaler une panne",
       createdDate: "Date création",
       searchPlaceholder: "Rechercher par numéro, notes...",
       filterPlaceholder: "Filtrer par statut",
       noDeclarations: "Aucune déclaration trouvée",
       noDeclarationsWithFilters: "Aucune déclaration trouvée avec ces critères",
-      confirmDelete: "Êtes-vous sûr de vouloir supprimer cette déclaration ?",
-      programNumberRequired: "Le numéro de programme doit contenir 4 chiffres",
-      distanceOrFeesRequired: "Veuillez renseigner soit la distance soit les frais de livraison"
+  confirmDelete: "Êtes-vous sûr de vouloir supprimer cette déclaration ?",
+  programNumberRequired: "Le numéro de programme doit contenir 4 chiffres",
+  distanceOrFeesRequired: "Veuillez renseigner soit la distance soit les frais de livraison",
+  referenceAlreadyExists: "Une déclaration avec cette référence existe déjà pour ce chauffeur.",
+  breakdownConfirm: "Êtes-vous sûr de vouloir signaler une panne pour cette déclaration ? Cette action est irréversible.",
+  breakdownSuccess: "Déclaration signalée en panne."
     },
     // Chauffeurs
     chauffeurs: {
@@ -189,6 +202,16 @@ export const translations = {
       camion_10t: "Camion 10T",
       camion_15t: "Camion 15T",
       camion_20t: "Camion 20T"
+    },
+    // Traceability
+    traceability: {
+  created: "Déclaration Créée",
+  modified: "Déclaration Modifiée",
+  validated: "Déclaration Validée",
+  refused: "Déclaration Refusée",
+  declared: "Déclaration Envoyée",
+  breakdown: "Un panne Signalée",
+  paymentReceiptCreated: "Reçu de paiement créé"
     }
   },
   en: {
@@ -222,6 +245,8 @@ export const translations = {
     },
     // Dashboard
     dashboard: {
+      selectRefusalReason: "Select a refusal reason",
+      selectReasonPlaceholder: "Choose a reason...",
   overview: "Overview",
   statistics: "Statistics",
   recentActivity: "Recent Activity",
@@ -258,17 +283,23 @@ export const translations = {
       validate: "Validate",
       refuse: "Refuse",
     declare: "Declare",
-      pending: "Pending",
-      validated: "Validated",
-      refused: "Refused",
+  pending: "Pending",
+  validated: "Validated",
+  refused: "Refused",
+  onRoad: "On Road",
+  breakdown: "Breakdown",
+  breakdownButton: "Report breakdown",
       createdDate: "Created Date",
       searchPlaceholder: "Search by number, notes...",
       filterPlaceholder: "Filter by status",
       noDeclarations: "No declarations found",
       noDeclarationsWithFilters: "No declarations found with these criteria",
-      confirmDelete: "Are you sure you want to delete this declaration?",
-      programNumberRequired: "Program number must contain 4 digits",
-      distanceOrFeesRequired: "Please enter either distance or delivery fees"
+  confirmDelete: "Are you sure you want to delete this declaration?",
+  programNumberRequired: "Program number must contain 4 digits",
+  distanceOrFeesRequired: "Please enter either distance or delivery fees",
+  referenceAlreadyExists: "A declaration with this reference already exists for this driver.",
+  breakdownConfirm: "Are you sure you want to mark this declaration as breakdown? This action is irreversible.",
+  breakdownSuccess: "Declaration marked as breakdown."
     },
     // Chauffeurs
     chauffeurs: {
@@ -352,6 +383,16 @@ export const translations = {
       camion_10t: "10T Truck",
       camion_15t: "15T Truck",
       camion_20t: "20T Truck"
+    },
+    // Traceability
+    traceability: {
+  created: "Declare Created",
+  modified: "Declare Modified",
+  validated: "Declare Validated",
+  refused: "Declare Refused",
+  declared: "Declare sent",
+  breakdown: "Reported as breakdown",
+  paymentReceiptCreated: "Payment receipt created"
     }
   },
   ar: {
@@ -385,6 +426,8 @@ export const translations = {
     },
     // Dashboard
     dashboard: {
+      selectRefusalReason: "اختر سبب الرفض",
+      selectReasonPlaceholder: "اختر السبب...",
   overview: "نظرة عامة",
   statistics: "الإحصائيات",
   recentActivity: "النشاط الأخير",
@@ -421,17 +464,23 @@ export const translations = {
       validate: "تأكيد",
       refuse: "رفض",
     declare: "تصريح",
-      pending: "معلق",
-      validated: "مؤكد",
-      refused: "مرفوض",
+  pending: "معلق",
+  validated: "مؤكد",
+  refused: "مرفوض",
+  onRoad: "في الطريق",
+  breakdown: "عطل تقني",
+  breakdownButton: "الإبلاغ عن عطل تقني",
       createdDate: "تاريخ الإنشاء",
       searchPlaceholder: "البحث بالرقم أو الملاحظات...",
       filterPlaceholder: "تصفية حسب الحالة",
       noDeclarations: "لا توجد تصريحات",
       noDeclarationsWithFilters: "لا توجد تصريحات بهذه المعايير",
-      confirmDelete: "هل أنت متأكد من حذف هذا التصريح؟",
-      programNumberRequired: "رقم البرنامج يجب أن يحتوي على 4 أرقام",
-      distanceOrFeesRequired: "يرجى إدخال المسافة أو رسوم التسليم"
+  confirmDelete: "هل أنت متأكد من حذف هذا التصريح؟",
+  programNumberRequired: "رقم البرنامج يجب أن يحتوي على 4 أرقام",
+  distanceOrFeesRequired: "يرجى إدخال المسافة أو رسوم التسليم",
+  referenceAlreadyExists: "يوجد تصريح بهذه المرجعية لهذا السائق بالفعل.",
+  breakdownConfirm: "هل أنت متأكد أنك تريد الإبلاغ عن عطل تقني لهذا التصريح؟ هذا الإجراء لا يمكن التراجع عنه.",
+  breakdownSuccess: "تم الإبلاغ عن التصريح كعطل تقني."
     },
     // Chauffeurs
     chauffeurs: {
@@ -515,6 +564,16 @@ export const translations = {
       camion_10t: "شاحنة 10 طن",
       camion_15t: "شاحنة 15 طن",
       camion_20t: "شاحنة 20 طن"
+    },
+    // Traceability
+    traceability: {
+  created: "تم إنشاء التصريح",
+  modified: "تم تعديل التصريح",
+  validated: "تم تأكيد التصريح",
+  refused: "تم رفض التصريح",
+  declared: "تم التصريح",
+  breakdown: "تم الإبلاغ عن عطل",
+  paymentReceiptCreated: "تم إنشاء إيصال الدفع"
     }
   }
 };

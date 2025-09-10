@@ -16,31 +16,35 @@ interface ProfilePageProps {
 }
 
 const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
+  // Tous les hooks doivent être appelés avant tout return !
   const isMobileScreen = useIsMobile();
   const { settings } = useSettings();
-  // On considère mobile si le mode est forcé ou si l'écran est petit
-  const isMobile = settings.viewMode === 'mobile' || isMobileScreen;
-  const { user, changePassword } = useAuth();
+  const auth = useAuth();
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: '',
     newPassword: '',
     confirmPassword: ''
   });
+  // On considère mobile si le mode est forcé ou si l'écran est petit
+  const isMobile = settings.viewMode === 'mobile' || isMobileScreen;
+
+  // Gestion absence de contexte ou d'utilisateur
+  if (!auth || !auth.user) {
+    return <div>Utilisateur non trouvé</div>;
+  }
+  const { user, changePassword } = auth;
 
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
       toast.error('Les nouveaux mots de passe ne correspondent pas');
       return;
     }
-
     if (passwordForm.newPassword.length < 6) {
       toast.error('Le nouveau mot de passe doit contenir au moins 6 caractères');
       return;
     }
-
     try {
       const success = await changePassword(passwordForm.currentPassword, passwordForm.newPassword);
       if (success) {
@@ -54,10 +58,6 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
       toast.error('Erreur lors de la modification du mot de passe');
     }
   };
-
-  if (!user) {
-    return <div>Utilisateur non trouvé</div>;
-  }
 
   // Layout mobile friendly si mobile, sinon desktop (2 colonnes)
   return isMobile ? (

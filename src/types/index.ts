@@ -33,6 +33,27 @@ export interface Chauffeur {
   };
 }
 
+export interface DeclarationTrace {
+  userId: string;
+  userName: string;
+  action: string;
+  date: string; // ISO
+}
+
+
+export interface PaymentReceipt {
+  id: string;
+  programReference: string; // Référence programme (auto)
+  createdAt: string; // Date de création (auto)
+  chauffeurId: string;
+  chauffeurName: string;
+  status: 'brouillon' | 'validee';
+  validatedAt?: string;
+  companyId: string;
+  companyName: string;
+  photoUrl: string;
+}
+
 export interface Declaration {
   id: string;
   number: string;
@@ -46,10 +67,12 @@ export interface Declaration {
   notes?: string;
   photos?: string[];
   status: 'en_cours' | 'valide' | 'refuse' | 'en_route' | 'en_panne';
+  paymentReceipts?: PaymentReceipt[];
   createdAt: string;
   validatedAt?: string;
   validatedBy?: string;
   refusalReason?: string;
+  traceability?: DeclarationTrace[];
 }
 
 export interface Warehouse {

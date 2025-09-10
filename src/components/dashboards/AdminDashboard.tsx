@@ -31,8 +31,36 @@ import ProfilePage from '../ProfilePage';
 import PhoneNumbersField from '../PhoneNumbersField';
 import PasswordField from '../PasswordField';
 import { simpleHash } from '../../utils/authUtils';
+import RefusalReasonsConfig from '../admin/RefusalReasonsConfig';
+
+const zoomLevels = {
+  '40': 0.75,
+  '50': 0.80,
+  '60': 0.85,
+  '70': 0.90,
+  '80': 0.95,
+  '90': 1.0,
+  '100': 1.05
+};
 
 const AdminDashboard = () => {
+  const [userTableFontSize, setUserTableFontSize] = useState(() => localStorage.getItem('userTableFontSize') || '80');
+  const [companyTableFontSize, setCompanyTableFontSize] = useState(() => localStorage.getItem('companyTableFontSize') || '80');
+  const [vehicleTypeTableFontSize, setVehicleTypeTableFontSize] = useState(() => localStorage.getItem('vehicleTypeTableFontSize') || '80');
+
+  // Enregistre le zoom choisi dans le localStorage
+  const handleUserTableZoom = (value) => {
+    setUserTableFontSize(value);
+    localStorage.setItem('userTableFontSize', value);
+  };
+  const handleCompanyTableZoom = (value) => {
+    setCompanyTableFontSize(value);
+    localStorage.setItem('companyTableFontSize', value);
+  };
+  const handleVehicleTypeTableZoom = (value) => {
+    setVehicleTypeTableFontSize(value);
+    localStorage.setItem('vehicleTypeTableFontSize', value);
+  };
   const { settings } = useSettings();
   const viewMode = settings.viewMode || 'desktop';
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -394,7 +422,7 @@ const AdminDashboard = () => {
   }
 
   return (
-    <div className={viewMode === 'mobile' ? 'max-w-[430px] mx-auto' : ''}>
+    <div className={viewMode === 'mobile' ? 'max-w-[430px] mx-auto bg-background min-h-screen flex flex-col' : ''}>
       <style>{viewMode === 'mobile' ? `
         html, body, .max-w-[430px] {
           font-size: 15px !important;
@@ -407,46 +435,84 @@ const AdminDashboard = () => {
         }
       ` : ''}</style>
       <Header onProfileClick={handleProfileClick} />
-      <div className="flex justify-end items-center px-6 pt-2">
-        <span
-          className={`flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium ${isOnline ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}
-          title={isOnline ? 'Connecté au cloud' : 'Hors ligne'}
-        >
-          <span className={`inline-block w-2 h-2 rounded-full ${isOnline ? 'bg-green-500' : 'bg-red-500'}`}></span>
-          {isOnline ? 'En ligne' : 'Hors ligne'}
-        </span>
-      </div>
-      <div className="flex h-[calc(100vh-4rem)]">
-        <div className="w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 p-4">
-          <nav className="space-y-2">
-            <Button
-              variant={activeTab === 'dashboard' ? 'default' : 'ghost'}
-              className="w-full justify-start"
+      {viewMode === 'mobile' ? (
+        <>
+          <div className="flex px-2 pt-3 mb-2">
+            <span
+              className="flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700 shadow"
+              title={isOnline ? 'Connecté au cloud' : 'Hors ligne'}
+            >
+              <span className="inline-block w-2 h-2 rounded-full bg-green-500"></span>
+              En ligne
+            </span>
+          </div>
+          <nav className="flex flex-row justify-center items-center gap-8 py-3 px-4 bg-white dark:bg-gray-900 rounded-full shadow-lg w-full border-2 border-blue-400 dark:border-blue-600 overflow-x-auto mb-2">
+            <button
+              aria-label="Tableau de bord"
               onClick={() => setActiveTab('dashboard')}
+              className={`rounded-full p-2 transition-all ${activeTab === 'dashboard' ? 'bg-blue-600 text-white shadow-lg scale-110' : 'bg-gray-100 text-gray-600'} flex items-center justify-center h-10 w-10`}
             >
-              <ClipboardList className="mr-2 h-4 w-4" />
-              Tableau de bord
-            </Button>
-            <Button
-              variant={activeTab === 'users' ? 'default' : 'ghost'}
-              className="w-full justify-start"
+              <ClipboardList className="h-[22px] w-[22px]" />
+            </button>
+            <button
+              aria-label="Utilisateurs"
               onClick={() => setActiveTab('users')}
+              className={`rounded-full p-2 transition-all ${activeTab === 'users' ? 'bg-blue-600 text-white shadow-lg scale-110' : 'bg-gray-100 text-gray-600'} flex items-center justify-center h-10 w-10`}
             >
-              <Users className="mr-2 h-4 w-4" />
-              Utilisateurs
-            </Button>
-            <Button
-              variant={activeTab === 'configuration' ? 'default' : 'ghost'}
-              className="w-full justify-start"
+              <Users className="h-[22px] w-[22px]" />
+            </button>
+            <button
+              aria-label="Configuration"
               onClick={() => setActiveTab('configuration')}
+              className={`rounded-full p-2 transition-all ${activeTab === 'configuration' ? 'bg-blue-600 text-white shadow-lg scale-110' : 'bg-gray-100 text-gray-600'} flex items-center justify-center h-10 w-10`}
             >
-              <Settings className="mr-2 h-4 w-4" />
-              Configuration
-            </Button>
+              <Settings className="h-[22px] w-[22px]" />
+            </button>
           </nav>
+        </>
+      ) : (
+        <div className="flex justify-end items-center px-6 pt-2">
+          <span
+            className={`flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium ${isOnline ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}
+            title={isOnline ? 'Connecté au cloud' : 'Hors ligne'}
+          >
+            <span className={`inline-block w-2 h-2 rounded-full ${isOnline ? 'bg-green-500' : 'bg-red-500'}`}></span>
+            {isOnline ? 'En ligne' : 'Hors ligne'}
+          </span>
         </div>
-
-        <div className="flex-1 p-6 overflow-auto">
+      )}
+      <div className="flex h-[calc(100vh-4rem)]">
+        {viewMode !== 'mobile' && (
+          <div className="w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 p-4">
+            <nav className="space-y-2">
+              <Button
+                variant={activeTab === 'dashboard' ? 'default' : 'ghost'}
+                className="w-full justify-start"
+                onClick={() => setActiveTab('dashboard')}
+              >
+                <ClipboardList className="mr-2 h-4 w-4" />
+                Tableau de bord
+              </Button>
+              <Button
+                variant={activeTab === 'users' ? 'default' : 'ghost'}
+                className="w-full justify-start"
+                onClick={() => setActiveTab('users')}
+              >
+                <Users className="mr-2 h-4 w-4" />
+                Utilisateurs
+              </Button>
+              <Button
+                variant={activeTab === 'configuration' ? 'default' : 'ghost'}
+                className="w-full justify-start"
+                onClick={() => setActiveTab('configuration')}
+              >
+                <Settings className="mr-2 h-4 w-4" />
+                Configuration
+              </Button>
+            </nav>
+          </div>
+        )}
+        <div className={viewMode === 'mobile' ? 'flex-1 p-2 w-full' : 'flex-1 p-6 overflow-auto'}>
           {activeTab === 'dashboard' && (
             <div className="space-y-6">
               <h1 className="text-3xl font-bold">Tableau de bord - Administrateur</h1>
@@ -635,59 +701,79 @@ const AdminDashboard = () => {
 
               <Card>
                 <CardContent className="p-0">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Nom complet</TableHead>
-                        <TableHead>Nom d'utilisateur</TableHead>
-                        <TableHead>Rôle</TableHead>
-                        <TableHead>Téléphone</TableHead>
-                        <TableHead>Mot de passe</TableHead>
-                        <TableHead>Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {users.map((user) => (
-                        <TableRow key={user.id}>
-                          <TableCell className="font-medium">{user.fullName}</TableCell>
-                          <TableCell>{user.username}</TableCell>
-                          <TableCell>{getRoleBadge(user.role)}</TableCell>
-                          <TableCell>
-                            {user.phone && user.phone.length > 0 ? (
-                              <div className="space-y-1">
-                                {user.phone.map((phone, index) => (
-                                  <div key={index} className="text-sm">{phone}</div>
-                                ))}
-                              </div>
-                            ) : '-'}
-                          </TableCell>
-                          <TableCell>
-                            <PasswordField password={user.password ?? ''} showLabel={false} />
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex gap-2">
-                              <Button 
-                                size="sm" 
-                                variant="outline"
-                                onClick={() => handleEditUser(user)}
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button 
-                                size="sm" 
-                                variant="outline"
-                                onClick={() => openChangePasswordDialog(user.id)}
-                              >
-                                <Key className="h-4 w-4" />
-                              </Button>
-                              <Button 
-                                size="sm" 
-                                variant="outline"
-                                onClick={() => handleDeleteUser(user.id)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-      {/* Confirmation dialog for user deletion */}
+                  {/* Sélecteur de zoom pour utilisateurs */}
+                  <div className="flex items-center justify-end mb-2">
+                    <label className="mr-2 text-xs text-muted-foreground">Zoom :</label>
+                    <select
+                      value={userTableFontSize}
+                      onChange={e => handleUserTableZoom(e.target.value)}
+                      className="border rounded px-2 py-1 text-xs bg-background"
+                      title="Zoom sur la taille d'écriture du tableau"
+                    >
+                      <option value="100">100%</option>
+                      <option value="90">90%</option>
+                      <option value="80">80%</option>
+                      <option value="60">60%</option>
+                      <option value="50">50%</option>
+                    </select>
+                  </div>
+                  <div className="w-full overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow style={{ fontSize: `${Math.round(14 * (zoomLevels[userTableFontSize] || 1))}px` }}>
+                          <TableHead style={{ fontSize: `${Math.round(14 * (zoomLevels[userTableFontSize] || 1))}px` }}>Nom complet</TableHead>
+                          <TableHead style={{ fontSize: `${Math.round(14 * (zoomLevels[userTableFontSize] || 1))}px` }}>Nom d'utilisateur</TableHead>
+                          <TableHead style={{ fontSize: `${Math.round(14 * (zoomLevels[userTableFontSize] || 1))}px` }}>Rôle</TableHead>
+                          <TableHead style={{ fontSize: `${Math.round(14 * (zoomLevels[userTableFontSize] || 1))}px` }}>Téléphone</TableHead>
+                          <TableHead style={{ fontSize: `${Math.round(14 * (zoomLevels[userTableFontSize] || 1))}px` }}>Mot de passe</TableHead>
+                          <TableHead style={{ fontSize: `${Math.round(14 * (zoomLevels[userTableFontSize] || 1))}px` }}>Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {users.map((user) => (
+                          <TableRow key={user.id} style={{ fontSize: `${Math.round(14 * (zoomLevels[userTableFontSize] || 1))}px` }}>
+                            <TableCell className="font-medium" style={{ fontSize: `${Math.round(14 * (zoomLevels[userTableFontSize] || 1))}px` }}>{user.fullName}</TableCell>
+                            <TableCell style={{ fontSize: `${Math.round(14 * (zoomLevels[userTableFontSize] || 1))}px` }}>{user.username}</TableCell>
+                            <TableCell style={{ fontSize: `${Math.round(14 * (zoomLevels[userTableFontSize] || 1))}px` }}>{getRoleBadge(user.role)}</TableCell>
+                            <TableCell style={{ fontSize: `${Math.round(14 * (zoomLevels[userTableFontSize] || 1))}px` }}>
+                              {user.phone && user.phone.length > 0 ? (
+                                <div className="space-y-1">
+                                  {user.phone.map((phone, index) => (
+                                    <div key={index} className="text-sm" style={{ fontSize: `${Math.round(14 * (zoomLevels[userTableFontSize] || 1))}px` }}>{phone}</div>
+                                  ))}
+                                </div>
+                              ) : '-'}
+                            </TableCell>
+                            <TableCell style={{ fontSize: `${Math.round(14 * (zoomLevels[userTableFontSize] || 1))}px` }}>
+                              <PasswordField password={user.password ?? ''} showLabel={false} />
+                            </TableCell>
+                            <TableCell style={{ fontSize: `${Math.round(14 * (zoomLevels[userTableFontSize] || 1))}px` }}>
+                              <div className="flex gap-2">
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  style={{ fontSize: `${Math.round(14 * (zoomLevels[userTableFontSize] || 1))}px` }}
+                                  onClick={() => handleEditUser(user)}
+                                >
+                                  <Edit className="h-4 w-4" style={{ width: `${Math.round(16 * (zoomLevels[userTableFontSize] || 1))}px`, height: `${Math.round(16 * (zoomLevels[userTableFontSize] || 1))}px` }} />
+                                </Button>
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  style={{ fontSize: `${Math.round(14 * (zoomLevels[userTableFontSize] || 1))}px` }}
+                                  onClick={() => openChangePasswordDialog(user.id)}
+                                >
+                                  <Key className="h-4 w-4" style={{ width: `${Math.round(16 * (zoomLevels[userTableFontSize] || 1))}px`, height: `${Math.round(16 * (zoomLevels[userTableFontSize] || 1))}px` }} />
+                                </Button>
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  style={{ fontSize: `${Math.round(14 * (zoomLevels[userTableFontSize] || 1))}px` }}
+                                  onClick={() => handleDeleteUser(user.id)}
+                                >
+                                  <Trash2 className="h-4 w-4" style={{ width: `${Math.round(16 * (zoomLevels[userTableFontSize] || 1))}px`, height: `${Math.round(16 * (zoomLevels[userTableFontSize] || 1))}px` }} />
+                                </Button>
+                                {/* Confirmation dialog for user deletion */}
       <AlertDialog open={!!userToDelete} onOpenChange={open => { if (!open) setUserToDelete(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -700,12 +786,13 @@ const AdminDashboard = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
                 </CardContent>
               </Card>
             </div>
@@ -786,53 +873,73 @@ const AdminDashboard = () => {
                   </div>
                 </CardHeader>
                 <CardContent className="p-0">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Nom</TableHead>
-                        <TableHead>Adresse</TableHead>
-                        <TableHead>Téléphone</TableHead>
-                        <TableHead>Email</TableHead>
-                        <TableHead>Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {companies.map((company) => (
-                        <TableRow key={company.id}>
-                          <TableCell className="font-medium">{company.name}</TableCell>
-                          <TableCell>{company.address || '-'}</TableCell>
-                          <TableCell>
-                            {company.phone && company.phone.length > 0 ? (
-                              <div className="space-y-1">
-                                {company.phone.map((phone, index) => (
-                                  <div key={index} className="text-sm">{phone}</div>
-                                ))}
-                              </div>
-                            ) : '-'}
-                          </TableCell>
-                          <TableCell>{company.email || '-'}</TableCell>
-                          <TableCell>
-                            <div className="flex gap-2">
-                              <Button 
-                                size="sm" 
-                                variant="outline"
-                                onClick={() => handleEditCompany(company)}
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button 
-                                size="sm" 
-                                variant="outline"
-                                onClick={() => handleDeleteCompany(company.id)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
+                  {/* Sélecteur de zoom pour sociétés */}
+                  <div className="flex items-center justify-end mb-2">
+                    <label className="mr-2 text-xs text-muted-foreground">Zoom :</label>
+                    <select
+                      value={companyTableFontSize}
+                      onChange={e => handleCompanyTableZoom(e.target.value)}
+                      className="border rounded px-2 py-1 text-xs bg-background"
+                      title="Zoom sur la taille d'écriture du tableau"
+                    >
+                      <option value="100">100%</option>
+                      <option value="90">90%</option>
+                      <option value="80">80%</option>
+                      <option value="60">60%</option>
+                      <option value="50">50%</option>
+                    </select>
+                  </div>
+                  <div className="w-full overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow style={{ fontSize: `${Math.round(14 * (zoomLevels[companyTableFontSize] || 1))}px` }}>
+                          <TableHead style={{ fontSize: `${Math.round(14 * (zoomLevels[companyTableFontSize] || 1))}px` }}>Nom</TableHead>
+                          <TableHead style={{ fontSize: `${Math.round(14 * (zoomLevels[companyTableFontSize] || 1))}px` }}>Adresse</TableHead>
+                          <TableHead style={{ fontSize: `${Math.round(14 * (zoomLevels[companyTableFontSize] || 1))}px` }}>Téléphone</TableHead>
+                          <TableHead style={{ fontSize: `${Math.round(14 * (zoomLevels[companyTableFontSize] || 1))}px` }}>Email</TableHead>
+                          <TableHead style={{ fontSize: `${Math.round(14 * (zoomLevels[companyTableFontSize] || 1))}px` }}>Actions</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                      </TableHeader>
+                      <TableBody>
+                        {companies.map((company) => (
+                          <TableRow key={company.id} style={{ fontSize: `${Math.round(14 * (zoomLevels[companyTableFontSize] || 1))}px` }}>
+                            <TableCell className="font-medium" style={{ fontSize: `${Math.round(14 * (zoomLevels[companyTableFontSize] || 1))}px` }}>{company.name}</TableCell>
+                            <TableCell style={{ fontSize: `${Math.round(14 * (zoomLevels[companyTableFontSize] || 1))}px` }}>{company.address || '-'}</TableCell>
+                            <TableCell style={{ fontSize: `${Math.round(14 * (zoomLevels[companyTableFontSize] || 1))}px` }}>
+                              {company.phone && company.phone.length > 0 ? (
+                                <div className="space-y-1">
+                                  {company.phone.map((phone, index) => (
+                                    <div key={index} className="text-sm" style={{ fontSize: `${Math.round(14 * (zoomLevels[companyTableFontSize] || 1))}px` }}>{phone}</div>
+                                  ))}
+                                </div>
+                              ) : '-'}
+                            </TableCell>
+                            <TableCell style={{ fontSize: `${Math.round(14 * (zoomLevels[companyTableFontSize] || 1))}px` }}>{company.email || '-'}</TableCell>
+                            <TableCell style={{ fontSize: `${Math.round(14 * (zoomLevels[companyTableFontSize] || 1))}px` }}>
+                              <div className="flex gap-2">
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  style={{ fontSize: `${Math.round(14 * (zoomLevels[companyTableFontSize] || 1))}px` }}
+                                  onClick={() => handleEditCompany(company)}
+                                >
+                                  <Edit className="h-4 w-4" style={{ width: `${Math.round(16 * (zoomLevels[companyTableFontSize] || 1))}px`, height: `${Math.round(16 * (zoomLevels[companyTableFontSize] || 1))}px` }} />
+                                </Button>
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  style={{ fontSize: `${Math.round(14 * (zoomLevels[companyTableFontSize] || 1))}px` }}
+                                  onClick={() => handleDeleteCompany(company.id)}
+                                >
+                                  <Trash2 className="h-4 w-4" style={{ width: `${Math.round(16 * (zoomLevels[companyTableFontSize] || 1))}px`, height: `${Math.round(16 * (zoomLevels[companyTableFontSize] || 1))}px` }} />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
                 </CardContent>
               </Card>
 
@@ -885,39 +992,75 @@ const AdminDashboard = () => {
                   </div>
                 </CardHeader>
                 <CardContent className="p-0">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Nom</TableHead>
-                        <TableHead>Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {vehicleTypes.map((vehicleType) => (
-                        <TableRow key={vehicleType.id}>
-                          <TableCell className="font-medium">{vehicleType.name}</TableCell>
-                          <TableCell>
-                            <div className="flex gap-2">
-                              <Button 
-                                size="sm" 
-                                variant="outline"
-                                onClick={() => handleEditVehicleType(vehicleType)}
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button 
-                                size="sm" 
-                                variant="outline"
-                                onClick={() => handleDeleteVehicleType(vehicleType.id)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
+                  {/* Sélecteur de zoom pour types de véhicules */}
+                  <div className="flex items-center justify-end mb-2">
+                    <label className="mr-2 text-xs text-muted-foreground">Zoom :</label>
+                    <select
+                      value={vehicleTypeTableFontSize}
+                      onChange={e => handleVehicleTypeTableZoom(e.target.value)}
+                      className="border rounded px-2 py-1 text-xs bg-background"
+                      title="Zoom sur la taille d'écriture du tableau"
+                    >
+                      <option value="100">100%</option>
+                      <option value="90">90%</option>
+                      <option value="80">80%</option>
+                      <option value="60">60%</option>
+                      <option value="50">50%</option>
+                    </select>
+                  </div>
+                  <div className="w-full overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow style={{ fontSize: `${Math.round(14 * (zoomLevels[vehicleTypeTableFontSize] || 1))}px` }}>
+                          <TableHead style={{ fontSize: `${Math.round(14 * (zoomLevels[vehicleTypeTableFontSize] || 1))}px` }}>Nom</TableHead>
+                          <TableHead style={{ fontSize: `${Math.round(14 * (zoomLevels[vehicleTypeTableFontSize] || 1))}px` }}>Actions</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                      </TableHeader>
+                      <TableBody>
+                        {vehicleTypes.map((vehicleType) => (
+                          <TableRow key={vehicleType.id} style={{ fontSize: `${Math.round(14 * (zoomLevels[vehicleTypeTableFontSize] || 1))}px` }}>
+                            <TableCell className="font-medium" style={{ fontSize: `${Math.round(14 * (zoomLevels[vehicleTypeTableFontSize] || 1))}px` }}>{vehicleType.name}</TableCell>
+                            <TableCell style={{ fontSize: `${Math.round(14 * (zoomLevels[vehicleTypeTableFontSize] || 1))}px` }}>
+                              <div className="flex gap-2">
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  style={{ fontSize: `${Math.round(14 * (zoomLevels[vehicleTypeTableFontSize] || 1))}px` }}
+                                  onClick={() => handleEditVehicleType(vehicleType)}
+                                >
+                                  <Edit className="h-4 w-4" style={{ width: `${Math.round(16 * (zoomLevels[vehicleTypeTableFontSize] || 1))}px`, height: `${Math.round(16 * (zoomLevels[vehicleTypeTableFontSize] || 1))}px` }} />
+                                </Button>
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  style={{ fontSize: `${Math.round(14 * (zoomLevels[vehicleTypeTableFontSize] || 1))}px` }}
+                                  onClick={() => handleDeleteVehicleType(vehicleType.id)}
+                                >
+                                  <Trash2 className="h-4 w-4" style={{ width: `${Math.round(16 * (zoomLevels[vehicleTypeTableFontSize] || 1))}px`, height: `${Math.round(16 * (zoomLevels[vehicleTypeTableFontSize] || 1))}px` }} />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Motifs de refus (nouvelle section) */}
+              <Card>
+                <CardHeader>
+                  <div className="flex flex-row-reverse items-center justify-between">
+                    <RefusalReasonsConfig showAddButton onlyButton />
+                    <div className="flex-1">
+                      <CardTitle>Motifs de Refus</CardTitle>
+                      <CardDescription>Gestion des motifs de refus multilingues</CardDescription>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <RefusalReasonsConfig hideHeader />
                 </CardContent>
               </Card>
             </div>

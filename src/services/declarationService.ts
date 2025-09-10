@@ -16,7 +16,7 @@ export async function uploadDeclarationPhotos(files: File[]): Promise<string[]> 
   return urls;
 }
 import { db } from './firebaseClient';
-import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, onSnapshot } from 'firebase/firestore';
+import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, onSnapshot, DocumentReference, DocumentData } from 'firebase/firestore';
 
 const declarationsCollection = collection(db, 'declarations');
 
@@ -40,13 +40,25 @@ export const getDeclarations = async () => {
   return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 };
 
-export const addDeclaration = async (declaration) => {
-  return await addDoc(declarationsCollection, declaration);
+
+// Add declaration with optional traceability entry
+export const addDeclaration = async (declaration, traceEntry = null): Promise<DocumentReference<DocumentData>> => {
+  let toSave = { ...declaration };
+  if (traceEntry) {
+    toSave.traceability = [...(declaration.traceability || []), traceEntry];
+  }
+  return await addDoc(declarationsCollection, toSave);
 };
 
-export const updateDeclaration = async (id, updates) => {
+
+// Update declaration with optional traceability entry
+export const updateDeclaration = async (id, updates, traceEntry = null) => {
   const declarationRef = doc(db, 'declarations', id);
-  return await updateDoc(declarationRef, updates);
+  let toUpdate = { ...updates };
+  if (traceEntry) {
+    toUpdate.traceability = [...(updates.traceability || []), traceEntry];
+  }
+  return await updateDoc(declarationRef, toUpdate);
 };
 
 export const deleteDeclaration = async (id) => {

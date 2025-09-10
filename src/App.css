@@ -1,3 +1,43 @@
+@keyframes card-glow-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(251, 146, 60, 0);
+  }
+  50% {
+    box-shadow: 0 0 32px 12px rgba(251, 146, 60, 0.95);
+  }
+}
+.card-glow-pulse {
+  animation: card-glow-pulse 1s infinite;
+  border-color: #fb923c !important;
+}
+@keyframes dashboard-glow-blink {
+  0% { opacity: 0; filter: blur(2px); }
+  40% { opacity: 0; filter: blur(2px); }
+  50% { opacity: 0.7; filter: blur(12px); }
+  100% { opacity: 0.7; filter: blur(12px); }
+}
+.dashboard-glow {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 120px;
+  height: 120px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(circle, #fb923c 0%, #fdba74 60%, #fff7ed 100%);
+  pointer-events: none;
+  opacity: 0;
+  z-index: 1;
+  animation: dashboard-glow-blink 1.2s infinite;
+}
+@keyframes glow-orange {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(251, 146, 60, 0); }
+  50% { box-shadow: 0 0 48px 16px rgba(251, 146, 60, 1); }
+}
+.animate-glow-orange {
+  animation: glow-orange 0.7s infinite;
+  border-color: #fb923c !important;
+}
 @keyframes glowFlicker {
   0%, 100% { box-shadow: 0 0 0 2px #FFD700, 0 0 12px 6px #FFD700cc; }
   20% { box-shadow: 0 0 0 2px #FFD700, 0 0 16px 8px #FFD70088; }

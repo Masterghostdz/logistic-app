@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from '../../hooks/useTranslation';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
@@ -44,17 +45,22 @@ const DeclarationsTable = ({
   const fontSizeStyle = { fontSize: `${Math.round(14 * zoom)}px` };
   const rowHeight = `h-[${Math.round(40 * zoom)}px]`;
 
+  const { t } = useTranslation();
   const getStatusBadge = (status: string) => {
     const badgeFontSize = { fontSize: `${Math.round(100 * zoom)}%` };
     switch (status) {
-        case 'en_cours':
-          return <Badge className={`bg-yellow-100 text-yellow-800 inline-block px-2`} style={badgeFontSize}> En Attente </Badge>;
-        case 'valide':
-          return <Badge className={`bg-green-100 text-green-800 inline-block px-2`} style={badgeFontSize}> Validé </Badge>;
-        case 'refuse':
-          return <Badge className={`bg-red-100 text-red-800 inline-block px-2`} style={badgeFontSize}> Refusé </Badge>;
-        default:
-          return <Badge variant="outline" className={`inline-block px-2`} style={badgeFontSize}> {status} </Badge>;
+      case 'en_route':
+        return <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200" style={badgeFontSize}>{t('dashboard.onRoad')}</Badge>;
+      case 'en_panne':
+        return <Badge className="bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200" style={badgeFontSize}>{t('declarations.breakdown')}</Badge>;
+      case 'en_cours':
+        return <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200" style={badgeFontSize}>{t('dashboard.pending')}</Badge>;
+      case 'valide':
+        return <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200" style={badgeFontSize}>{t('dashboard.validated')}</Badge>;
+      case 'refuse':
+        return <Badge className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200" style={badgeFontSize}>{t('dashboard.refused')}</Badge>;
+      default:
+        return <Badge variant="outline" style={badgeFontSize}>{status}</Badge>;
     }
   };
 

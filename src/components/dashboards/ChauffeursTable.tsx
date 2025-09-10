@@ -8,7 +8,7 @@ import { Chauffeur } from '../../types';
 import PasswordField from '../PasswordField';
 
 interface ChauffeursTableProps {
-  chauffeurs: Chauffeur[];
+  chauffeurs: (Chauffeur & { isEnPanne?: boolean })[];
   onEditChauffeur: (chauffeur: Chauffeur) => void;
   onDeleteChauffeur: (id: string) => void;
   fontSize?: '40' | '50' | '60' | '70' | '80' | '90' | '100';
@@ -103,13 +103,22 @@ const ChauffeursTable = ({ chauffeurs, onEditChauffeur, onDeleteChauffeur, fontS
                   </Badge>
                 </TableCell>
                 <TableCell style={fontSizeStyle}>
-                  <Badge 
-                    variant={chauffeur.isActive ? 'default' : 'secondary'}
-                    className="text-xs"
-                    style={fontSizeStyle}
-                  >
-                    {chauffeur.isActive ? 'Actif' : 'Inactif'}
-                  </Badge>
+                  {chauffeur.isEnPanne ? (
+                    <Badge 
+                      className="text-xs bg-orange-100 text-orange-700 border border-orange-300"
+                      style={fontSizeStyle}
+                    >
+                      En Panne
+                    </Badge>
+                  ) : (
+                    <Badge 
+                      variant={chauffeur.isActive ? 'default' : 'secondary'}
+                      className="text-xs"
+                      style={fontSizeStyle}
+                    >
+                      {chauffeur.isActive ? 'Actif' : 'Inactif'}
+                    </Badge>
+                  )}
                 </TableCell>
                 <TableCell style={fontSizeStyle}>
                   <div className="flex gap-1" style={fontSizeStyle}>

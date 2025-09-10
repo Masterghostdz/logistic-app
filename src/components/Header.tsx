@@ -12,13 +12,17 @@ import { User, Settings, LogOut, Menu } from 'lucide-react';
 import SettingsDialog from './SettingsDialog';
 import ProfilePage from './ProfilePage';
 
+import { ArrowLeft } from 'lucide-react';
+
 interface HeaderProps {
   onMenuToggle?: () => void;
   showMenuButton?: boolean;
   onProfileClick?: () => void;
+  variant?: 'default' | 'profile';
+  onBack?: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ onMenuToggle, showMenuButton = false, onProfileClick }) => {
+const Header: React.FC<HeaderProps> = ({ onMenuToggle, showMenuButton = false, onProfileClick, variant = 'default', onBack }) => {
   const { user, logout } = useAuth();
   const { t } = useTranslation();
   const [showSettings, setShowSettings] = useState(false);
@@ -28,6 +32,20 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle, showMenuButton = false, o
 
   // Détection du mode mobile via hook partagé
   const { settings } = useSettings();
+
+  // Header mobile natif pour le profil
+  if (variant === 'profile' && settings.viewMode === 'mobile') {
+    return (
+      <header className="border-b border-border bg-card shadow-sm">
+        <div className="flex items-center h-12 px-2">
+          <Button variant="ghost" size="icon" className="rounded-full" onClick={onBack}>
+            <ArrowLeft className="h-6 w-6" />
+          </Button>
+          <h1 className="text-xl font-bold flex-1 text-center">Mon Profil</h1>
+        </div>
+      </header>
+    );
+  }
 
   const getRoleBadgeColor = (role: string) => {
     switch (role) {

@@ -36,48 +36,8 @@ interface SharedDataProviderProps {
 }
 
 // Données par défaut
-const defaultCompanies: Company[] = [
-  {
-    id: '1',
-    name: 'TechCorp Solutions',
-    address: '123 Avenue Principale, Alger',
-    phone: ['+213 21 12 34 56', '+213 21 12 34 57'],
-    email: 'contact@techcorp.dz',
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: '2',
-    name: 'Industries Maghreb',
-    address: '456 Rue Commerce, Oran',
-    phone: ['+213 41 98 76 54'],
-    email: 'info@maghreb-ind.dz',
-    createdAt: new Date().toISOString()
-  }
-];
-
-const defaultVehicleTypes: VehicleType[] = [
-  {
-    id: '1',
-    name: 'Camion 3.5T',
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: '2',
-    name: 'Camionnette',
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: '3',
-    name: 'Utilitaire',
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: '4',
-    name: 'Poids Lourd',
-    createdAt: new Date().toISOString()
-  }
-];
-
+const defaultCompanies: Company[] = [];
+const defaultVehicleTypes: VehicleType[] = [];
 const defaultDeclarations: Declaration[] = [];
 
 export const SharedDataProvider: React.FC<SharedDataProviderProps> = ({ children }) => {
@@ -98,6 +58,18 @@ export const SharedDataProvider: React.FC<SharedDataProviderProps> = ({ children
 
   const [vehicleTypes, setVehicleTypesState] = useState<VehicleType[]>(defaultVehicleTypes);
 
+  // Synchronisation Firestore pour les types de véhicules (temps réel)
+  useEffect(() => {
+    let unsubscribe: any;
+    const listen = async () => {
+      const { listenVehicleTypes } = await import('../services/vehicleTypeService');
+      unsubscribe = listenVehicleTypes((cloudVehicleTypes: VehicleType[]) => {
+        setVehicleTypesState(cloudVehicleTypes);
+      });
+    };
+    listen();
+    return () => { if (unsubscribe) unsubscribe(); };
+  }, []);
 
   const [declarations, setDeclarationsState] = useState<Declaration[]>(defaultDeclarations);
 

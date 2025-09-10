@@ -1,12 +1,14 @@
-
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from '../hooks/useTranslation';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 import { Button } from './ui/button';
 import { Input } from './ui/input';  
 import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
 import { Declaration } from '../types';
+import { getAllRefusalReasons } from '../services/refusalReasonService';
 import SimpleDeclarationNumberForm from './SimpleDeclarationNumberForm';
+import { Badge } from './ui/badge';
 
 interface EditDeclarationDialogProps {
   declaration: Declaration | null;
@@ -23,6 +25,26 @@ const EditDeclarationDialog: React.FC<EditDeclarationDialogProps> = ({
   onSave,
   readOnly = false
 }) => {
+  const { t } = useTranslation();
+
+  // Affichage du motif de refus (hook unique, bien placé)
+  const [refusalReasonLabel, setRefusalReasonLabel] = useState<string | null>(null);
+  useEffect(() => {
+    if (declaration && declaration.status === 'refuse' && declaration.refusalReason) {
+      getAllRefusalReasons().then((reasons) => {
+        const found = reasons.find(r => r.id === declaration.refusalReason);
+        if (found) {
+          setRefusalReasonLabel(found[t('settings.language') || 'fr'] || found['fr']);
+        } else {
+          setRefusalReasonLabel(null);
+        }
+      });
+    } else {
+      setRefusalReasonLabel(null);
+    }
+  }, [declaration, t]);
+
+
   const [formData, setFormData] = useState({
     distance: '',
     deliveryFees: '',
@@ -89,11 +111,29 @@ const EditDeclarationDialog: React.FC<EditDeclarationDialogProps> = ({
     }));
   };
 
+  // Copie de la logique getStatusBadge pour cohérence avec le tableau
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'en_route':
+        return <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">{t('dashboard.onRoad')}</Badge>;
+      case 'en_panne':
+        return <Badge className="bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200">{t('declarations.breakdown')}</Badge>;
+      case 'en_cours':
+        return <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">{t('dashboard.pending')}</Badge>;
+      case 'valide':
+        return <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">{t('dashboard.validated')}</Badge>;
+      case 'refuse':
+        return <Badge className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">{t('dashboard.refused')}</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
+    }
+  };
+
   if (!declaration) return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-  <DialogContent className="max-w-md" aria-describedby="edit-declaration-description">
+      <DialogContent className="max-w-md" aria-describedby="edit-declaration-description">
         <div id="edit-declaration-description" className="sr-only">
           Ce dialogue permet de modifier ou consulter une déclaration. Remplissez les champs requis puis validez.
         </div>
@@ -101,6 +141,15 @@ const EditDeclarationDialog: React.FC<EditDeclarationDialogProps> = ({
           <DialogTitle>{readOnly ? 'Consulter la déclaration' : 'Modifier la déclaration'}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
+          {/* Affichage de l'état de la déclaration en badge, et motif à côté si refus */}
+          {readOnly && (
+            <div className="flex items-center gap-3 mb-2">
+              {getStatusBadge(declaration.status)}
+              {declaration.status === 'refuse' && refusalReasonLabel && (
+                <span className="text-base font-semibold text-red-700 dark:text-red-400">{refusalReasonLabel}</span>
+              )}
+            </div>
+          )}
           <SimpleDeclarationNumberForm
             onNumberChange={handleNumberChange}
             onComponentsChange={handleComponentsChange}
@@ -139,6 +188,42 @@ const EditDeclarationDialog: React.FC<EditDeclarationDialogProps> = ({
               disabled={readOnly}
             />
           </div>
+          {/* Affichage toujours la section des reçus de paiement (photos), même si vide */}
+          <div className="flex flex-col gap-2">
+            <Label className="text-foreground text-sm font-medium mb-1">{t('declarations.paymentReceipts') || 'Reçus de paiement (photos)'}</Label>
+            <div className="flex gap-2 flex-wrap items-center min-h-[2.5rem]">
+              {declaration?.paymentReceipts && declaration.paymentReceipts.length > 0 ? (
+                declaration.paymentReceipts.map((fileName, idx) => (
+                  <div key={idx} className="relative w-16 h-16 border rounded overflow-hidden bg-muted">
+                    {/* Remplacer l'URL par la logique réelle si besoin */}
+                    <img
+                      src={typeof fileName === 'string' ? fileName : ''}
+                      alt={`reçu-${idx}`}
+                      className="object-cover w-full h-full"
+                      onError={e => (e.currentTarget.style.display = 'none')}
+                    />
+                  </div>
+                ))
+              ) : (
+                <span className="text-muted-foreground text-xs italic">{t('declarations.noPaymentReceipts') || 'Aucun reçu de paiement'}</span>
+              )}
+            </div>
+          </div>
+          {/* Section traçabilité (historique) */}
+          {declaration?.traceability && declaration.traceability.length > 0 && (
+            <div className="mt-6 border-t pt-4">
+              <div className="font-semibold text-sm mb-2 text-muted-foreground">Historique de la déclaration</div>
+              <div className="space-y-2 text-xs">
+                {declaration.traceability.map((trace, idx) => (
+                  <div key={idx} className="text-muted-foreground">
+                    <span className="font-semibold">{trace.userName}</span>
+                    <span className="mx-2 text-[10px]">({new Date(trace.date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit' })} {new Date(trace.date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })})</span>
+                    : {trace.action}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
           <div className="flex gap-2 pt-4">
             {!readOnly && (
               <Button onClick={handleSave} className="flex-1">
