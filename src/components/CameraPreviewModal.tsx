@@ -55,7 +55,7 @@ function CameraPreviewModal({ isOpen, onPhotoTaken, onClose }: CameraPreviewModa
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black bg-opacity-80">
+  <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-black bg-opacity-80" style={{ pointerEvents: 'auto' }}>
       <div id="camera-preview-container" className="absolute inset-0" />
       {error && <div className="absolute top-4 left-4 bg-red-600 text-white p-2 rounded">{error}</div>}
       {preview ? (
@@ -64,14 +64,12 @@ function CameraPreviewModal({ isOpen, onPhotoTaken, onClose }: CameraPreviewModa
           {/* Boutons valider/reprendre flottants en bas pour mobile */}
           <div
             className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex justify-center"
-            style={{ pointerEvents: 'none' }}
           >
             <div
               className="flex gap-8 px-6 py-4 rounded-xl border-2 border-blue-500 bg-black bg-opacity-60 shadow-lg"
               style={{
                 boxShadow: '0 2px 12px 0 #007cf0',
                 borderColor: '#007cf0',
-                pointerEvents: 'auto',
                 backdropFilter: 'blur(6px)',
               }}
             >

@@ -1,8 +1,8 @@
-
 import React, { useEffect, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Warehouse, Chauffeur } from '../types';
+import { Client } from '../types/client';
 import { useTranslation } from '../hooks/useTranslation';
 import { initializeLeafletIcons } from './map/MapIcons';
 import { createSimpleMap } from './map/MapUtils';
@@ -12,6 +12,8 @@ interface OpenStreetMapProps {
   highlightedWarehouseId?: string | null;
   warehouses?: Warehouse[];
   chauffeurs?: Chauffeur[];
+  clients?: Client[];
+  highlightedClientId?: string | null;
   height?: string;
   onWarehouseClick?: (warehouse: Warehouse) => void;
   onChauffeurClick?: (chauffeur: Chauffeur) => void;
@@ -24,6 +26,8 @@ interface OpenStreetMapProps {
 const OpenStreetMap: React.FC<OpenStreetMapProps> = ({ 
   warehouses = [], 
   chauffeurs = [],
+  clients = [],
+  highlightedClientId,
   height = '100%',
   onWarehouseClick,
   onChauffeurClick,
@@ -95,6 +99,91 @@ const OpenStreetMap: React.FC<OpenStreetMapProps> = ({
   const mapRef = useRef<HTMLDivElement>(null);
   const map = useRef<L.Map | null>(null);
   const markersRef = useRef<L.Marker[]>([]);
+  // Marqueur client animé (vert, ombré, 50x50px)
+  const clientMarkerRef = useRef<L.Marker | null>(null);
+  // Marqueur client animé et popup Google Maps
+  useEffect(() => {
+    if (!map.current) return;
+    // Supprime l'ancien marker client
+    if (clientMarkerRef.current) {
+      map.current.removeLayer(clientMarkerRef.current);
+      clientMarkerRef.current = null;
+    }
+    if (highlightedClientId && clients && clients.length > 0) {
+      const client = clients.find(c => c.id === highlightedClientId);
+      if (client && client.coordinates) {
+        // Marqueur client : SVG "lucide user round icon" fourni par l'utilisateur, animé, avec glow
+        const iconHtml = `
+          <span style="position: relative; display: flex; align-items: center; justify-content: center; width: 64px; height: 64px;">
+            <span class='client-glow'></span>
+            <svg width="44" height="44" viewBox="0 0 24 24" fill="#22c55e" style="z-index:2;" class="client-anim-path lucide-user-round-icon lucide-user-round">
+              <circle cx="12" cy="8" r="5"/>
+              <path d="M20 21a8 8 0 0 0-16 0"/>
+            </svg>
+            <style>
+            .client-glow {
+              position: absolute;
+              left: 50%;
+              top: 50%;
+              width: 64px;
+              height: 64px;
+              transform: translate(-50%, -50%);
+              border-radius: 50%;
+              background: radial-gradient(circle, #22c55e 0%, #bbf7d0 60%, #f0fdf4 100%);
+              filter: blur(2px);
+              opacity: 0;
+              z-index: 1;
+              animation: client-glow-blink 1.2s infinite;
+            }
+            .client-anim-path {
+              animation: client-path-blink 1.2s infinite;
+            }
+            @keyframes client-glow-blink {
+              0% { opacity: 0; filter: blur(2px); }
+              40% { opacity: 0; filter: blur(2px); }
+              50% { opacity: 0.7; filter: blur(10px); }
+              100% { opacity: 0.7; filter: blur(10px); }
+            }
+            @keyframes client-path-blink {
+              0% { filter: brightness(1); }
+              40% { filter: brightness(1); }
+              50% { filter: brightness(1.3); }
+              100% { filter: brightness(1.3); }
+            }
+            </style>
+          </span>`;
+        const icon = L.divIcon({
+          className: 'custom-div-icon',
+          html: iconHtml,
+          iconSize: [44, 44],
+          iconAnchor: [22, 44], // bottom center of SVG
+        });
+        clientMarkerRef.current = L.marker([client.coordinates.lat, client.coordinates.lng], { icon, zIndexOffset: 1000 })
+          .addTo(map.current);
+        // Popup Google Maps
+        const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${client.coordinates.lat},${client.coordinates.lng}&query_place_id=${encodeURIComponent(client.name)}`;
+        const popupContent = `
+          <div style='padding:12px; min-width:200px; max-width:250px; background:white; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.1); overflow:hidden;'>
+            <h3 style='font-weight:600; font-size:16px; margin-bottom:8px; color:#1f2937; word-wrap:break-word;'>${client.name}</h3>
+            <a href='${googleMapsUrl}' target='_blank' style='display:inline-block; background:#22c55e; color:white; padding:8px 12px; text-decoration:none; border-radius:4px; font-size:14px; font-weight:500; margin-top:4px;'>📍 Ouvrir dans Google Maps</a>
+          </div>
+        `;
+        clientMarkerRef.current.bindPopup(popupContent, {
+          maxWidth: 250,
+          closeButton: true,
+          autoClose: false,
+          autoPan: true,
+          offset: [0, -10],
+          className: 'custom-popup'
+        });
+        // Focus et popup
+        map.current.setView([client.coordinates.lat, client.coordinates.lng], 16, { animate: true });
+        setTimeout(() => {
+          clientMarkerRef.current?.openPopup();
+        }, 350);
+      }
+    }
+  }, [highlightedClientId, clients]);
   const { t } = useTranslation();
   const isInitialized = useRef(false);
 

@@ -66,22 +66,18 @@ class MobileService {
 
   async getCurrentLocation(): Promise<LocationCoordinates | null> {
     try {
-      // Check permissions first
-      const permissions = await Geolocation.checkPermissions();
-      
-      if (permissions.location !== 'granted') {
-        const requestResult = await Geolocation.requestPermissions();
-        if (requestResult.location !== 'granted') {
-          throw new Error('Location permission denied');
-        }
+      // Sur le web, il faut toujours tenter getCurrentPosition pour déclencher le prompt navigateur
+      let position;
+      try {
+        position = await Geolocation.getCurrentPosition({
+          enableHighAccuracy: true,
+          timeout: 10000
+        });
+      } catch (err) {
+        // Si refus ou erreur, on log et retourne null
+        console.error('Error getting location:', err);
+        return null;
       }
-
-      // Get current position
-      const position = await Geolocation.getCurrentPosition({
-        enableHighAccuracy: true,
-        timeout: 10000
-      });
-
       return {
         lat: position.coords.latitude,
         lng: position.coords.longitude,

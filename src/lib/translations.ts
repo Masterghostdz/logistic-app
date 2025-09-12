@@ -1,5 +1,29 @@
 export const translations = {
   fr: {
+    roles: {
+      admin: "Administrateur",
+      planificateur: "Planificateur",
+      chauffeur: "Chauffeur",
+      client: "Client"
+    },
+    buttons: {
+      myClients: "Mes clients",
+      add: "Ajouter",
+      settings: "Paramètres",
+      centerMap: "Centrer la carte",
+      gps: "GPS",
+      screenshot: "Capture d'écran",
+      mapMode: "Mode carte",
+      listMode: "Mode liste",
+      changeLayer: "Changer le fond de carte",
+      viewWarehouses: "Voir la liste des entrepôts",
+      createWarehouse: "Créer un nouvel entrepôt"
+    },
+    tabs: {
+      tracage: "Traçage",
+      warehouses: "Entrepôts",
+      clients: "Clients"
+    },
     // Header
     header: {
       title: "Logigrine",
@@ -27,6 +51,13 @@ export const translations = {
       invalidCredentials: "Identifiants invalides",
       welcome: "Bienvenue sur Logigrine",
       subtitle: "Système de gestion logistique"
+    },
+    // Login status band
+    login: {
+      connected: "Vous êtes connecté",
+      connecting: "Connexion au serveur",
+      notConnected: "Non connecté au serveur",
+      offline: "Hors ligne"
     },
     // Dashboard
     dashboard: {
@@ -60,6 +91,30 @@ export const translations = {
   paymentReceipts: "Reçus de paiement (photos)",
   noPaymentReceipts: "Aucun reçu de paiement",
   en: {
+    roles: {
+      admin: "Administrator",
+      planificateur: "Planner",
+      chauffeur: "Driver",
+      client: "Client"
+    },
+    buttons: {
+      myClients: "My Clients",
+      add: "Add",
+      settings: "Settings",
+      centerMap: "Center map",
+      gps: "GPS",
+      screenshot: "Screenshot",
+      mapMode: "Map mode",
+      listMode: "List mode",
+      changeLayer: "Change map background",
+      viewWarehouses: "View warehouse list",
+      createWarehouse: "Create new warehouse"
+    },
+    tabs: {
+      tracage: "Traceability",
+      warehouses: "Warehouses",
+      clients: "Clients"
+    },
     // ...existing code...
   declarations: {
       confirmCancelTitle: "Confirm cancellation",
@@ -73,6 +128,30 @@ export const translations = {
     // ...existing code...
   },
   ar: {
+    roles: {
+      admin: "مسؤول",
+      planificateur: "مخطط",
+      chauffeur: "سائق",
+      client: "عميل"
+    },
+    buttons: {
+      myClients: "عملائي",
+      add: "إضافة",
+      settings: "الإعدادات",
+      centerMap: "توسيط الخريطة",
+      gps: "نظام تحديد المواقع",
+      screenshot: "لقطة شاشة",
+      mapMode: "وضع الخريطة",
+      listMode: "وضع القائمة",
+      changeLayer: "تغيير خلفية الخريطة",
+      viewWarehouses: "عرض قائمة المستودعات",
+      createWarehouse: "إنشاء مستودع جديد"
+    },
+    tabs: {
+      tracage: "التتبع",
+      warehouses: "المستودعات",
+      clients: "العملاء"
+    },
     // ...existing code...
   declarations: {
       confirmCancelTitle: "تأكيد الإلغاء",
@@ -166,16 +245,25 @@ export const translations = {
     },
     // Forms
     forms: {
-  save: "Enregistrer",
-  cancel: "Annuler",
-  edit: "Modifier",
-  delete: "Supprimer",
-  confirm: "Confirmer",
-  yes: "Oui",
-  no: "Non",
-  required: "Champ requis",
-  success: "Opération réussie",
-  error: "Erreur lors de l'opération"
+      myClients: "Mes clients",
+      add: "Ajouter",
+      save: "Enregistrer",
+      cancel: "Annuler",
+      edit: "Modifier",
+      delete: "Supprimer",
+      confirm: "Confirmer",
+      yes: "Oui",
+      no: "Non",
+      required: "Champ requis",
+      success: "Opération réussie",
+      error: "Erreur lors de l'opération",
+      name: "Nom",
+      mobile: "Téléphone mobile",
+      phonePlaceholder: "Numéro de téléphone",
+      photo: "Photo",
+      geolocation: "Position géographique",
+      address: "Adresse",
+      addressPlaceholder: "Adresse du client"
     },
     // Settings
     settings: {
@@ -205,13 +293,20 @@ export const translations = {
     },
     // Traceability
     traceability: {
-  created: "Déclaration Créée",
-  modified: "Déclaration Modifiée",
-  validated: "Déclaration Validée",
-  refused: "Déclaration Refusée",
-  declared: "Déclaration Envoyée",
-  breakdown: "Un panne Signalée",
-  paymentReceiptCreated: "Reçu de paiement créé"
+      created: "Déclaration Créée",
+      modified: "Déclaration Modifiée",
+      validated: "Déclaration Validée",
+      refused: "Déclaration Refusée",
+      declared: "Déclaration Envoyée",
+      breakdown: "Un panne Signalée",
+      paymentReceiptCreated: "Reçu de paiement créé",
+      clientHistory: "Historique du client",
+      clientCreated: "Client créé",
+      clientModified: "Client modifié",
+      clientValidated: "Client validé",
+      clientRejected: "Client rejeté",
+      clientArchived: "Client archivé",
+      unknownUser: "Utilisateur inconnu"
     }
   },
   en: {
@@ -242,6 +337,13 @@ export const translations = {
       invalidCredentials: "Invalid credentials",
       welcome: "Welcome to Logigrine",
       subtitle: "Logistics Management System"
+    },
+    // Login status band
+    login: {
+      connected: "You are connected",
+      connecting: "Connecting to server...",
+      notConnected: "Not connected to server",
+      offline: "Offline"
     },
     // Dashboard
     dashboard: {
@@ -349,16 +451,25 @@ export const translations = {
     },
     // Forms
     forms: {
-  save: "Save",
-  cancel: "Cancel",
-  edit: "Edit",
-  delete: "Delete",
-  confirm: "Confirm",
-  yes: "Yes",
-  no: "No",
-  required: "Required field",
-  success: "Operation successful",
-  error: "Operation error"
+      myClients: "My Clients",
+      add: "Add",
+      save: "Save",
+      cancel: "Cancel",
+      edit: "Edit",
+      delete: "Delete",
+      confirm: "Confirm",
+      yes: "Yes",
+      no: "No",
+      required: "Required field",
+      success: "Operation successful",
+      error: "Operation error",
+      name: "Name",
+      mobile: "Mobile phone",
+      phonePlaceholder: "Phone number",
+      photo: "Photo",
+      geolocation: "Geolocation",
+      address: "Address",
+      addressPlaceholder: "Client address"
     },
     // Settings
     settings: {
@@ -386,13 +497,20 @@ export const translations = {
     },
     // Traceability
     traceability: {
-  created: "Declare Created",
-  modified: "Declare Modified",
-  validated: "Declare Validated",
-  refused: "Declare Refused",
-  declared: "Declare sent",
-  breakdown: "Reported as breakdown",
-  paymentReceiptCreated: "Payment receipt created"
+      created: "Declare Created",
+      modified: "Declare Modified",
+      validated: "Declare Validated",
+      refused: "Declare Refused",
+      declared: "Declare sent",
+      breakdown: "Reported as breakdown",
+      paymentReceiptCreated: "Payment receipt created",
+      clientHistory: "Client history",
+      clientCreated: "Client created",
+      clientModified: "Client modified",
+      clientValidated: "Client validated",
+      clientRejected: "Client rejected",
+      clientArchived: "Client archived",
+      unknownUser: "Unknown user"
     }
   },
   ar: {
@@ -423,6 +541,13 @@ export const translations = {
       invalidCredentials: "بيانات اعتماد غير صحيحة",
       welcome: "مرحبا بك في لوجيجرين",
       subtitle: "نظام إدارة اللوجستيات"
+    },
+    // Login status band
+    login: {
+      connected: "أنت متصل",
+      connecting: "جارٍ الاتصال بخادم",
+      notConnected: "غير متصل بخادم",
+      offline: "غير متصل بالإنترنت"
     },
     // Dashboard
     dashboard: {
@@ -530,16 +655,25 @@ export const translations = {
     },
     // Forms
     forms: {
-  save: "حفظ",
-  cancel: "إلغاء",
-  edit: "تعديل",
-  delete: "حذف",
-  confirm: "تأكيد",
-  yes: "نعم",
-  no: "لا",
-  required: "حقل مطلوب",
-  success: "نجحت العملية",
-  error: "خطأ في العملية"
+      myClients: "عملائي",
+      add: "إضافة",
+      save: "حفظ",
+      cancel: "إلغاء",
+      edit: "تعديل",
+      delete: "حذف",
+      confirm: "تأكيد",
+      yes: "نعم",
+      no: "لا",
+      required: "حقل مطلوب",
+      success: "نجحت العملية",
+      error: "خطأ في العملية",
+      name: "الاسم",
+      mobile: "الهاتف المحمول",
+      phonePlaceholder: "رقم الهاتف",
+      photo: "صورة",
+      geolocation: "الموقع الجغرافي",
+      address: "العنوان",
+      addressPlaceholder: "عنوان العميل"
     },
     // Settings
     settings: {
@@ -567,13 +701,20 @@ export const translations = {
     },
     // Traceability
     traceability: {
-  created: "تم إنشاء التصريح",
-  modified: "تم تعديل التصريح",
-  validated: "تم تأكيد التصريح",
-  refused: "تم رفض التصريح",
-  declared: "تم التصريح",
-  breakdown: "تم الإبلاغ عن عطل",
-  paymentReceiptCreated: "تم إنشاء إيصال الدفع"
+      created: "تم إنشاء التصريح",
+      modified: "تم تعديل التصريح",
+      validated: "تم تأكيد التصريح",
+      refused: "تم رفض التصريح",
+      declared: "تم التصريح",
+      breakdown: "تم الإبلاغ عن عطل",
+      paymentReceiptCreated: "تم إنشاء إيصال الدفع",
+      clientHistory: "سجل العميل",
+      clientCreated: "تم إنشاء العميل",
+      clientModified: "تم تعديل العميل",
+      clientValidated: "تم تأكيد العميل",
+      clientRejected: "تم رفض العميل",
+      clientArchived: "تم أرشفة العميل",
+      unknownUser: "مستخدم غير معروف"
     }
   }
 };

@@ -28,11 +28,15 @@ import DeclarationsTable from './DeclarationsTable';
 import RefusalReasonDialog from '../RefusalReasonDialog';
 import ChauffeursTable from './ChauffeursTable';
 import CreateChauffeurDialog from './CreateChauffeurDialog';
+import ClientsTable from './ClientsTable';
+import ClientDialog from './ClientDialog';
+import ClientMapDialog from './ClientMapDialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from '../../hooks/useTranslation';
 
 const PlanificateurDashboard = () => {
+  const [consultMode, setConsultMode] = useState(false);
   const { user } = useAuth();
   const { t } = useTranslation();
   const { companies } = useSharedData();
@@ -122,6 +126,77 @@ const PlanificateurDashboard = () => {
     };
   }, []);
   const [activeTab, setActiveTab] = useState('dashboard');
+
+  // --- Clients state ---
+  const [clients, setClients] = useState([]);
+  // Indique s'il y a au moins un client en attente de validation
+  const hasPendingClients = clients.some(c => c.status === 'pending');
+  const [editingClient, setEditingClient] = useState(null);
+  const [showEditClient, setShowEditClient] = useState(false);
+  const [clientToDelete, setClientToDelete] = useState(null);
+  const [zoomedClient, setZoomedClient] = useState(null);
+  const [showClientMap, setShowClientMap] = useState(false);
+
+  // Listen to clients in Firestore
+  useEffect(() => {
+    let unsubscribe;
+    import('../../services/clientService').then(({ listenClients }) => {
+      unsubscribe = listenClients(setClients);
+    });
+    return () => { if (unsubscribe) unsubscribe(); };
+  }, []);
+
+  // Handlers for client CRUD
+  const handleEditClient = (client) => {
+    setEditingClient(client);
+    setShowEditClient(true);
+  };
+
+  // Handler to validate a client (set status to 'validated')
+  const handleValidateClient = async (client) => {
+    try {
+      const { updateClient } = await import('../../services/clientService');
+      await updateClient(client.id, { status: 'validated' }, user);
+      toast.success('Client validé');
+    } catch {
+      toast.error('Erreur lors de la validation du client');
+    }
+  };
+
+  // Ajout/édition client
+  const handleSubmitClient = async (client, isEdit) => {
+    try {
+      if (isEdit && editingClient) {
+        const { updateClient } = await import('../../services/clientService');
+        await updateClient(editingClient.id, client, user);
+        toast.success('Client modifié');
+      } else {
+        const { addClient } = await import('../../services/clientService');
+        await addClient({ ...client, createdAt: new Date().toISOString() }, user);
+        toast.success('Client ajouté');
+      }
+      setShowEditClient(false);
+      setEditingClient(null);
+    } catch {
+      toast.error('Erreur lors de l\'enregistrement du client');
+    }
+  };
+  const handleDeleteClient = (id) => setClientToDelete(id);
+  const confirmDeleteClient = async () => {
+    if (!clientToDelete) return;
+    try {
+      const { deleteClient } = await import('../../services/clientService');
+      await deleteClient(clientToDelete);
+      toast.success('Client supprimé');
+    } catch {
+      toast.error('Erreur lors de la suppression');
+    }
+    setClientToDelete(null);
+  };
+  const handleZoomClient = (client) => {
+    setZoomedClient(client);
+    setShowClientMap(true);
+  };
 
   // Ajout d'un statut enrichi pour chaque chauffeur (en_panne si au moins une déclaration en panne)
   const [chauffeurs, setChauffeurs] = useState<(Chauffeur & { isEnPanne?: boolean })[]>([]);
@@ -476,12 +551,16 @@ const PlanificateurDashboard = () => {
     );
   }
 
+  // --- GPS state for TracageSection ---
+  const [gpsActive, setGpsActive] = useState(false);
+  const [userPosition, setUserPosition] = useState<{ lat: number; lng: number; accuracy?: number } | null>(null);
+
   if (activeTab === 'tracage') {
     if (viewMode === 'desktop') {
       return (
         <div className="bg-background min-h-screen flex flex-col">
           <Header onProfileClick={handleProfileClick} />
-          <div className="flex h-[calc(100vh-4rem)] relative">
+          <div className="flex min-h-[calc(100vh-4rem)] relative">
             {/* Badge en ligne en haut à droite, desktop uniquement */}
             <span
               className="absolute top-0 right-0 m-2 z-10 flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700 shadow"
@@ -490,9 +569,14 @@ const PlanificateurDashboard = () => {
               <span className="inline-block w-2 h-2 rounded-full bg-green-500"></span>
               En ligne
             </span>
-            <PlanificateurSidebar activeTab={activeTab} onTabChange={setActiveTab} />
-            <div className="flex-1 p-6 pt-16">
-              <TracageSection />
+            <PlanificateurSidebar activeTab={activeTab} onTabChange={setActiveTab} hasPendingClients={hasPendingClients} />
+            <div className="flex-1 p-6 pt-16 overflow-auto">
+              <TracageSection 
+                gpsActive={gpsActive}
+                setGpsActive={setGpsActive}
+                userPosition={userPosition}
+                setUserPosition={setUserPosition}
+              />
             </div>
           </div>
         </div>
@@ -511,10 +595,15 @@ const PlanificateurDashboard = () => {
               En ligne
             </span>
           </div>
-          <PlanificateurSidebar activeTab={activeTab} onTabChange={setActiveTab} />
+          <PlanificateurSidebar activeTab={activeTab} onTabChange={setActiveTab} hasPendingClients={hasPendingClients} />
           <div className="p-6">
             {/* Carte (map) en premier */}
-            <TracageSection />
+            <TracageSection 
+              gpsActive={gpsActive}
+              setGpsActive={setGpsActive}
+              userPosition={userPosition}
+              setUserPosition={setUserPosition}
+            />
           </div>
         </div>
       );
@@ -567,7 +656,7 @@ const PlanificateurDashboard = () => {
     : filteredDeclarations;
 
   return (
-    <div className={viewMode === 'mobile' ? 'max-w-[430px] mx-auto bg-background min-h-screen flex flex-col' : 'bg-background min-h-screen flex flex-col'}>
+  <div className={viewMode === 'mobile' ? 'max-w-[430px] mx-auto bg-background min-h-screen flex flex-col' : 'bg-background min-h-screen flex flex-col'}>
       <Header onProfileClick={handleProfileClick} />
       {/* Badge en ligne : mobile sous le header, desktop à droite de la sidebar, sous le header */}
       {viewMode === 'mobile' ? (
@@ -581,9 +670,9 @@ const PlanificateurDashboard = () => {
           </span>
         </div>
       ) : null}
-      <div className={viewMode === 'mobile' ? 'flex flex-col h-auto gap-2' : 'flex flex-row h-[calc(100vh-4rem)] relative'}>
-        <PlanificateurSidebar activeTab={activeTab} onTabChange={setActiveTab} />
-        <div className="relative flex-1">
+      <div className={viewMode === 'mobile' ? 'flex flex-col h-auto gap-2' : 'flex flex-row min-h-[calc(100vh-4rem)] relative'}>
+        <PlanificateurSidebar activeTab={activeTab} onTabChange={setActiveTab} hasPendingClients={hasPendingClients} />
+        <div className="flex-1 p-6 pt-16 overflow-auto relative">
           {/* Badge En ligne en haut à droite du bloc content, sous le header, à l'intérieur mais hors de la sidebar (desktop uniquement) */}
           {viewMode !== 'mobile' && (
             <span
@@ -594,8 +683,7 @@ const PlanificateurDashboard = () => {
               En ligne
             </span>
           )}
-          <div className="p-6 pt-16 overflow-auto">
-            {/* ...existing code for tabs and content... */}
+          {/* ...existing code for tabs and content... */}
             {activeTab === 'dashboard' && (
               <div className="space-y-6">
                 <div className="mb-4">
@@ -909,6 +997,83 @@ const PlanificateurDashboard = () => {
               </div>
             )}
             {/* ...dialogs and modals... */}
+
+            {/* Onglet Clients */}
+            {activeTab === 'clients' && (
+              <div className="space-y-6">
+                <div className="flex items-center justify-between mb-2">
+                  <h2 className="text-2xl font-bold">Gestion des Clients</h2>
+                  <Button 
+                    className="flex items-center gap-2"
+                    onClick={() => { setEditingClient(null); setShowEditClient(true); }}
+                  >
+                    <Plus className="h-4 w-4" />
+                    Ajouter
+                  </Button>
+                </div>
+                {/* Barre de recherche/filtre pour clients */}
+                <SearchAndFilter
+                  searchValue={searchValue}
+                  onSearchChange={setSearchValue}
+                  filterValue={filterStatus}
+                  onFilterChange={setFilterStatus}
+                  filterOptions={[]}
+                  searchPlaceholder="Rechercher par nom..."
+                  filterPlaceholder="Filtrer..."
+                  searchColumn={searchColumn}
+                  onSearchColumnChange={value => setSearchColumn(value as 'number' | 'chauffeurName')}
+                  searchColumnOptions={[
+                    { value: 'number', label: 'Numéro' },
+                    { value: 'clientName', label: 'Client' }
+                  ]}
+                />
+                <ClientsTable
+                  clients={clients.filter(c => !searchValue || c.name.toLowerCase().includes(searchValue.toLowerCase()))}
+                  onEditClient={client => {
+                    setEditingClient(client);
+                    setShowEditClient(true);
+                    setConsultMode(false);
+                  }}
+                  onConsultClient={client => {
+                    setEditingClient(client);
+                    setShowEditClient(true);
+                    setConsultMode(true);
+                  }}
+                  onDeleteClient={handleDeleteClient}
+                  onZoomClient={handleZoomClient}
+                  onValidateClient={handleValidateClient}
+                  fontSize={tableFontSize as any}
+                />
+                <ClientMapDialog
+                  isOpen={showClientMap}
+                  onClose={() => setShowClientMap(false)}
+                  client={zoomedClient}
+                />
+                {/* Dialog de suppression client */}
+                <AlertDialog open={!!clientToDelete} onOpenChange={open => { if (!open) setClientToDelete(null); }}>
+                  <AlertDialogContent style={{ zIndex: 10000, position: 'fixed' }} aria-describedby="delete-client-desc">
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
+                    </AlertDialogHeader>
+                    <AlertDialogDescription id="delete-client-desc">
+                      Êtes-vous sûr de vouloir supprimer ce client ? Cette action est irréversible.
+                    </AlertDialogDescription>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel onClick={() => setClientToDelete(null)}>Annuler</AlertDialogCancel>
+                      <AlertDialogAction onClick={confirmDeleteClient}>Supprimer</AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+                {/* Dialog d'ajout/édition client */}
+                <ClientDialog
+                  isOpen={showEditClient}
+                  onClose={() => { setShowEditClient(false); setEditingClient(null); setConsultMode(false); }}
+                  onSubmit={handleSubmitClient}
+                  editingClient={editingClient}
+                  readOnly={consultMode}
+                />
+              </div>
+            )}
             <CreateChauffeurDialog
               isOpen={showCreateChauffeur}
               onClose={() => {
@@ -945,7 +1110,6 @@ const PlanificateurDashboard = () => {
               language={settings.language || 'fr'}
             />
 
-          </div>
         </div>
       </div>
     </div>

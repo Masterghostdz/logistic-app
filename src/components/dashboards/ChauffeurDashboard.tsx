@@ -32,6 +32,7 @@ import { Badge } from '../ui/badge';
 import { Separator } from '../ui/separator';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { MapPin, Plus, Clock, Search, Edit, Trash2 } from 'lucide-react';
+// ...existing code...
 import ChauffeurSidebar from './ChauffeurSidebar';
 import { Declaration, Warehouse, PaymentReceipt } from '../../types';
 import SimpleDeclarationNumberForm from '../SimpleDeclarationNumberForm';
@@ -42,7 +43,13 @@ import Header from '../Header';
 import ProfilePage from '../ProfilePage';
 import { getAllRefusalReasons } from '../../services/refusalReasonService';
 
+import { getCurrentPosition } from '../../utils/gpsUtils';
+
 const ChauffeurDashboard = () => {
+  // GPS state for dashboard
+  const [gpsActive, setGpsActive] = useState(false);
+  const [showGpsConfirm, setShowGpsConfirm] = useState(false);
+  const [gpsPosition, setGpsPosition] = useState<{ lat: number; lng: number; accuracy?: number } | null>(null);
   // Aperçu photo reçu (doit être déclaré dans le composant, après les imports)
   const [previewPhotoUrl, setPreviewPhotoUrl] = useState<string | null>(null);
   // TOUS les hooks doivent être appelés avant tout return !
@@ -82,6 +89,27 @@ const ChauffeurDashboard = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   // On utilise activeTab pour la navigation (dashboard, tracage, profile)
   const [activeTab, setActiveTab] = useState<'dashboard' | 'tracage' | 'profile'>('dashboard');
+  // Track previous tab to detect tab switch
+  const [prevTab, setPrevTab] = useState<'dashboard' | 'tracage' | 'profile'>('dashboard');
+
+  // Effect: auto-activate GPS when entering 'tracage' from another tab
+  useEffect(() => {
+    if (activeTab === 'tracage' && prevTab !== 'tracage' && !gpsActive) {
+      // Try to get position and activate GPS
+      (async () => {
+        const pos = await getCurrentPosition();
+        if (pos) {
+          setGpsPosition(pos);
+          setGpsActive(true);
+        } else {
+          setGpsActive(false);
+          setGpsPosition(null);
+          toast({ title: 'Accès à la position refusé ou indisponible', variant: 'destructive' });
+        }
+      })();
+    }
+    setPrevTab(activeTab);
+  }, [activeTab]);
   // Pour la confirmation d'annulation en mode mobile
   const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
   // Entrepôts pour la carte
@@ -352,10 +380,10 @@ const ChauffeurDashboard = () => {
   return (
     <div className={isMobile ? 'max-w-[430px] mx-auto bg-background min-h-screen flex flex-col' : 'min-h-screen bg-background w-full overflow-x-hidden'}>
       <Header onProfileClick={() => setActiveTab('profile')} />
-      {/* Badge En ligne : mobile sous le header, desktop en haut à droite (absolute, hors sidebar) */}
+      {/* Badge En ligne + GPS : mobile sous le header, desktop en haut à droite (absolute, hors sidebar) */}
       {isMobile ? (
         <>
-          <div className="flex px-2 pt-3 mb-2">
+          <div className="flex px-2 pt-3 mb-2 items-center gap-2">
             <span
               className="flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700 shadow"
               title={isOnline ? 'Connecté au cloud' : 'Hors ligne'}
@@ -363,6 +391,51 @@ const ChauffeurDashboard = () => {
               <span className="inline-block w-2 h-2 rounded-full bg-green-500"></span>
               En ligne
             </span>
+            {/* GPS Button (mobile, à côté du badge) */}
+            <Button
+              type="button"
+              className={
+                `ml-2 flex items-center justify-center w-8 h-8 rounded-full border-2 transition-all ` +
+                (gpsActive
+                  ? 'bg-green-500 border-green-600 shadow-lg ring-2 ring-green-300 animate-pulse'
+                  : 'bg-red-500 border-red-600')
+              }
+              style={{ boxShadow: gpsActive ? '0 0 8px 2px #22c55e' : 'none' }}
+              title={gpsActive ? 'Désactiver le GPS' : 'Activer le GPS'}
+              onClick={async e => {
+                if (gpsActive) {
+                  setShowGpsConfirm(true);
+                } else {
+                  // Activation : demande la position
+                  const pos = await getCurrentPosition();
+                  if (pos) {
+                    setGpsPosition(pos);
+                    setGpsActive(true);
+                  } else {
+                    setGpsActive(false);
+                    setGpsPosition(null);
+                    toast({ title: 'Accès à la position refusé ou indisponible', variant: 'destructive' });
+                  }
+                }
+              }}
+            >
+              <span className="material-icons text-white">gps_fixed</span>
+            </Button>
+            {/* Confirmation dialog uniquement pour la désactivation */}
+            <AlertDialog open={showGpsConfirm} onOpenChange={setShowGpsConfirm}>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Désactiver le GPS</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Êtes-vous sûr de vouloir désactiver le GPS ?
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Annuler</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => { setGpsActive(false); setGpsPosition(null); setShowGpsConfirm(false); }}>Désactiver</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
           {chauffeurDeclarations.some(d => d.status === 'en_panne') && (
             <div className="flex items-center gap-2 px-4 py-2 bg-red-100 border-b-2 border-red-500 text-red-700 font-semibold mb-2">
@@ -961,8 +1034,15 @@ const ChauffeurDashboard = () => {
             )}
             {activeTab === 'tracage' && (
               <div className={isMobile ? 'max-w-[430px] mx-auto w-full p-4' : 'p-6 pt-8'}>
-                <h1 className="text-2xl font-bold text-foreground mb-6">Traçage des Entrepôts</h1>
-                <TracageSection />
+                <h1 className="text-2xl font-bold text-foreground mb-6">
+                  {t('tabs.tracage') || 'Traçage'}
+                </h1>
+                <TracageSection 
+                  gpsActive={gpsActive}
+                  setGpsActive={setGpsActive}
+                  userPosition={gpsPosition}
+                  setUserPosition={setGpsPosition}
+                />
               </div>
             )}
           </main>
@@ -970,13 +1050,59 @@ const ChauffeurDashboard = () => {
       ) : (
         <div className="flex min-h-[calc(100vh-4rem)] relative">
           {/* Badge En ligne en haut à droite, absolute, hors sidebar */}
-          <span
-            className="absolute top-0 right-0 m-2 z-10 flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700 shadow"
-            title={isOnline ? 'Connecté au cloud' : 'Hors ligne'}
-          >
-            <span className="inline-block w-2 h-2 rounded-full bg-green-500"></span>
-            En ligne
-          </span>
+          <div className="absolute top-0 right-0 m-2 z-10 flex items-center gap-2">
+            <span
+              className="flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700 shadow"
+              title={isOnline ? 'Connecté au cloud' : 'Hors ligne'}
+            >
+              <span className="inline-block w-2 h-2 rounded-full bg-green-500"></span>
+              En ligne
+            </span>
+            {/* GPS Button (toujours visible, desktop et mobile) */}
+            <Button
+              type="button"
+              className={
+                `ml-2 flex items-center justify-center w-8 h-8 rounded-full border-2 transition-all ` +
+                (gpsActive
+                  ? 'bg-green-500 border-green-600 shadow-lg ring-2 ring-green-300 animate-pulse'
+                  : 'bg-red-500 border-red-600')
+              }
+              style={{ boxShadow: gpsActive ? '0 0 8px 2px #22c55e' : 'none' }}
+              title={gpsActive ? 'Désactiver le GPS' : 'Activer le GPS'}
+              onClick={async e => {
+                if (gpsActive) {
+                  setShowGpsConfirm(true);
+                } else {
+                  const pos = await getCurrentPosition();
+                  if (pos) {
+                    setGpsPosition(pos);
+                    setGpsActive(true);
+                  } else {
+                    setGpsActive(false);
+                    setGpsPosition(null);
+                    toast({ title: 'Accès à la position refusé ou indisponible', variant: 'destructive' });
+                  }
+                }
+              }}
+            >
+              <span className="material-icons text-white text-lg">gps_fixed</span>
+            </Button>
+            {/* Confirmation dialog uniquement pour la désactivation */}
+            <AlertDialog open={showGpsConfirm} onOpenChange={setShowGpsConfirm}>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Désactiver le GPS ?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Êtes-vous sûr de vouloir désactiver le GPS ?
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel onClick={() => setShowGpsConfirm(false)}>Annuler</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => { setGpsActive(false); setGpsPosition(null); setShowGpsConfirm(false); }}>Désactiver</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
           <ChauffeurSidebar activeTab={activeTab} onTabChange={(tab) => setActiveTab(tab as 'dashboard' | 'tracage')} />
           <div className="flex-1 p-6 pt-16 overflow-auto">
             {/* ...existing code for dashboard/tracage/content... */}
@@ -1353,7 +1479,22 @@ const ChauffeurDashboard = () => {
               </>
             )}
             {activeTab === 'tracage' && (
-              <TracageSection />
+              <>
+                {/* Show Tracage title above tabs in desktop mode only */}
+                {!(settings?.viewMode === 'mobile') && (
+                  <div className="mb-4">
+                    <h1 className="text-2xl md:text-3xl font-bold text-primary mb-2">
+                      {t('tabs.tracage') || 'Traçage'}
+                    </h1>
+                  </div>
+                )}
+                <TracageSection 
+                  gpsActive={gpsActive}
+                  setGpsActive={setGpsActive}
+                  userPosition={gpsPosition}
+                  setUserPosition={setGpsPosition}
+                />
+              </>
             )}
           </div>
         </div>
