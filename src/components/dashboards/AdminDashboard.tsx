@@ -93,7 +93,9 @@ const AdminDashboard = () => {
   }, []);
   
   // Synchronisation temps réel avec Firestore
-  const [users, setUsers] = useState<(UserType & { password?: string })[]>([]);
+  const [users, setUsers] = useState<(UserType & { password?: string; isOnline?: boolean })[]>([]);
+
+  const { isOnline } = useOnlineStatus();
 
   useEffect(() => {
     let unsubscribe: (() => void) | undefined;
@@ -390,25 +392,42 @@ const AdminDashboard = () => {
       planificateur: 'bg-blue-100 text-blue-800',
       financier: 'bg-green-100 text-green-800',
       financier_unite: 'bg-purple-100 text-purple-800',
-      chauffeur: 'bg-gray-100 text-gray-800'
+      chauffeur: 'bg-gray-100 text-gray-800',
     };
-    
     const roleLabels = {
       admin: 'Administrateur',
       planificateur: 'Planificateur',
       financier: 'Financier',
       financier_unite: 'Financier Unité',
-      chauffeur: 'Chauffeur'
+      chauffeur: 'Chauffeur',
     };
-
     return (
-      <Badge className={roleColors[role as keyof typeof roleColors]}>
-        {roleLabels[role as keyof typeof roleLabels]}
+      <Badge
+        className={
+          `${roleColors[role as keyof typeof roleColors]} text-xs px-2 py-1 rounded-full font-semibold border border-transparent`
+        }
+        style={{ minWidth: 90, textAlign: 'center', letterSpacing: 0.2 }}
+      >
+        {roleLabels[role as keyof typeof roleLabels] || role}
       </Badge>
     );
   };
 
-  const { isOnline } = useOnlineStatus();
+  // Copie exacte de la fonction du header pour cohérence visuelle
+  const getRoleBadgeColor = (role: string) => {
+    switch (role) {
+      case 'admin':
+        return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-300 border-red-200 dark:border-red-800';
+      case 'planificateur':
+        return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300 border-blue-200 dark:border-blue-800';
+      case 'financier':
+        return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300 border-green-200 dark:border-green-800';
+      case 'chauffeur':
+        return 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-300 border-purple-200 dark:border-purple-800';
+      default:
+        return 'bg-muted text-muted-foreground border-border';
+    }
+  };
 
   if (activeTab === 'profile') {
     return (
@@ -608,6 +627,7 @@ const AdminDashboard = () => {
                          required={!editingUser}
                          minLength={editingUser ? 0 : 6}
                          placeholder={editingUser ? 'Laisser vide pour ne pas changer' : ''}
+
                        />
                      </div>
                       <div>
@@ -724,6 +744,17 @@ const AdminDashboard = () => {
                           <TableHead style={{ fontSize: `${Math.round(14 * (zoomLevels[userTableFontSize] || 1))}px` }}>Nom complet</TableHead>
                           <TableHead style={{ fontSize: `${Math.round(14 * (zoomLevels[userTableFontSize] || 1))}px` }}>Nom d'utilisateur</TableHead>
                           <TableHead style={{ fontSize: `${Math.round(14 * (zoomLevels[userTableFontSize] || 1))}px` }}>Rôle</TableHead>
+                          <TableHead
+  style={{
+    fontSize: `${Math.round(14 * (zoomLevels[userTableFontSize] || 1))}px`,
+    textAlign: 'center',
+    paddingLeft: 0,
+    paddingRight: 0,
+    whiteSpace: 'nowrap',
+  }}
+>
+  Connexion
+</TableHead>
                           <TableHead style={{ fontSize: `${Math.round(14 * (zoomLevels[userTableFontSize] || 1))}px` }}>Téléphone</TableHead>
                           <TableHead style={{ fontSize: `${Math.round(14 * (zoomLevels[userTableFontSize] || 1))}px` }}>Mot de passe</TableHead>
                           <TableHead style={{ fontSize: `${Math.round(14 * (zoomLevels[userTableFontSize] || 1))}px` }}>Actions</TableHead>
@@ -734,7 +765,37 @@ const AdminDashboard = () => {
                           <TableRow key={user.id} style={{ fontSize: `${Math.round(14 * (zoomLevels[userTableFontSize] || 1))}px` }}>
                             <TableCell className="font-medium" style={{ fontSize: `${Math.round(14 * (zoomLevels[userTableFontSize] || 1))}px` }}>{user.fullName}</TableCell>
                             <TableCell style={{ fontSize: `${Math.round(14 * (zoomLevels[userTableFontSize] || 1))}px` }}>{user.username}</TableCell>
-                            <TableCell style={{ fontSize: `${Math.round(14 * (zoomLevels[userTableFontSize] || 1))}px` }}>{getRoleBadge(user.role)}</TableCell>
+                            <TableCell style={{ fontSize: `${Math.round(14 * (zoomLevels[userTableFontSize] || 1))}px` }}>
+                              {/* Badge rôle harmonisé (identique header) */}
+                              <Badge className={`border ${getRoleBadgeColor(user.role)}`}>
+                                {user.role}
+                              </Badge>
+                            </TableCell>
+                            {/* Connexion column */}
+                            <TableCell
+  style={{
+    fontSize: `${Math.round(14 * (zoomLevels[userTableFontSize] || 1))}px`,
+    textAlign: 'center',
+    paddingLeft: 0,
+    paddingRight: 0,
+  }}
+>
+  {/* Statut connexion : point vert (en ligne) ou rouge (hors ligne) avec glow/ombre */}
+  <span
+    title={user.isOnline ? 'En ligne' : 'Hors ligne'}
+    style={{
+      display: 'inline-block',
+      width: 14,
+      height: 14,
+      borderRadius: '50%',
+      background: user.isOnline ? '#22c55e' : '#ef4444',
+      boxShadow: user.isOnline
+        ? '0 0 8px 2px #22c55e, 0 2px 6px rgba(34,197,94,0.3)'
+        : '0 0 6px 1px #ef4444, 0 2px 6px rgba(239,68,68,0.3)',
+      margin: '0 auto',
+    }}
+  />
+</TableCell>
                             <TableCell style={{ fontSize: `${Math.round(14 * (zoomLevels[userTableFontSize] || 1))}px` }}>
                               {user.phone && user.phone.length > 0 ? (
                                 <div className="space-y-1">
@@ -745,7 +806,8 @@ const AdminDashboard = () => {
                               ) : '-'}
                             </TableCell>
                             <TableCell style={{ fontSize: `${Math.round(14 * (zoomLevels[userTableFontSize] || 1))}px` }}>
-                              <PasswordField password={user.password ?? ''} showLabel={false} />
+                              {/* Affiche toujours 8 points pour le mot de passe */}
+                              <span style={{ letterSpacing: 2 }}>{'•'.repeat(8)}</span>
                             </TableCell>
                             <TableCell style={{ fontSize: `${Math.round(14 * (zoomLevels[userTableFontSize] || 1))}px` }}>
                               <div className="flex gap-2">

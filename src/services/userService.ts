@@ -19,7 +19,8 @@ export const listenUsers = (callback: (users: any[]) => void) => {
         avatar: data.avatar,
         vehicleType: data.vehicleType,
         employeeType: data.employeeType,
-        theme: data.theme || 'light'
+        theme: data.theme || 'light',
+        isOnline: data.isOnline ?? false
       };
     });
     callback(users);
@@ -70,4 +71,10 @@ export const deleteUser = async (id) => {
   try {
     await deleteDoc(chauffeurRef);
   } catch (e) {}
+};
+
+export const setUserOnlineStatus = async (userId: string, isOnline: boolean) => {
+  if (!userId) return;
+  const userRef = doc(db, 'users', userId);
+  await updateDoc(userRef, { isOnline });
 };

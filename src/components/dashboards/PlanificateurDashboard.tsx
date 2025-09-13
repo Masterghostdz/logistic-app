@@ -227,6 +227,11 @@ const PlanificateurDashboard = () => {
             isActive: typeof c.isActive === 'boolean' ? c.isActive : true,
             createdAt: c.createdAt || '',
             isEnPanne: hasPanne,
+            latitude: typeof c.latitude === 'number' ? c.latitude : (c.coordinates?.lat ?? undefined),
+            longitude: typeof c.longitude === 'number' ? c.longitude : (c.coordinates?.lng ?? undefined),
+            isTracking: typeof c.isTracking === 'boolean' ? c.isTracking : false,
+            lastPositionAt: c.lastPositionAt,
+            isOnline: typeof c.isOnline === 'boolean' ? c.isOnline : false,
           };
         });
         setChauffeurs(mappedChauffeurs);
@@ -236,7 +241,7 @@ const PlanificateurDashboard = () => {
     return () => {
       if (unsubscribe) unsubscribe();
     };
-  }, []);
+  }, [declarations, isOnline]);
 
   const [searchValue, setSearchValue] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');

@@ -1,8 +1,9 @@
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { User } from '../types';
 import { generateSecureToken, storeSession, clearSession, SESSION_DURATION, SessionData } from '../utils/sessionUtils';
 import { loginWithUsername } from '../services/loginService';
+import { setUserOnlineStatus } from '../services/userService';
+import { setChauffeurOnlineStatus } from '../services/setChauffeurOnlineStatus';
 
 export const useAuthLogic = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -21,7 +22,6 @@ export const useAuthLogic = () => {
           expiresAt: Date.now() + SESSION_DURATION
         };
         storeSession(sessionData);
-        // S'assure que tous les champs User sont présents
         setUser({
           id: userData.id,
           username: userData.username || '',
@@ -39,6 +39,10 @@ export const useAuthLogic = () => {
           employeeType: userData.employeeType
         });
         setIsAuthenticated(true);
+        await setUserOnlineStatus(userData.id, true);
+        if (userData.role === 'chauffeur') {
+          await setChauffeurOnlineStatus(userData.id, true);
+        }
         return true;
       }
       return false;
@@ -51,7 +55,13 @@ export const useAuthLogic = () => {
   // (Optionnel) À adapter pour Firestore si tu veux changer le mot de passe
   const changePassword = async () => false;
 
-  const logout = () => {
+  const logout = async () => {
+    if (user) {
+      await setUserOnlineStatus(user.id, false);
+      if (user.role === 'chauffeur') {
+        await setChauffeurOnlineStatus(user.id, false);
+      }
+    }
     setUser(null);
     setIsAuthenticated(false);
     clearSession();
@@ -91,6 +101,23 @@ export const useAuthLogic = () => {
       return false;
     }
   };
+
+  useEffect(() => {
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (user) {
+        // Envoi synchrone du statut offline via sendBeacon
+        const urlUser = `${window.location.origin}/api/setUserOffline`;
+        const urlChauffeur = `${window.location.origin}/api/setChauffeurOffline`;
+        const payload = JSON.stringify({ userId: user.id });
+        navigator.sendBeacon(urlUser, payload);
+        if (user.role === 'chauffeur') {
+          navigator.sendBeacon(urlChauffeur, payload);
+        }
+      }
+    };
+    window.addEventListener('unload', handleBeforeUnload);
+    return () => window.removeEventListener('unload', handleBeforeUnload);
+  }, [user]);
 
   return {
     user,

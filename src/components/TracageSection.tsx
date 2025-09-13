@@ -47,11 +47,13 @@ const TracageSection = ({ gpsActive, setGpsActive, userPosition, setUserPosition
   const [layerType, setLayerType] = useState('osm');
   const [showLayerMenu, setShowLayerMenu] = useState(false);
 
+  const auth = useAuth();
   // Onglet actif : client ou entrepot (client par défaut)
   const [activeTab, setActiveTab] = useState<'clients' | 'warehouses'>('clients');
   const [prevTab, setPrevTab] = useState<'clients' | 'warehouses'>('clients');
   useEffect(() => {
-    if (activeTab !== prevTab && !gpsActive) {
+    // N'active pas automatiquement le GPS pour le planificateur
+    if (auth?.user?.role !== 'planificateur' && activeTab !== prevTab && !gpsActive) {
       // Try to activate GPS on tab switch
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
@@ -138,7 +140,6 @@ const TracageSection = ({ gpsActive, setGpsActive, userPosition, setUserPosition
     }
   };
   // Seuls les clients validés sont affichés
-  const auth = useAuth();
   const myClients = useMemo(() => {
     if (!auth?.user) return [];
     const userNames = [auth.user.fullName, auth.user.username].filter(Boolean).map(s => s.trim().toLowerCase());
@@ -194,36 +195,77 @@ const TracageSection = ({ gpsActive, setGpsActive, userPosition, setUserPosition
     }
   };
   const handleGps = () => {
-    if (userPosition) {
-      setUserPosition(null);
-      // Ne pas désactiver le GPS global ici
+    if (auth?.user?.role === 'planificateur') {
+      if (userPosition) {
+        // Si la position existe, centrer la carte dessus
+        if (mapInstance && userPosition) {
+          mapInstance.setView([userPosition.lat, userPosition.lng], 15, { animate: true });
+        }
+        // Désactive visuellement le GPS si la position n'est plus suivie
+        setUserPosition(null);
+        setGpsActive(false);
+        return;
+      } else {
+        if (!mapInstance) {
+          toast.error("La carte n'est pas encore prête.");
+          return;
+        }
+        if (!navigator.geolocation) {
+          toast.error("La géolocalisation n'est pas supportée par ce navigateur.");
+          return;
+        }
+        setFocusedWarehouseId(null);
+        navigator.geolocation.getCurrentPosition(
+          pos => {
+            setUserPosition({ lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: pos.coords.accuracy });
+            setGpsActive(true);
+            mapInstance.setView([pos.coords.latitude, pos.coords.longitude], 15, { animate: true });
+          },
+          err => {
+            if (err.code === 1) {
+              toast.error("Accès à la position refusé. Veuillez autoriser la géolocalisation.");
+            } else if (err.code === 2) {
+              toast.error("Position non disponible.");
+            } else {
+              toast.error("Erreur lors de la récupération de la position.");
+            }
+          },
+          { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+        );
+      }
     } else {
-      if (!mapInstance) {
-        toast.error("La carte n'est pas encore prête.");
-        return;
+      if (userPosition) {
+        setUserPosition(null);
+        setGpsActive(false);
+        // Ne pas désactiver le GPS global ici
+      } else {
+        if (!mapInstance) {
+          toast.error("La carte n'est pas encore prête.");
+          return;
+        }
+        if (!navigator.geolocation) {
+          toast.error("La géolocalisation n'est pas supportée par ce navigateur.");
+          return;
+        }
+        setFocusedWarehouseId(null);
+        navigator.geolocation.getCurrentPosition(
+          pos => {
+            setUserPosition({ lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: pos.coords.accuracy });
+            setGpsActive(true);
+            mapInstance.setView([pos.coords.latitude, pos.coords.longitude], 15, { animate: true });
+          },
+          err => {
+            if (err.code === 1) {
+              toast.error("Accès à la position refusé. Veuillez autoriser la géolocalisation.");
+            } else if (err.code === 2) {
+              toast.error("Position non disponible.");
+            } else {
+              toast.error("Erreur lors de la récupération de la position.");
+            }
+          },
+          { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+        );
       }
-      if (!navigator.geolocation) {
-        toast.error("La géolocalisation n'est pas supportée par ce navigateur.");
-        return;
-      }
-      setFocusedWarehouseId(null);
-      navigator.geolocation.getCurrentPosition(
-        pos => {
-          setUserPosition({ lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: pos.coords.accuracy });
-          setGpsActive(true);
-          mapInstance.setView([pos.coords.latitude, pos.coords.longitude], 15, { animate: true });
-        },
-        err => {
-          if (err.code === 1) {
-            toast.error("Accès à la position refusé. Veuillez autoriser la géolocalisation.");
-          } else if (err.code === 2) {
-            toast.error("Position non disponible.");
-          } else {
-            toast.error("Erreur lors de la récupération de la position.");
-          }
-        },
-        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-      );
     }
   };
   const handleScreenshot = async () => {
@@ -434,8 +476,8 @@ const TracageSection = ({ gpsActive, setGpsActive, userPosition, setUserPosition
               </Button>
                 <Button
                   size="icon"
-                  variant={userPosition ? "default" : "ghost"}
-                  className={`bg-white/80 dark:bg-muted/80 text-dark dark:text-white rounded-lg shadow ${userPosition ? "ring-2 ring-primary" : ""}`}
+                  variant={userPosition && gpsActive ? "default" : "ghost"}
+                  className={`bg-white/80 dark:bg-muted/80 text-dark dark:text-white rounded-lg shadow ${(userPosition && gpsActive) ? "ring-2 ring-primary" : ""}`}
                   title="GPS"
                   onClick={handleGps}
                 >
