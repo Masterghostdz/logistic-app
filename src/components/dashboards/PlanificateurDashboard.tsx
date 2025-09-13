@@ -15,6 +15,8 @@ import PhoneNumbersField from '../PhoneNumbersField';
 import { toast } from 'sonner';
 import { Plus } from 'lucide-react';
 import { Declaration, Chauffeur } from '../../types';
+import { doc, updateDoc } from 'firebase/firestore';
+import { db as firestore } from '../../services/firebaseClient';
 import { useSharedData } from '../../contexts/SharedDataContext';
 import SearchAndFilter from '../SearchAndFilter';
 import ProfilePage from '../ProfilePage';
@@ -36,6 +38,17 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from '../../hooks/useTranslation';
 
 const PlanificateurDashboard = () => {
+  // Heartbeat Firestore: met à jour lastOnline toutes les 60s
+  const auth = useAuth();
+  useEffect(() => {
+    if (!auth?.user?.id) return;
+    const userRef = doc(firestore, 'users', auth.user.id);
+    const interval = setInterval(() => {
+      updateDoc(userRef, { lastOnline: Date.now(), isOnline: true });
+    }, 60000);
+    updateDoc(userRef, { lastOnline: Date.now(), isOnline: true });
+    return () => clearInterval(interval);
+  }, [auth?.user?.id]);
   const [consultMode, setConsultMode] = useState(false);
   const { user } = useAuth();
   const { t } = useTranslation();
@@ -232,6 +245,7 @@ const PlanificateurDashboard = () => {
             isTracking: typeof c.isTracking === 'boolean' ? c.isTracking : false,
             lastPositionAt: c.lastPositionAt,
             isOnline: typeof c.isOnline === 'boolean' ? c.isOnline : false,
+            gpsActive: typeof c.gpsActive === 'boolean' ? c.gpsActive : false,
           };
         });
         setChauffeurs(mappedChauffeurs);

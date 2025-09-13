@@ -45,16 +45,49 @@ import { getAllRefusalReasons } from '../../services/refusalReasonService';
 
 import { getCurrentPosition } from '../../utils/gpsUtils';
 
+import { doc, updateDoc } from 'firebase/firestore';
+import { db as firestore } from '../../services/firebaseClient';
+
 const ChauffeurDashboard = () => {
+  const auth = useAuth();
+  // Heartbeat Firestore: met à jour lastActive toutes les 60s
+  useEffect(() => {
+    if (!auth?.user?.id) return;
+    const userRef = doc(firestore, 'users', auth.user.id);
+    // Heartbeat: set online every 60s
+    const interval = setInterval(() => {
+      updateDoc(userRef, { lastOnline: Date.now(), isOnline: true });
+    }, 60000);
+    // Set online immediately
+    updateDoc(userRef, { lastOnline: Date.now(), isOnline: true });
+
+    // Set offline on unload/tab close
+    const handleUnload = () => {
+      updateDoc(userRef, { isOnline: false });
+    };
+    window.addEventListener('beforeunload', handleUnload);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('beforeunload', handleUnload);
+      updateDoc(userRef, { isOnline: false });
+    };
+  }, [auth?.user?.id]);
   // GPS state for dashboard
   const [gpsActive, setGpsActive] = useState(false);
+
+  // Sync gpsActive to Firestore when it changes
+  useEffect(() => {
+    if (!auth?.user?.id) return;
+    const userRef = doc(firestore, 'users', auth.user.id);
+    updateDoc(userRef, { gpsActive });
+  }, [gpsActive, auth?.user?.id]);
   const [showGpsConfirm, setShowGpsConfirm] = useState(false);
   const [gpsPosition, setGpsPosition] = useState<{ lat: number; lng: number; accuracy?: number } | null>(null);
   // Aperçu photo reçu (doit être déclaré dans le composant, après les imports)
   const [previewPhotoUrl, setPreviewPhotoUrl] = useState<string | null>(null);
   // TOUS les hooks doivent être appelés avant tout return !
   const { isOnline } = useOnlineStatus();
-  const auth = useAuth();
   const { declarations, addDeclaration, updateDeclaration, deleteDeclaration, companies } = useSharedData();
   const { t, settings } = useTranslation();
   const isMobile = settings?.viewMode === 'mobile';

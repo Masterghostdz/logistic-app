@@ -1,5 +1,18 @@
 
 const FinancierDashboard = () => {
+  // Heartbeat Firestore: met à jour lastOnline toutes les 60s
+  const auth = useAuth();
+  useEffect(() => {
+    if (!auth?.user?.id) return;
+    const { doc, updateDoc } = require('firebase/firestore');
+    const { firestore } = require('../../services/firebase');
+    const userRef = doc(firestore, 'users', auth.user.id);
+    const interval = setInterval(() => {
+  updateDoc(userRef, { lastOnline: Date.now(), isOnline: true });
+    }, 60000);
+  updateDoc(userRef, { lastOnline: Date.now(), isOnline: true });
+    return () => clearInterval(interval);
+  }, [auth?.user?.id]);
   const { user } = useAuth();
   const { t, settings } = useTranslation();
   const [records, setRecords] = useState<FinancialRecord[]>([]);

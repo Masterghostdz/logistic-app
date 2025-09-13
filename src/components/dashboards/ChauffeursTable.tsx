@@ -14,6 +14,7 @@ interface ChauffeurWithStatus extends Chauffeur {
   isTracking?: boolean;
   lastPositionAt?: string;
   isOnline?: boolean;
+  gpsActive?: boolean;
 }
 
 interface ChauffeursTableProps {
@@ -75,6 +76,7 @@ const ChauffeursTable = ({ chauffeurs, onEditChauffeur, onDeleteChauffeur, fontS
               <TableHead className="w-[100px]" style={fontSizeStyle}>Véhicule</TableHead>
               <TableHead className="w-[60px]" style={fontSizeStyle}>Type</TableHead>
               <TableHead className="w-[120px]" style={fontSizeStyle}>Position</TableHead>
+              <TableHead className="w-[90px]" style={fontSizeStyle}>GPS</TableHead>
               <TableHead className="w-[90px]" style={fontSizeStyle}>Connexion</TableHead>
               <TableHead className="w-[90px]" style={fontSizeStyle}>Statut</TableHead>
               <TableHead className="w-[80px]" style={fontSizeStyle}>Actions</TableHead>
@@ -130,6 +132,21 @@ const ChauffeursTable = ({ chauffeurs, onEditChauffeur, onDeleteChauffeur, fontS
                     {typeof chauffeur.latitude === 'number' && typeof chauffeur.longitude === 'number'
                       ? `${chauffeur.latitude.toFixed(5)}, ${chauffeur.longitude.toFixed(5)}`
                       : '-'}
+                  </TableCell>
+                  {/* GPS column */}
+                  <TableCell style={fontSizeStyle}>
+                    <span
+                      className="material-icons"
+                      title={chauffeur.gpsActive ? 'GPS activé' : 'GPS désactivé'}
+                      style={{
+                        color: chauffeur.gpsActive ? '#22c55e' : '#ef4444',
+                        fontSize: '20px',
+                        verticalAlign: 'middle',
+                        display: 'inline-block',
+                      }}
+                    >
+                      gps_fixed
+                    </span>
                   </TableCell>
                   {/* Connexion column */}
                   <TableCell style={fontSizeStyle}>
