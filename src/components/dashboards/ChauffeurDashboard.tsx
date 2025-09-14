@@ -57,6 +57,7 @@ const ChauffeurDashboard = () => {
     // Heartbeat: set online every 60s
     const interval = setInterval(() => {
       updateDoc(userRef, { lastOnline: Date.now(), isOnline: true });
+    
     }, 60000);
     // Set online immediately
     updateDoc(userRef, { lastOnline: Date.now(), isOnline: true });
@@ -73,6 +74,8 @@ const ChauffeurDashboard = () => {
       updateDoc(userRef, { isOnline: false });
     };
   }, [auth?.user?.id]);
+
+  
   // GPS state for dashboard
   const [gpsActive, setGpsActive] = useState(false);
 
@@ -102,10 +105,35 @@ const ChauffeurDashboard = () => {
     programNumber: ''
   });
   const [statusFilter, setStatusFilter] = useState('all');
+
+  useEffect(() => {
+    if (!auth?.user?.id || !gpsActive || !gpsPosition) return;
+    const userRef = doc(firestore, 'users', auth.user.id);
+
+    // Heartbeat: met à jour lastPosition toutes les 20s
+    const interval = setInterval(() => {
+      updateDoc(userRef, {
+        lastPosition: {
+          lat: gpsPosition.lat,
+          lng: gpsPosition.lng,
+          at: Date.now()
+        }
+      });
+    }, 20000);
+
+    // Met à jour immédiatement
+    updateDoc(userRef, {
+      lastPosition: {
+        lat: gpsPosition.lat,
+        lng: gpsPosition.lng,
+        at: Date.now()
+      }
+    });
+
+    return () => clearInterval(interval);
+  }, [auth?.user?.id, gpsActive, gpsPosition]);
+
   // Reçus de paiement structurés
-
-
-
   const [paymentReceipts, setPaymentReceipts] = useState<PaymentReceipt[]>([]);
   const [enRouteDeclaration, setEnRouteDeclaration] = useState<Declaration | null>(null);
   // Synchronise paymentReceipts avec ceux de la déclaration en cours si présents

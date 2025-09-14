@@ -31,6 +31,12 @@ export interface Chauffeur {
     lat: number;
     lng: number;
   };
+  lastPosition?: {
+    lat: number;
+    lng: number;
+    at: number; // timestamp
+  };
+  gpsActive?: boolean;
 }
 
 export interface DeclarationTrace {

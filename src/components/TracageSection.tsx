@@ -21,7 +21,7 @@ import { addClient } from '../services/clientService';
 import OpenStreetMap from './OpenStreetMap';
 import MobileOpenStreetMap from './MobileOpenStreetMap';
 import html2canvas from 'html2canvas';
-import { Warehouse, Chauffeur } from '../types';
+import { Warehouse, Chauffeur, Declaration } from '../types';
 import { useSharedData } from '../contexts/SharedDataContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useIsMobile } from '../hooks/use-mobile';
@@ -49,8 +49,8 @@ const TracageSection = ({ gpsActive, setGpsActive, userPosition, setUserPosition
 
   const auth = useAuth();
   // Onglet actif : client ou entrepot (client par défaut)
-  const [activeTab, setActiveTab] = useState<'clients' | 'warehouses'>('clients');
-  const [prevTab, setPrevTab] = useState<'clients' | 'warehouses'>('clients');
+  const [activeTab, setActiveTab] = useState<'clients' | 'warehouses' | 'chauffeurs'>('clients');
+  const [prevTab, setPrevTab] = useState<'clients' | 'warehouses' | 'chauffeurs'>('clients');
   useEffect(() => {
     // N'active pas automatiquement le GPS pour le planificateur
     if (auth?.user?.role !== 'planificateur' && activeTab !== prevTab && !gpsActive) {
@@ -291,36 +291,27 @@ const TracageSection = ({ gpsActive, setGpsActive, userPosition, setUserPosition
       mod.getWarehouses().then((data: Warehouse[]) => setWarehouses(data));
     });
   }, []);
-  const [chauffeurs] = useState<Chauffeur[]>([
-    {
-      id: '1',
-      firstName: 'Ahmed',
-      lastName: 'Benali',
-      fullName: 'Ahmed Benali',
-      username: 'abenali',
-      password: 'demo123',
-      phone: ['+213 55 12 34 56'],
-      vehicleType: 'Camion 3.5T',
-      employeeType: 'interne',
-      isActive: true,
-      createdAt: new Date().toISOString(),
-      coordinates: { lat: 36.7750, lng: 3.0594 }
-    },
-    {
-      id: '2',
-      firstName: 'Mohamed',
-      lastName: 'Khedira',
-      fullName: 'Mohamed Khedira',
-      username: 'mkhedira',
-      password: 'demo123',
-      phone: ['+213 66 98 76 54'],
-      vehicleType: 'Camionnette',
-      employeeType: 'externe',
-      isActive: true,
-      createdAt: new Date().toISOString(),
-      coordinates: { lat: 35.7000, lng: -0.6300 }
-    }
-  ]);
+  const [chauffeurs, setChauffeurs] = useState<Chauffeur[]>([]);
+  useEffect(() => {
+    let unsubscribe: (() => void) | undefined;
+    import('../services/chauffeurService').then(({ listenChauffeurs }) => {
+      unsubscribe = listenChauffeurs((cloudChauffeurs) => {
+        setChauffeurs(cloudChauffeurs);
+      });
+    });
+    return () => { if (unsubscribe) unsubscribe(); };
+  }, []);
+  // Déclarations en route
+  const [enRouteDeclarations, setEnRouteDeclarations] = useState<Declaration[]>([]);
+  useEffect(() => {
+    let unsubscribe: (() => void) | undefined;
+    import('../services/declarationService').then(({ listenDeclarations }) => {
+      unsubscribe = listenDeclarations((cloudDeclarations) => {
+        setEnRouteDeclarations(cloudDeclarations.filter((d: Declaration) => d.status === 'en_route'));
+      });
+    });
+    return () => { if (unsubscribe) unsubscribe(); };
+  }, []);
   const [showCreateWarehouse, setShowCreateWarehouse] = useState(false);
   const [newWarehouse, setNewWarehouse] = useState({
     name: '',
@@ -384,11 +375,14 @@ const TracageSection = ({ gpsActive, setGpsActive, userPosition, setUserPosition
         <Tabs
           key={settings.language}
           value={activeTab}
-          onValueChange={v => setActiveTab(v as 'clients' | 'warehouses')}
+          onValueChange={v => setActiveTab(v as 'clients' | 'warehouses' | 'chauffeurs')}
         >
           <TabsList>
             <TabsTrigger value="clients">{t('tabs.clients') || 'Clients'}</TabsTrigger>
             <TabsTrigger value="warehouses">{t('tabs.warehouses') || 'Entrepôts'}</TabsTrigger>
+            {auth?.user?.role === 'planificateur' && (
+              <TabsTrigger value="chauffeurs">{t('tabs.chauffeurs') || 'Chauffeurs'}</TabsTrigger>
+            )}
           </TabsList>
         </Tabs>
       </div>
@@ -502,6 +496,7 @@ const TracageSection = ({ gpsActive, setGpsActive, userPosition, setUserPosition
                   height="350px"
                   userPosition={userPosition}
                   highlightedWarehouseId={activeTab === 'warehouses' ? focusedWarehouseId : null}
+                  chauffeurs={activeTab === 'chauffeurs' ? chauffeurs : []}
                 />
               ) : (
                 <OpenStreetMap
@@ -514,6 +509,7 @@ const TracageSection = ({ gpsActive, setGpsActive, userPosition, setUserPosition
                   highlightedWarehouseId={activeTab === 'warehouses' ? focusedWarehouseId : null}
                   clients={activeTab === 'clients' ? clients : []}
                   highlightedClientId={activeTab === 'clients' ? highlightedClientId : null}
+                  chauffeurs={activeTab === 'chauffeurs' ? chauffeurs : []}
                 />
               )}
               {/* Bouton calques à l'intérieur de la carte, fixé en bas droite */}
@@ -795,9 +791,108 @@ const TracageSection = ({ gpsActive, setGpsActive, userPosition, setUserPosition
             )}
           </div>
         )}
+        {activeTab === 'chauffeurs' && (
+          <>
+            {/* Liste des déclarations en route */}
+            <div className="w-full mt-8">
+              <h2 className="text-xl md:text-2xl font-bold mb-4">Déclarations en route</h2>
+              <div className="space-y-2">
+                {enRouteDeclarations.length === 0 ? (
+                  <div className="text-muted-foreground text-sm">Aucune déclaration en route.</div>
+                ) : (
+                  enRouteDeclarations.map(decl => (
+                    <div key={decl.id} className="my-2 mx-1">
+                      <Card className="p-2 cursor-pointer transition-all">
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center justify-between whitespace-nowrap">
+                            <span className="text-xs md:text-sm font-extrabold bg-purple-100 text-purple-500 rounded px-2 py-0.5 border border-purple-200 shadow-sm leading-tight">{decl.number}</span>
+                            {/* Badge état cohérent avec la table des déclarations */}
+                            {(() => {
+                              switch (decl.status) {
+                                case 'en_route':
+                                  return <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 border border-blue-200 shadow" style={{ minWidth: 80, textAlign: 'center' }}>En route</span>;
+                                case 'en_panne':
+                                  return <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200 border border-orange-200 shadow" style={{ minWidth: 80, textAlign: 'center' }}>En panne</span>;
+                                case 'en_cours':
+                                  return <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 border border-yellow-200 shadow" style={{ minWidth: 80, textAlign: 'center' }}>En cours</span>;
+                                case 'valide':
+                                  return <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 border border-green-200 shadow" style={{ minWidth: 80, textAlign: 'center' }}>Validé</span>;
+                                case 'refuse':
+                                  return <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 border border-red-200 shadow" style={{ minWidth: 80, textAlign: 'center' }}>Refusé</span>;
+                                default:
+                                  return <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold border shadow" style={{ minWidth: 80, textAlign: 'center' }}>{decl.status}</span>;
+                              }
+                            })()}
+                          </div>
+                          <div className="flex gap-2 text-xs items-center mt-1">
+                            <span className="font-bold text-gray-900 dark:text-white">{decl.chauffeurName}</span>
+                            {/* Bouton GPS status du chauffeur, sans remplissage, sans glow, sans ombre, sélectionnable */}
+                            <GPSStatusButton decl={decl} chauffeurs={chauffeurs} />
+                          </div>
+                          {decl.notes && (
+                            <div className="text-xs text-gray-700 mt-1">{decl.notes}</div>
+                          )}
+                        </div>
+                      </Card>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </>
   );
 };
 
 export default TracageSection;
+
+function GPSStatusButton({ decl, chauffeurs }) {
+  const chauffeur = chauffeurs.find(c => c.fullName === decl.chauffeurName || c.username === decl.chauffeurName);
+  if (!chauffeur) return null;
+  const gpsActive = (chauffeur).gpsActive ?? chauffeur.isActive;
+  const [selected, setSelected] = React.useState(false);
+
+  // Heartbeat: met à jour la position GPS toutes les 15 secondes si GPS actif
+  React.useEffect(() => {
+    let intervalId;
+    if (gpsActive && chauffeur.id) {
+      intervalId = setInterval(() => {
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(pos => {
+            import('../services/chauffeurService').then(({ updateChauffeurPosition }) => {
+              updateChauffeurPosition(chauffeur.id, pos.coords.latitude, pos.coords.longitude, true);
+            });
+          });
+        }
+      }, 15000); // 15 secondes
+    }
+    return () => { if (intervalId) clearInterval(intervalId); };
+  }, [gpsActive, chauffeur.id]);
+
+  return (
+    <Button
+      size="sm"
+      variant="outline"
+      className={`p-0 min-w-0 flex items-center justify-center rounded-full border ${selected ? 'border-2 border-white' : ''}`}
+      style={{
+        background: 'transparent',
+        borderColor: selected ? '#fff' : (gpsActive ? '#ffffffff' : '#ef4444'),
+        color: gpsActive ? '#22c55e' : '#ef4444',
+        fontSize: 18,
+        width: 32,
+        height: 32,
+        minWidth: 32,
+        minHeight: 32,
+        padding: 0,
+        boxShadow: 'none',
+      }}
+      title={gpsActive ? 'GPS activé' : 'GPS désactivé'}
+      onClick={() => setSelected(s => !s)}
+      aria-pressed={selected}
+    >
+      <span className="material-icons" style={{ fontSize: 20, verticalAlign: 'middle', color: gpsActive ? '#22c55e' : '#ef4444' }}>gps_fixed</span>
+    </Button>
+  );
+}

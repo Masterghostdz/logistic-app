@@ -33,6 +33,8 @@ import PhoneNumbersField from '../PhoneNumbersField';
 import PasswordField from '../PasswordField';
 import { simpleHash } from '../../utils/authUtils';
 import RefusalReasonsConfig from '../admin/RefusalReasonsConfig';
+import { db } from '../../services/firebaseClient';
+import { doc, updateDoc } from 'firebase/firestore';
 
 const zoomLevels = {
   '40': 0.75,
@@ -49,13 +51,11 @@ const AdminDashboard = () => {
   const auth = useAuth();
   useEffect(() => {
     if (!auth?.user?.id) return;
-    const { doc, updateDoc } = require('firebase/firestore');
-    const { firestore } = require('../../services/firebase');
-    const userRef = doc(firestore, 'users', auth.user.id);
+    const userRef = doc(db, 'users', auth.user.id);
     const interval = setInterval(() => {
-  updateDoc(userRef, { lastOnline: Date.now(), isOnline: true });
+      updateDoc(userRef, { lastOnline: Date.now(), isOnline: true });
     }, 60000);
-  updateDoc(userRef, { lastOnline: Date.now(), isOnline: true });
+    updateDoc(userRef, { lastOnline: Date.now(), isOnline: true });
     return () => clearInterval(interval);
   }, [auth?.user?.id]);
   const [userTableFontSize, setUserTableFontSize] = useState(() => localStorage.getItem('userTableFontSize') || '80');
