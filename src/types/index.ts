@@ -139,4 +139,14 @@ export interface Settings {
   theme: 'light' | 'dark';
   viewMode?: 'mobile' | 'desktop';
   tableFontSize?: '40' | '50' | '60' | '70' | '80' | '90' | '100';
+  heartbeatOnlineInterval?: number;
+  heartbeatGpsInterval?: number;
+  heartbeatPositionInterval?: number;
+  heartbeatOnlineEnabled?: boolean;
+  heartbeatOnlineImmediate?: boolean;
+  heartbeatGpsEnabled?: boolean;
+  heartbeatGpsImmediate?: boolean;
+  heartbeatPositionEnabled?: boolean;
+  heartbeatPositionImmediate?: boolean;
+  gpsActivationRequestEnabled?: boolean;
 }

@@ -49,50 +49,71 @@ import { doc, updateDoc } from 'firebase/firestore';
 import { db as firestore } from '../../services/firebaseClient';
 
 const ChauffeurDashboard = () => {
+  const [gpsActive, setGpsActive] = useState(false);
+  const [gpsPosition, setGpsPosition] = useState<{ lat: number; lng: number; accuracy?: number } | null>(null);
+  // Hooks d'état GPS doivent être déclarés en tout premier
+  // ...existing code...
+  // Demande d'activation GPS au démarrage si paramètre admin activé
+  useEffect(() => {
+    const { settings } = useTranslation();
+    if (settings.gpsActivationRequestEnabled && !gpsActive) {
+      (async () => {
+        const pos = await getCurrentPosition();
+        if (pos) {
+          setGpsPosition(pos);
+          setGpsActive(true);
+        } else {
+          setGpsActive(false);
+          setGpsPosition(null);
+          toast({ title: 'Accès à la position refusé ou indisponible', variant: 'destructive' });
+        }
+      })();
+    }
+  }, [gpsActive]);
   const auth = useAuth();
+  // TOUS les hooks doivent être appelés avant tout return !
+  const { t, settings } = useTranslation();
   // Heartbeat Firestore: met à jour lastActive toutes les 60s
   useEffect(() => {
-    if (!auth?.user?.id) return;
+    if (!auth?.user?.id || !settings.heartbeatOnlineEnabled) return;
     const userRef = doc(firestore, 'users', auth.user.id);
-    // Heartbeat: set online every 60s
-    const interval = setInterval(() => {
+    let interval: NodeJS.Timeout | undefined;
+    if (settings.heartbeatOnlineEnabled) {
+      interval = setInterval(() => {
+        updateDoc(userRef, { lastOnline: Date.now(), isOnline: true });
+      }, (settings.heartbeatOnlineInterval || 60) * 1000);
+    }
+    if (settings.heartbeatOnlineImmediate) {
       updateDoc(userRef, { lastOnline: Date.now(), isOnline: true });
-    
-    }, 60000);
-    // Set online immediately
-    updateDoc(userRef, { lastOnline: Date.now(), isOnline: true });
-
+    }
     // Set offline on unload/tab close
     const handleUnload = () => {
       updateDoc(userRef, { isOnline: false });
     };
     window.addEventListener('beforeunload', handleUnload);
-
     return () => {
-      clearInterval(interval);
+      if (interval) clearInterval(interval);
       window.removeEventListener('beforeunload', handleUnload);
       updateDoc(userRef, { isOnline: false });
     };
-  }, [auth?.user?.id]);
+  }, [auth?.user?.id, settings.heartbeatOnlineEnabled, settings.heartbeatOnlineImmediate, settings.heartbeatOnlineInterval]);
 
   
-  // GPS state for dashboard
-  const [gpsActive, setGpsActive] = useState(false);
 
-  // Sync gpsActive to Firestore when it changes
+  // Sync gpsActive to Firestore (users & chauffeurs) when it changes
   useEffect(() => {
     if (!auth?.user?.id) return;
     const userRef = doc(firestore, 'users', auth.user.id);
+    const chauffeurRef = doc(firestore, 'chauffeurs', auth.user.id);
     updateDoc(userRef, { gpsActive });
+    updateDoc(chauffeurRef, { gpsActive });
   }, [gpsActive, auth?.user?.id]);
   const [showGpsConfirm, setShowGpsConfirm] = useState(false);
-  const [gpsPosition, setGpsPosition] = useState<{ lat: number; lng: number; accuracy?: number } | null>(null);
   // Aperçu photo reçu (doit être déclaré dans le composant, après les imports)
   const [previewPhotoUrl, setPreviewPhotoUrl] = useState<string | null>(null);
   // TOUS les hooks doivent être appelés avant tout return !
   const { isOnline } = useOnlineStatus();
   const { declarations, addDeclaration, updateDeclaration, deleteDeclaration, companies } = useSharedData();
-  const { t, settings } = useTranslation();
   const isMobile = settings?.viewMode === 'mobile';
   const [isCreating, setIsCreating] = useState(false);
   const [formData, setFormData] = useState({
@@ -107,31 +128,34 @@ const ChauffeurDashboard = () => {
   const [statusFilter, setStatusFilter] = useState('all');
 
   useEffect(() => {
-    if (!auth?.user?.id || !gpsActive || !gpsPosition) return;
+    if (!auth?.user?.id || !gpsActive || !settings.heartbeatPositionEnabled) return;
     const userRef = doc(firestore, 'users', auth.user.id);
-
-    // Heartbeat: met à jour lastPosition toutes les 20s
-    const interval = setInterval(() => {
-      updateDoc(userRef, {
-        lastPosition: {
-          lat: gpsPosition.lat,
-          lng: gpsPosition.lng,
-          at: Date.now()
-        }
-      });
-    }, 20000);
-
-    // Met à jour immédiatement
-    updateDoc(userRef, {
-      lastPosition: {
-        lat: gpsPosition.lat,
-        lng: gpsPosition.lng,
-        at: Date.now()
+    const chauffeurRef = doc(firestore, 'chauffeurs', auth.user.id);
+    const sendPosition = async () => {
+      const pos = await getCurrentPosition();
+      if (pos) {
+        const positionData = {
+          lastPosition: {
+            lat: pos.lat,
+            lng: pos.lng,
+            at: Date.now()
+          }
+        };
+        updateDoc(userRef, positionData);
+        updateDoc(chauffeurRef, positionData);
       }
-    });
-
-    return () => clearInterval(interval);
-  }, [auth?.user?.id, gpsActive, gpsPosition]);
+    };
+    let interval: NodeJS.Timeout | undefined;
+    if (settings.heartbeatPositionEnabled) {
+      interval = setInterval(sendPosition, (settings.heartbeatPositionInterval || 20) * 1000);
+    }
+    if (settings.heartbeatPositionImmediate) {
+      sendPosition();
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [auth?.user?.id, gpsActive, settings.heartbeatPositionEnabled, settings.heartbeatPositionImmediate, settings.heartbeatPositionInterval]);
 
   // Reçus de paiement structurés
   const [paymentReceipts, setPaymentReceipts] = useState<PaymentReceipt[]>([]);

@@ -878,6 +878,125 @@ const AdminDashboard = () => {
             <div className="space-y-8">
               <h2 className="text-2xl font-bold">Configuration</h2>
 
+              {/* Paramètres heartbeat organisés */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg font-bold">Paramètres d'actualisation automatique</CardTitle>
+                  <CardDescription>
+                    <span className="block text-sm text-muted-foreground">Par défaut, toutes les actualisations sont activées.<br/>Online toutes les 60s, GPS et Position toutes les 120s.</span>
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {(() => {
+                    const {
+                      settings,
+                      setHeartbeatOnlineEnabled,
+                      setHeartbeatOnlineImmediate,
+                      setHeartbeatOnlineInterval,
+                      setHeartbeatGpsEnabled,
+                      setHeartbeatGpsImmediate,
+                      setHeartbeatGpsInterval,
+                      setHeartbeatPositionEnabled,
+                      setHeartbeatPositionImmediate,
+                      setHeartbeatPositionInterval,
+                      setGpsActivationRequestEnabled
+                    } = useSettings();
+                    // Sauvegarde automatique dans Firestore à chaque modification
+                    React.useEffect(() => {
+                      const saveSettingsToFirestore = async () => {
+                        const { db } = await import('../../services/firebaseClient');
+                        const { doc, setDoc } = await import('firebase/firestore');
+                        const ref = doc(db, 'admin_settings', 'heartbeat');
+                        await setDoc(ref, settings, { merge: true });
+                      };
+                      saveSettingsToFirestore();
+                    }, [settings]);
+                    return <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-4 p-4 rounded-lg border bg-background">
+                        <Label className="font-bold text-blue-700">Statut Online</Label>
+                        <div className="flex flex-col gap-2 mt-2">
+                          <label className="flex items-center gap-2">
+                            <input type="checkbox" checked={!!settings.heartbeatOnlineEnabled} onChange={e => setHeartbeatOnlineEnabled?.(e.target.checked)} /> Activer actualisation automatique
+                          </label>
+                          <label className="flex items-center gap-2">
+                            <input type="checkbox" checked={!!settings.heartbeatOnlineImmediate} onChange={e => setHeartbeatOnlineImmediate?.(e.target.checked)} /> Actualisation immédiate au démarrage
+                          </label>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs">Intervalle :</span>
+                            <Input
+                              id="heartbeatOnlineInterval"
+                              type="number"
+                              min={5}
+                              value={settings.heartbeatOnlineInterval ?? 60}
+                              onChange={e => setHeartbeatOnlineInterval?.(parseInt(e.target.value) || 60)}
+                              style={{ width: 80 }}
+                              placeholder="60"
+                            />
+                            <span className="text-xs">secondes</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="space-y-4 p-4 rounded-lg border bg-background">
+                        <Label className="font-bold text-green-700">Statut GPS</Label>
+                        <div className="flex flex-col gap-2 mt-2">
+                          <label className="flex items-center gap-2">
+                            <input type="checkbox" checked={!!settings.heartbeatGpsEnabled} onChange={e => setHeartbeatGpsEnabled?.(e.target.checked)} /> Activer actualisation automatique
+                          </label>
+                          <label className="flex items-center gap-2">
+                            <input type="checkbox" checked={!!settings.heartbeatGpsImmediate} onChange={e => setHeartbeatGpsImmediate?.(e.target.checked)} /> Actualisation immédiate à l'activation GPS
+                          </label>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs">Intervalle :</span>
+                            <Input
+                              id="heartbeatGpsInterval"
+                              type="number"
+                              min={5}
+                              value={settings.heartbeatGpsInterval ?? 120}
+                              onChange={e => setHeartbeatGpsInterval?.(parseInt(e.target.value) || 120)}
+                              style={{ width: 80 }}
+                              placeholder="120"
+                            />
+                            <span className="text-xs">secondes</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="space-y-4 p-4 rounded-lg border bg-background">
+                        <Label className="font-bold text-purple-700">Position GPS</Label>
+                        <div className="flex flex-col gap-2 mt-2">
+                          <label className="flex items-center gap-2">
+                            <input type="checkbox" checked={!!settings.heartbeatPositionEnabled} onChange={e => setHeartbeatPositionEnabled?.(e.target.checked)} /> Activer actualisation automatique
+                          </label>
+                          <label className="flex items-center gap-2">
+                            <input type="checkbox" checked={!!settings.heartbeatPositionImmediate} onChange={e => setHeartbeatPositionImmediate?.(e.target.checked)} /> Actualisation immédiate à l'activation GPS
+                          </label>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs">Intervalle :</span>
+                            <Input
+                              id="heartbeatPositionInterval"
+                              type="number"
+                              min={5}
+                              value={settings.heartbeatPositionInterval ?? 120}
+                              onChange={e => setHeartbeatPositionInterval?.(parseInt(e.target.value) || 120)}
+                              style={{ width: 80 }}
+                              placeholder="120"
+                            />
+                            <span className="text-xs">secondes</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="space-y-4 p-4 rounded-lg border bg-background">
+                        <Label className="font-bold text-orange-700">Demande d'activation GPS</Label>
+                        <div className="flex flex-col gap-2 mt-2">
+                          <label className="flex items-center gap-2">
+                            <input type="checkbox" checked={!!settings.gpsActivationRequestEnabled} onChange={e => setGpsActivationRequestEnabled?.(e.target.checked)} /> Activer la demande d'activation GPS au démarrage
+                          </label>
+                        </div>
+                      </div>
+                    </div>;
+                  })()}
+                </CardContent>
+              </Card>
+
               {/* Sociétés */}
               <Card>
                 <CardHeader>
