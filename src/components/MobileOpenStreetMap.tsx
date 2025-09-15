@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -21,6 +20,7 @@ interface MobileOpenStreetMapProps {
   userPosition?: { lat: number; lng: number } | null;
   showListButton?: boolean;
   highlightedWarehouseId?: string | null;
+  highlightedChauffeurId?: string | null;
 }
 
 const MobileOpenStreetMap: React.FC<MobileOpenStreetMapProps> = ({ 
@@ -34,7 +34,8 @@ const MobileOpenStreetMap: React.FC<MobileOpenStreetMapProps> = ({
   layerType = 'osm',
   userPosition,
   showListButton = true,
-  highlightedWarehouseId
+  highlightedWarehouseId,
+  highlightedChauffeurId
 }) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const map = useRef<L.Map | null>(null);
@@ -223,7 +224,8 @@ const MobileOpenStreetMap: React.FC<MobileOpenStreetMapProps> = ({
       onWarehouseClick,
       onChauffeurClick,
       isMobile: true,
-      highlightedWarehouseId
+      highlightedWarehouseId,
+      highlightedChauffeurId
     });
 
     // Only fit map to markers if user hasn't interacted with the map

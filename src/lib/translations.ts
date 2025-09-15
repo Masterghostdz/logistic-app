@@ -22,7 +22,8 @@ export const translations = {
     tabs: {
       tracage: "Traçage",
       warehouses: "Entrepôts",
-      clients: "Clients"
+      clients: "Clients",
+      chauffeurs: "Chauffeurs"
     },
     // Header
     header: {
@@ -113,7 +114,8 @@ export const translations = {
     tabs: {
       tracage: "Traceability",
       warehouses: "Warehouses",
-      clients: "Clients"
+      clients: "Clients",
+      chauffeurs: "Drivers"
     },
     // ...existing code...
   declarations: {
@@ -150,7 +152,8 @@ export const translations = {
     tabs: {
       tracage: "التتبع",
       warehouses: "المستودعات",
-      clients: "العملاء"
+      clients: "العملاء",
+      chauffeurs: "السائقين"
     },
     // ...existing code...
   declarations: {
@@ -210,7 +213,15 @@ export const translations = {
       internal: "Interne",
       external: "Externe (TP)",
       active: "Actif",
-      inactive: "Inactif"
+      inactive: "Inactif",
+      searchPlaceholder: "Rechercher par nom ou téléphone...",
+      filterPlaceholder: "Filtrer...",
+      columnNumber: "Numéro",
+      columnChauffeur: "Chauffeur",
+      deleteTitle: "Confirmer la suppression",
+      deleteDesc: "Êtes-vous sûr de vouloir supprimer ce chauffeur ? Cette action est irréversible.",
+      cancel: "Annuler",
+      delete: "Supprimer",
     },
     // Warehouses
     warehouses: {
@@ -416,7 +427,15 @@ export const translations = {
       internal: "Internal",
       external: "External (TP)",
       active: "Active",
-      inactive: "Inactive"
+      inactive: "Inactive",
+      searchPlaceholder: "Search by name or phone...",
+      filterPlaceholder: "Filter...",
+      columnNumber: "Number",
+      columnChauffeur: "Driver",
+      deleteTitle: "Confirm deletion",
+      deleteDesc: "Are you sure you want to delete this driver? This action is irreversible.",
+      cancel: "Cancel",
+      delete: "Delete",
     },
     // Warehouses
     warehouses: {
@@ -620,7 +639,15 @@ export const translations = {
       internal: "داخلي",
       external: "خارجي (TP)",
       active: "نشط",
-      inactive: "غير نشط"
+      inactive: "غير نشط",
+      searchPlaceholder: "البحث بالاسم أو الهاتف...",
+      filterPlaceholder: "تصفية...",
+      columnNumber: "الرقم",
+      columnChauffeur: "السائق",
+      deleteTitle: "تأكيد الحذف",
+      deleteDesc: "هل أنت متأكد أنك تريد حذف هذا السائق؟ هذا الإجراء لا يمكن التراجع عنه.",
+      cancel: "إلغاء",
+      delete: "حذف",
     },
     // Warehouses
     warehouses: {

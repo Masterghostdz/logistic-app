@@ -29,11 +29,13 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
   // On considère mobile si le mode est forcé ou si l'écran est petit
   const isMobile = settings.viewMode === 'mobile' || isMobileScreen;
 
+  // Déstructuration avant tout return
+  const { user, changePassword } = auth || {};
+
   // Gestion absence de contexte ou d'utilisateur
-  if (!auth || !auth.user) {
+  if (!auth || !user) {
     return <div>Utilisateur non trouvé</div>;
   }
-  const { user, changePassword } = auth;
 
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();

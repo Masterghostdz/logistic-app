@@ -41,6 +41,7 @@ const TracageSection = ({ gpsActive, setGpsActive, userPosition, setUserPosition
   const isMobile = useIsMobile();
   const [showSettings, setShowSettings] = useState(false);
   const [highlightedClientId, setHighlightedClientId] = useState<string | null>(null);
+  const [highlightedChauffeurId, setHighlightedChauffeurId] = useState<string | null>(null);
   const [showMapModal, setShowMapModal] = useState(false);
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   // Sélecteur de calque (fond de carte)
@@ -312,6 +313,34 @@ const TracageSection = ({ gpsActive, setGpsActive, userPosition, setUserPosition
     });
     return () => { if (unsubscribe) unsubscribe(); };
   }, []);
+  // Chauffeurs à afficher sur la carte : uniquement ceux liés à une déclaration en route et avec lastPosition
+  const chauffeursEnRouteWithPosition = useMemo(() => {
+    const enRouteChauffeurIds = enRouteDeclarations.map(d => String(d.chauffeurId));
+    const filtered = enRouteChauffeurIds
+      .map(id => {
+        const c = chauffeurs.find(c => String(c.id) === id && c.lastPosition && typeof c.lastPosition.lat === 'number' && typeof c.lastPosition.lng === 'number');
+        if (!c) return null;
+        // Find the matching declaration for this chauffeur
+        const declaration = enRouteDeclarations.find(d => String(d.chauffeurId) === id);
+        // Attach declaration to chauffeur object
+        return {
+          ...c,
+          coordinates: {
+            lat: c.lastPosition.lat,
+            lng: c.lastPosition.lng
+          },
+          declaration // <-- attach declaration
+        };
+      })
+      .filter(Boolean);
+    console.log('Filtrage chauffeursEnRouteWithPosition appelé');
+    if (activeTab === 'chauffeurs') {
+      console.log('Chauffeurs en route IDs:', enRouteChauffeurIds);
+      console.log('Chauffeurs Firestore:', chauffeurs);
+      console.log('Chauffeurs affichés sur la map:', filtered);
+    }
+    return filtered;
+  }, [chauffeurs, enRouteDeclarations, activeTab]);
   const [showCreateWarehouse, setShowCreateWarehouse] = useState(false);
   const [newWarehouse, setNewWarehouse] = useState({
     name: '',
@@ -496,7 +525,8 @@ const TracageSection = ({ gpsActive, setGpsActive, userPosition, setUserPosition
                   height="350px"
                   userPosition={userPosition}
                   highlightedWarehouseId={activeTab === 'warehouses' ? focusedWarehouseId : null}
-                  chauffeurs={activeTab === 'chauffeurs' ? chauffeurs : []}
+                  chauffeurs={activeTab === 'chauffeurs' ? chauffeursEnRouteWithPosition : []}
+                  highlightedChauffeurId={activeTab === 'chauffeurs' ? highlightedChauffeurId : null}
                 />
               ) : (
                 <OpenStreetMap
@@ -509,7 +539,8 @@ const TracageSection = ({ gpsActive, setGpsActive, userPosition, setUserPosition
                   highlightedWarehouseId={activeTab === 'warehouses' ? focusedWarehouseId : null}
                   clients={activeTab === 'clients' ? clients : []}
                   highlightedClientId={activeTab === 'clients' ? highlightedClientId : null}
-                  chauffeurs={activeTab === 'chauffeurs' ? chauffeurs : []}
+                  chauffeurs={activeTab === 'chauffeurs' ? chauffeursEnRouteWithPosition : []}
+                  highlightedChauffeurId={activeTab === 'chauffeurs' ? highlightedChauffeurId : null}
                 />
               )}
               {/* Bouton calques à l'intérieur de la carte, fixé en bas droite */}
@@ -827,7 +858,7 @@ const TracageSection = ({ gpsActive, setGpsActive, userPosition, setUserPosition
                           <div className="flex gap-2 text-xs items-center mt-1">
                             <span className="font-bold text-gray-900 dark:text-white">{decl.chauffeurName}</span>
                             {/* Bouton GPS status du chauffeur, sans remplissage, sans glow, sans ombre, sélectionnable */}
-                            <GPSStatusButton decl={decl} chauffeurs={chauffeurs} />
+                            <GPSStatusButton decl={decl} chauffeurs={chauffeurs} setHighlightedChauffeurId={setHighlightedChauffeurId} highlightedChauffeurId={highlightedChauffeurId} mapInstance={mapInstance} />
                           </div>
                           {decl.notes && (
                             <div className="text-xs text-gray-700 mt-1">{decl.notes}</div>
@@ -848,29 +879,11 @@ const TracageSection = ({ gpsActive, setGpsActive, userPosition, setUserPosition
 
 export default TracageSection;
 
-function GPSStatusButton({ decl, chauffeurs }) {
+function GPSStatusButton({ decl, chauffeurs, setHighlightedChauffeurId, highlightedChauffeurId, mapInstance }) {
   const chauffeur = chauffeurs.find(c => c.fullName === decl.chauffeurName || c.username === decl.chauffeurName);
   if (!chauffeur) return null;
   const gpsActive = (chauffeur).gpsActive ?? chauffeur.isActive;
-  const [selected, setSelected] = React.useState(false);
-
-  // Heartbeat: met à jour la position GPS toutes les 15 secondes si GPS actif
-  React.useEffect(() => {
-    let intervalId;
-    if (gpsActive && chauffeur.id) {
-      intervalId = setInterval(() => {
-        if (navigator.geolocation) {
-          navigator.geolocation.getCurrentPosition(pos => {
-            import('../services/chauffeurService').then(({ updateChauffeurPosition }) => {
-              updateChauffeurPosition(chauffeur.id, pos.coords.latitude, pos.coords.longitude, true);
-            });
-          });
-        }
-      }, 15000); // 15 secondes
-    }
-    return () => { if (intervalId) clearInterval(intervalId); };
-  }, [gpsActive, chauffeur.id]);
-
+  const selected = highlightedChauffeurId === chauffeur.id;
   return (
     <Button
       size="sm"
@@ -878,7 +891,7 @@ function GPSStatusButton({ decl, chauffeurs }) {
       className={`p-0 min-w-0 flex items-center justify-center rounded-full border ${selected ? 'border-2 border-white' : ''}`}
       style={{
         background: 'transparent',
-        borderColor: selected ? '#fff' : (gpsActive ? '#ffffffff' : '#ef4444'),
+        borderColor: '#fff', // always white border
         color: gpsActive ? '#22c55e' : '#ef4444',
         fontSize: 18,
         width: 32,
@@ -889,7 +902,19 @@ function GPSStatusButton({ decl, chauffeurs }) {
         boxShadow: 'none',
       }}
       title={gpsActive ? 'GPS activé' : 'GPS désactivé'}
-      onClick={() => setSelected(s => !s)}
+      onClick={() => {
+        if (selected) {
+          setHighlightedChauffeurId(null);
+        } else {
+          setHighlightedChauffeurId(chauffeur.id);
+          if (chauffeur.coordinates && mapInstance && mapInstance.setView) {
+            mapInstance.setView([
+              chauffeur.coordinates.lat,
+              chauffeur.coordinates.lng
+            ], 16, { animate: true });
+          }
+        }
+      }}
       aria-pressed={selected}
     >
       <span className="material-icons" style={{ fontSize: 20, verticalAlign: 'middle', color: gpsActive ? '#22c55e' : '#ef4444' }}>gps_fixed</span>

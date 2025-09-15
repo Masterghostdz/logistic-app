@@ -21,6 +21,7 @@ interface OpenStreetMapProps {
   setMapInstance?: (map: any) => void;
   layerType?: string;
   userPosition?: { lat: number; lng: number } | null;
+  highlightedChauffeurId?: string | null;
 }
 
 const OpenStreetMap: React.FC<OpenStreetMapProps> = ({ 
@@ -35,7 +36,8 @@ const OpenStreetMap: React.FC<OpenStreetMapProps> = ({
   setMapInstance,
   layerType = 'osm',
   userPosition,
-  highlightedWarehouseId
+  highlightedWarehouseId,
+  highlightedChauffeurId
 }) => {
   // Marqueur animé pour la position utilisateur
   const userMarkerRef = useRef<L.Marker | null>(null);
@@ -266,7 +268,8 @@ const OpenStreetMap: React.FC<OpenStreetMapProps> = ({
       onWarehouseClick,
       onChauffeurClick,
       isMobile: false, // Desktop version
-      highlightedWarehouseId
+      highlightedWarehouseId,
+      highlightedChauffeurId
     });
 
     // Fit map to show all markers only on first load or when markers change significantly
@@ -286,7 +289,11 @@ const OpenStreetMap: React.FC<OpenStreetMapProps> = ({
         const pos = m.getLatLng();
         return Math.abs(pos.lat - warehouse.coordinates.lat) < 1e-6 && Math.abs(pos.lng - warehouse.coordinates.lng) < 1e-6;
       });
-      if (marker) marker.openPopup();
+      if (marker) {
+        setTimeout(() => {
+          marker.openPopup();
+        }, 350);
+      }
     }
   }, [focusedWarehouseId, warehouses]);
 

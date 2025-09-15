@@ -554,6 +554,9 @@ const PlanificateurDashboard = () => {
     setChauffeurToDelete(null);
   };
 
+  const [gpsActive, setGpsActive] = useState(false);
+  const [userPosition, setUserPosition] = useState<{ lat: number; lng: number; accuracy?: number } | null>(null);
+
   if (activeTab === 'profile') {
     if (viewMode === 'mobile') {
       // En mobile, header mobile natif du profil
@@ -571,9 +574,6 @@ const PlanificateurDashboard = () => {
   }
 
   // --- GPS state for TracageSection ---
-  const [gpsActive, setGpsActive] = useState(false);
-  const [userPosition, setUserPosition] = useState<{ lat: number; lng: number; accuracy?: number } | null>(null);
-
   if (activeTab === 'tracage') {
     if (viewMode === 'desktop') {
       return (
@@ -968,13 +968,13 @@ const PlanificateurDashboard = () => {
             {activeTab === 'chauffeurs' && (
               <div className="space-y-6">
                 <div className="flex items-center justify-between mb-2">
-                  <h2 className="text-2xl font-bold">Gestion des Chauffeurs</h2>
+                  <h2 className="text-2xl font-bold">{t('chauffeurs.title')}</h2>
                   <Button 
                     className="flex items-center gap-2"
                     onClick={() => setShowCreateChauffeur(true)}
                   >
                     <Plus className="h-4 w-4" />
-                    Ajouter
+                    {t('chauffeurs.add')}
                   </Button>
                 </div>
                 {/* Barre de recherche/filtre pour chauffeurs */}
@@ -983,14 +983,17 @@ const PlanificateurDashboard = () => {
                   onSearchChange={setSearchValue}
                   filterValue={filterStatus}
                   onFilterChange={setFilterStatus}
-                  filterOptions={[{ value: 'actif', label: 'Actif' }, { value: 'inactif', label: 'Inactif' }]}
-                  searchPlaceholder="Rechercher par nom ou téléphone..."
-                  filterPlaceholder="Filtrer..."
+                  filterOptions={[
+                    { value: 'actif', label: t('chauffeurs.active') },
+                    { value: 'inactif', label: t('chauffeurs.inactive') }
+                  ]}
+                  searchPlaceholder={t('chauffeurs.searchPlaceholder')}
+                  filterPlaceholder={t('chauffeurs.filterPlaceholder')}
                   searchColumn={searchColumn}
                   onSearchColumnChange={value => setSearchColumn(value as 'number' | 'chauffeurName')}
                   searchColumnOptions={[
-                    { value: 'number', label: 'Numéro' },
-                    { value: 'chauffeurName', label: 'Chauffeur' }
+                    { value: 'number', label: t('chauffeurs.columnNumber') },
+                    { value: 'chauffeurName', label: t('chauffeurs.columnChauffeur') }
                   ]}
                 />
                 <ChauffeursTable
@@ -1002,14 +1005,14 @@ const PlanificateurDashboard = () => {
                 <AlertDialog open={!!chauffeurToDelete} onOpenChange={open => { if (!open) setChauffeurToDelete(null); }}>
                   <AlertDialogContent style={{ zIndex: 10000, position: 'fixed' }} aria-describedby="delete-chauffeur-desc">
                     <AlertDialogHeader>
-                      <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
+                      <AlertDialogTitle>{t('chauffeurs.deleteTitle')}</AlertDialogTitle>
                     </AlertDialogHeader>
                     <AlertDialogDescription id="delete-chauffeur-desc">
-                      Êtes-vous sûr de vouloir supprimer ce chauffeur ? Cette action est irréversible.
+                      {t('chauffeurs.deleteDesc')}
                     </AlertDialogDescription>
                     <AlertDialogFooter>
-                      <AlertDialogCancel onClick={() => setChauffeurToDelete(null)}>Annuler</AlertDialogCancel>
-                      <AlertDialogAction onClick={confirmDeleteChauffeur}>Supprimer</AlertDialogAction>
+                      <AlertDialogCancel onClick={() => setChauffeurToDelete(null)}>{t('chauffeurs.cancel')}</AlertDialogCancel>
+                      <AlertDialogAction onClick={confirmDeleteChauffeur}>{t('chauffeurs.delete')}</AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>
                 </AlertDialog>

@@ -1,7 +1,6 @@
-
 import L from 'leaflet';
 import { Warehouse, Chauffeur } from '../../types';
-import { warehouseIcon, chauffeurIcon, desktopWarehouseIcon, desktopChauffeurIcon } from './MapIcons';
+import { warehouseIcon, chauffeurIcon, desktopWarehouseIcon, desktopChauffeurIcon, chauffeurIconHighlighted } from './MapIcons';
 
 interface CreateMarkersOptions {
   warehouses: Warehouse[];
@@ -12,6 +11,7 @@ interface CreateMarkersOptions {
   onChauffeurClick?: (chauffeur: Chauffeur) => void;
   isMobile?: boolean;
   highlightedWarehouseId?: string | null;
+  highlightedChauffeurId?: string | null;
 }
 
 // Cache pour éviter la recréation des marqueurs
@@ -30,8 +30,10 @@ export const createMarkers = ({
   onWarehouseClick,
   onChauffeurClick,
   isMobile = false,
-  highlightedWarehouseId
+  highlightedWarehouseId,
+  highlightedChauffeurId
 }: CreateMarkersOptions): L.Marker[] => {
+  console.log('createMarkers chauffeurs:', chauffeurs);
   const markers: L.Marker[] = [];
   const currentMarkerIds = new Set<string>();
 
@@ -162,25 +164,34 @@ export const createMarkers = ({
     if (chauffeur.coordinates) {
       const markerId = `chauffeur-${chauffeur.id}`;
       currentMarkerIds.add(markerId);
-      
       let marker = markerCache.get(markerId);
-      
+      // Utilise l'icône animée si le chauffeur est sélectionné
+      let iconToUse = chauffeurIconToUse;
+      if (highlightedChauffeurId && String(chauffeur.id) === String(highlightedChauffeurId)) {
+        iconToUse = chauffeurIconHighlighted;
+      }
       if (!marker) {
         const displayName = chauffeur.employeeType === 'externe' 
           ? `TP - ${chauffeur.fullName}` 
           : chauffeur.fullName;
 
         marker = L.marker([chauffeur.coordinates.lat, chauffeur.coordinates.lng], {
-          icon: chauffeurIconToUse
+          icon: iconToUse
         });
 
-        // Create popup content
+        // Use attached declaration for program reference
+        let programRef = '';
+        if (chauffeur.declaration && chauffeur.declaration.year && chauffeur.declaration.month && chauffeur.declaration.programNumber) {
+          programRef = `DCP/${chauffeur.declaration.year}/${chauffeur.declaration.month}/${chauffeur.declaration.programNumber}`;
+        }
+
         const popupContent = `
-          <div style="padding: ${popupPadding}; min-width: ${popupMinWidth}; max-width: ${popupMaxWidth}; background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); overflow: hidden;">
-            <h3 style="font-weight: 600; font-size: ${popupTitleSize}; margin-bottom: ${popupMargin}; color: #1f2937; word-wrap: break-word;">${displayName}</h3>
-            <p style="font-size: ${popupFontSize}; color: #6b7280; margin-bottom: ${popupLineMargin}; word-wrap: break-word;"><strong>${t('chauffeurs.employeeType')}:</strong> ${chauffeur.employeeType}</p>
-            <p style="font-size: ${popupFontSize}; color: #6b7280; margin-bottom: ${popupLineMargin}; word-wrap: break-word;"><strong>${t('chauffeurs.vehicleType')}:</strong> ${chauffeur.vehicleType}</p>
-            <p style="font-size: ${popupFontSize}; color: #6b7280; word-wrap: break-word;"><strong>${t('chauffeurs.phone')}:</strong> ${chauffeur.phone.join(', ')}</p>
+          <div style="padding: ${popupPadding}; min-width: ${popupMinWidth}; max-width: ${popupMaxWidth}; background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); overflow: hidden; font-family: 'Segoe UI', 'Arial', sans-serif; font-size: 13px; line-height: 1.1;">
+            <h3 style="font-family: 'Segoe UI', 'Arial', sans-serif; font-weight: 900; font-size: 16px; margin-bottom: 10px; color: #2563eb; word-wrap: break-word;">${displayName}</h3>
+            <div style="font-size: 15px; color: #111; margin-bottom: 2px; word-wrap: break-word; font-weight: bold;"><strong>Programme:</strong> <strong>${programRef || '<span style=\'color:#b91c1c\'>Aucune référence</span>'}</strong></div>
+            <p style="font-size: 13px; color: #111; margin-bottom: 2px; word-wrap: break-word;"><strong>${t('chauffeurs.employeeType')}:</strong> ${chauffeur.employeeType}</p>
+            <p style="font-size: 13px; color: #111; margin-bottom: 2px; word-wrap: break-word;"><strong>${t('chauffeurs.vehicleType')}:</strong> ${chauffeur.vehicleType}</p>
+            <p style="font-size: 13px; color: #111; word-wrap: break-word;"><strong>${t('chauffeurs.phone')}:</strong> ${chauffeur.phone.join(', ')}</p>
           </div>
         `;
 
@@ -204,6 +215,8 @@ export const createMarkers = ({
 
         // Cache the marker
         markerCache.set(markerId, marker);
+      } else {
+        marker.setIcon(iconToUse);
       }
 
       // Only add to map if not already added

@@ -49,13 +49,14 @@ import { doc, updateDoc } from 'firebase/firestore';
 import { db as firestore } from '../../services/firebaseClient';
 
 const ChauffeurDashboard = () => {
+  const { t, settings } = useTranslation();
   const [gpsActive, setGpsActive] = useState(false);
   const [gpsPosition, setGpsPosition] = useState<{ lat: number; lng: number; accuracy?: number } | null>(null);
   // Hooks d'état GPS doivent être déclarés en tout premier
   // ...existing code...
   // Demande d'activation GPS au démarrage si paramètre admin activé
   useEffect(() => {
-    const { settings } = useTranslation();
+    // Utiliser settings directement, ne pas appeler useTranslation ici
     if (settings.gpsActivationRequestEnabled && !gpsActive) {
       (async () => {
         const pos = await getCurrentPosition();
@@ -69,10 +70,9 @@ const ChauffeurDashboard = () => {
         }
       })();
     }
-  }, [gpsActive]);
+  }, [gpsActive, settings.gpsActivationRequestEnabled]);
   const auth = useAuth();
   // TOUS les hooks doivent être appelés avant tout return !
-  const { t, settings } = useTranslation();
   // Heartbeat Firestore: met à jour lastActive toutes les 60s
   useEffect(() => {
     if (!auth?.user?.id || !settings.heartbeatOnlineEnabled) return;
