@@ -341,6 +341,22 @@ const TracageSection = ({ gpsActive, setGpsActive, userPosition, setUserPosition
     }
     return filtered;
   }, [chauffeurs, enRouteDeclarations, activeTab]);
+
+  // Centrage automatique sur le chauffeur sélectionné
+  useEffect(() => {
+    if (!mapInstance || !highlightedChauffeurId) return;
+    // Cherche le chauffeur en route avec position
+    const chauffeur = chauffeursEnRouteWithPosition.find(
+      c => c.id === highlightedChauffeurId && c.coordinates
+    );
+    if (chauffeur && chauffeur.coordinates) {
+      mapInstance.setView([
+        chauffeur.coordinates.lat,
+        chauffeur.coordinates.lng
+      ], 15, { animate: true });
+    }
+  }, [highlightedChauffeurId, mapInstance, chauffeursEnRouteWithPosition]);
+
   const [showCreateWarehouse, setShowCreateWarehouse] = useState(false);
   const [newWarehouse, setNewWarehouse] = useState({
     name: '',
@@ -903,16 +919,16 @@ function GPSStatusButton({ decl, chauffeurs, setHighlightedChauffeurId, highligh
       }}
       title={gpsActive ? 'GPS activé' : 'GPS désactivé'}
       onClick={() => {
+        if (chauffeur.coordinates && mapInstance && mapInstance.setView) {
+          mapInstance.setView([
+            chauffeur.coordinates.lat,
+            chauffeur.coordinates.lng
+          ], 16, { animate: true });
+        }
         if (selected) {
           setHighlightedChauffeurId(null);
         } else {
           setHighlightedChauffeurId(chauffeur.id);
-          if (chauffeur.coordinates && mapInstance && mapInstance.setView) {
-            mapInstance.setView([
-              chauffeur.coordinates.lat,
-              chauffeur.coordinates.lng
-            ], 16, { animate: true });
-          }
         }
       }}
       aria-pressed={selected}

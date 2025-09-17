@@ -590,6 +590,7 @@ const PlanificateurDashboard = () => {
             </span>
             <PlanificateurSidebar activeTab={activeTab} onTabChange={setActiveTab} hasPendingClients={hasPendingClients} />
             <div className="flex-1 p-6 pt-16 overflow-auto">
+              <h2 className="text-2xl font-bold mb-4">{t('tracage.title')}</h2>
               <TracageSection 
                 gpsActive={gpsActive}
                 setGpsActive={setGpsActive}
@@ -616,6 +617,7 @@ const PlanificateurDashboard = () => {
           </div>
           <PlanificateurSidebar activeTab={activeTab} onTabChange={setActiveTab} hasPendingClients={hasPendingClients} />
           <div className="p-6">
+            <h2 className="text-2xl font-bold mb-4">{t('tracage.title')}</h2>
             {/* Carte (map) en premier */}
             <TracageSection 
               gpsActive={gpsActive}

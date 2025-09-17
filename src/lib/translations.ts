@@ -318,6 +318,9 @@ export const translations = {
       clientRejected: "Client rejeté",
       clientArchived: "Client archivé",
       unknownUser: "Utilisateur inconnu"
+    },
+    tracage: {
+      title: "Suivi des Chauffeurs et Déclarations"
     }
   },
   en: {
@@ -530,6 +533,9 @@ export const translations = {
       clientRejected: "Client rejected",
       clientArchived: "Client archived",
       unknownUser: "Unknown user"
+    },
+    tracage: {
+      title: "Chauffeurs & Declarations Tracking"
     }
   },
   ar: {
@@ -742,6 +748,9 @@ export const translations = {
       clientRejected: "تم رفض العميل",
       clientArchived: "تم أرشفة العميل",
       unknownUser: "مستخدم غير معروف"
+    },
+    tracage: {
+      title: "تتبع السائقين والتصريحات"
     }
   }
 };
