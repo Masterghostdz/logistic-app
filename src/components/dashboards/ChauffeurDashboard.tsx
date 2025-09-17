@@ -134,15 +134,30 @@ const ChauffeurDashboard = () => {
     const sendPosition = async () => {
       const pos = await getCurrentPosition();
       if (pos) {
+        const now = Date.now();
         const positionData = {
           lastPosition: {
             lat: pos.lat,
             lng: pos.lng,
-            at: Date.now()
+            at: now
           }
         };
         updateDoc(userRef, positionData);
         updateDoc(chauffeurRef, positionData);
+
+        // Ajout uniquement dans le champ positions de la déclaration en_route
+        if (enRouteDeclaration) {
+          const declarationRef = doc(firestore, 'declarations', enRouteDeclaration.id);
+          const tracePoint = {
+            lat: pos.lat,
+            lng: pos.lng,
+            at: now
+          };
+          const { arrayUnion } = await import('firebase/firestore');
+          await updateDoc(declarationRef, {
+            positions: arrayUnion(tracePoint)
+          });
+        }
       }
     };
     let interval: NodeJS.Timeout | undefined;

@@ -36,6 +36,8 @@ interface TracageSectionProps {
 }
 
 const TracageSection = ({ gpsActive, setGpsActive, userPosition, setUserPosition }: TracageSectionProps) => {
+  // État pour bouton itinéraire actif
+  const [highlightedItineraireId, setHighlightedItineraireId] = useState<string | null>(null);
   const sharedData = useSharedData();
   const companies = sharedData.companies || [];
   const isMobile = useIsMobile();
@@ -543,6 +545,8 @@ const TracageSection = ({ gpsActive, setGpsActive, userPosition, setUserPosition
                   highlightedWarehouseId={activeTab === 'warehouses' ? focusedWarehouseId : null}
                   chauffeurs={activeTab === 'chauffeurs' ? chauffeursEnRouteWithPosition : []}
                   highlightedChauffeurId={activeTab === 'chauffeurs' ? highlightedChauffeurId : null}
+                  highlightedItineraireId={activeTab === 'chauffeurs' ? highlightedItineraireId : null}
+                  declarations={activeTab === 'chauffeurs' ? enRouteDeclarations : []}
                 />
               ) : (
                 <OpenStreetMap
@@ -557,6 +561,8 @@ const TracageSection = ({ gpsActive, setGpsActive, userPosition, setUserPosition
                   highlightedClientId={activeTab === 'clients' ? highlightedClientId : null}
                   chauffeurs={activeTab === 'chauffeurs' ? chauffeursEnRouteWithPosition : []}
                   highlightedChauffeurId={activeTab === 'chauffeurs' ? highlightedChauffeurId : null}
+                  highlightedItineraireId={activeTab === 'chauffeurs' ? highlightedItineraireId : null}
+                  declarations={activeTab === 'chauffeurs' ? enRouteDeclarations : []}
                 />
               )}
               {/* Bouton calques à l'intérieur de la carte, fixé en bas droite */}
@@ -873,8 +879,33 @@ const TracageSection = ({ gpsActive, setGpsActive, userPosition, setUserPosition
                           </div>
                           <div className="flex gap-2 text-xs items-center mt-1">
                             <span className="font-bold text-gray-900 dark:text-white">{decl.chauffeurName}</span>
-                            {/* Bouton GPS status du chauffeur, sans remplissage, sans glow, sans ombre, sélectionnable */}
+                            {/* Bouton GPS status du chauffeur */}
                             <GPSStatusButton decl={decl} chauffeurs={chauffeurs} setHighlightedChauffeurId={setHighlightedChauffeurId} highlightedChauffeurId={highlightedChauffeurId} mapInstance={mapInstance} />
+                            {/* Nouveau bouton itinéraire */}
+                            <Button
+                              size="sm"
+                              variant={highlightedItineraireId === decl.id ? "default" : "outline"}
+                              className={`ml-2 ${highlightedItineraireId === decl.id ? "ring-2 ring-primary" : ""}`}
+                              title="Afficher l'itinéraire du chauffeur"
+                              onClick={() => {
+                                if (highlightedItineraireId === decl.id) {
+                                  setHighlightedItineraireId(null);
+                                } else {
+                                  setHighlightedItineraireId(decl.id);
+                                  if (decl.positions && decl.positions.length > 0 && mapInstance && mapInstance.setView) {
+                                    const bounds = decl.positions.map(p => [p.lat, p.lng]);
+                                    if (bounds.length > 0) {
+                                      mapInstance.fitBounds(bounds, { animate: true, padding: [40, 40] });
+                                    }
+                                    toast.success('Itinéraire affiché sur la carte');
+                                  } else {
+                                    toast.info('Aucun point enregistré pour cette déclaration');
+                                  }
+                                }
+                              }}
+                            >
+                              <span className="material-icons" style={{ fontSize: 20, verticalAlign: 'middle', color: '#3b82f6' }}>alt_route</span>
+                            </Button>
                           </div>
                           {decl.notes && (
                             <div className="text-xs text-gray-700 mt-1">{decl.notes}</div>

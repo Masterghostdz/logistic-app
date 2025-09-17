@@ -81,6 +81,7 @@ export interface Declaration {
   validatedBy?: string;
   refusalReason?: string;
   traceability?: DeclarationTrace[];
+  positions?: Array<{ lat: number; lng: number; at: number }>;
 }
 
 export interface Warehouse {

@@ -9,6 +9,8 @@ import { createMarkers, fitMapToMarkers } from './map/MapMarkers';
 import MapControls from './map/MapControls';
 
 interface MobileOpenStreetMapProps {
+  highlightedItineraireId?: string | null;
+  declarations?: any[];
   warehouses?: Warehouse[];
   chauffeurs?: Chauffeur[];
   height?: string;
@@ -35,7 +37,9 @@ const MobileOpenStreetMap: React.FC<MobileOpenStreetMapProps> = ({
   userPosition,
   showListButton = true,
   highlightedWarehouseId,
-  highlightedChauffeurId
+  highlightedChauffeurId,
+  highlightedItineraireId,
+  declarations = []
 }) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const map = useRef<L.Map | null>(null);
@@ -47,6 +51,34 @@ const MobileOpenStreetMap: React.FC<MobileOpenStreetMapProps> = ({
   const hasUserInteracted = useRef(false);
   // Affiche le marker GPS animé si userPosition est défini
   useEffect(() => {
+  // Affichage des points d'itinéraire si demandé
+  useEffect(() => {
+    if (!map.current || !highlightedItineraireId || !declarations) return;
+    // Supprime les anciens markers d'itinéraire
+    if (markersRef.current && markersRef.current.length > 0) {
+      markersRef.current.forEach(m => {
+        if (m.options && m.options.icon && m.options.icon.options.className === 'itineraire-marker') {
+          map.current?.removeLayer(m);
+        }
+      });
+    }
+    const decl = declarations.find(d => d.id === highlightedItineraireId);
+    if (decl && decl.positions && decl.positions.length > 0) {
+      decl.positions.forEach((pos, idx) => {
+        const marker = L.marker([pos.lat, pos.lng], {
+          icon: L.divIcon({
+            className: 'itineraire-marker',
+            html: `<span style='display:block;width:18px;height:18px;background:#3b82f6;border-radius:50%;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.12);'></span>`,
+            iconSize: [18, 18],
+            iconAnchor: [9, 9]
+          }),
+          zIndexOffset: 500 + idx
+        });
+        marker.addTo(map.current);
+        markersRef.current.push(marker);
+      });
+    }
+  }, [highlightedItineraireId, declarations]);
     if (!map.current) return;
     // Toujours retirer l'ancien marker
     if (userMarkerRef.current) {

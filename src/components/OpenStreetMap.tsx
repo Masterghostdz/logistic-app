@@ -9,6 +9,8 @@ import { createSimpleMap } from './map/MapUtils';
 import { createMarkers, fitMapToMarkers } from './map/MapMarkers';
 
 interface OpenStreetMapProps {
+  highlightedItineraireId?: string | null;
+  declarations?: any[];
   highlightedWarehouseId?: string | null;
   warehouses?: Warehouse[];
   chauffeurs?: Chauffeur[];
@@ -37,10 +39,46 @@ const OpenStreetMap: React.FC<OpenStreetMapProps> = ({
   layerType = 'osm',
   userPosition,
   highlightedWarehouseId,
-  highlightedChauffeurId
+  highlightedChauffeurId,
+  highlightedItineraireId,
+  declarations = []
 }) => {
   // Marqueur animé pour la position utilisateur
   const userMarkerRef = useRef<L.Marker | null>(null);
+  // Marqueurs d'itinéraire isolés
+  const itineraryMarkersRef = useRef<L.Marker[]>([]);
+
+  // Affichage des points d'itinéraire si demandé
+  useEffect(() => {
+    if (!map.current || !declarations) return;
+    // Supprime TOUS les markers d'itinéraire à chaque changement
+    if (itineraryMarkersRef.current.length > 0) {
+      itineraryMarkersRef.current.forEach((marker) => {
+        map.current?.removeLayer(marker);
+      });
+      itineraryMarkersRef.current = [];
+    }
+    // Si bouton actif, affiche les points
+    if (highlightedItineraireId) {
+      const decl = declarations.find(d => d.id === highlightedItineraireId);
+      if (decl && decl.positions && decl.positions.length > 0) {
+        decl.positions.forEach((pos, idx) => {
+          const marker = L.marker([pos.lat, pos.lng], {
+            icon: L.divIcon({
+              className: 'itineraire-marker',
+              html: `<span style='display:block;width:18px;height:18px;background:#3b82f6;border-radius:50%;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.12);'></span>`,
+              iconSize: [18, 18],
+              iconAnchor: [9, 9]
+            }),
+            zIndexOffset: 500 + idx
+          });
+          marker.addTo(map.current);
+          itineraryMarkersRef.current.push(marker);
+        });
+      }
+    }
+  }, [highlightedItineraireId, declarations]);
+
   useEffect(() => {
     if (!map.current) return;
     // Supprime l'ancien marker
