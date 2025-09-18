@@ -37,6 +37,10 @@ export const addChauffeur = async (chauffeur) => {
 };
 
 export const updateChauffeur = async (id, updates) => {
+  // Si le chauffeur est offline, forcer gpsActive à false
+  if (updates.isActive === false) {
+    updates.gpsActive = false;
+  }
   // Met à jour la collection users (Admin)
   const userRef = doc(db, 'users', id);
   // Met à jour la collection chauffeurs (Firebase)

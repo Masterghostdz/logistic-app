@@ -19,6 +19,7 @@ interface DeclarationsTableProps {
   mobile?: boolean;
   fontSize?: '40' | '50' | '60' | '70' | '80' | '90' | '100';
   onConsultDeclaration?: (declaration: Declaration) => void;
+  chauffeurTypes?: Record<string, 'interne' | 'externe'>;
 }
 
 const DeclarationsTable = ({ 
@@ -31,7 +32,8 @@ const DeclarationsTable = ({
   setSelectedDeclarationIds,
   mobile = false,
   fontSize = '100',
-  onConsultDeclaration
+  onConsultDeclaration,
+  chauffeurTypes
 }: DeclarationsTableProps) => {
   const [localFontSize, setLocalFontSize] = useState(fontSize);
   const zoomLevels: Record<string, number> = {
@@ -165,6 +167,7 @@ const DeclarationsTable = ({
                 <TableHead className={`${colWidth} whitespace-nowrap`} style={fontSizeStyle}>Chauffeur</TableHead>
                 <TableHead className={`${colWidthSmall} whitespace-nowrap`} style={fontSizeStyle}>Distance</TableHead>
                 <TableHead className={`${colWidth} whitespace-nowrap`} style={fontSizeStyle}>Frais</TableHead>
+                <TableHead className={`${colWidth} whitespace-nowrap`} style={fontSizeStyle}>Prime de route</TableHead>
                 <TableHead className={`${colWidth} whitespace-nowrap`} style={fontSizeStyle}>Créé</TableHead>
                 <TableHead className={`${colWidth} whitespace-nowrap`} style={fontSizeStyle}>Validé</TableHead>
                 <TableHead className={`${colWidthEtat} whitespace-nowrap`} style={fontSizeStyle}>État</TableHead>
@@ -210,6 +213,11 @@ const DeclarationsTable = ({
                         <span className={`whitespace-nowrap`} style={fontSizeStyle}>{declaration.deliveryFees.toFixed(2)} DZD</span>
                         <CopyButton value={Math.floor(declaration.deliveryFees).toString()} />
                       </div>
+                    ) : '-'}
+                  </TableCell>
+                  <TableCell className={`text-center whitespace-nowrap`} style={fontSizeStyle}>
+                    {chauffeurTypes && chauffeurTypes[declaration.chauffeurId] !== 'interne' && declaration.primeDeRoute ? (
+                      <span className="font-bold text-yellow-700 bg-yellow-50 px-2 py-1 rounded" style={{ color: '#FFD700', background: '#FFFBEA' }}>{declaration.primeDeRoute.toFixed(2)} DZD</span>
                     ) : '-'}
                   </TableCell>
                   <TableCell className={`whitespace-nowrap`} style={fontSizeStyle}>

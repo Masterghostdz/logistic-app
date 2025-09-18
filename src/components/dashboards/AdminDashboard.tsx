@@ -164,7 +164,8 @@ const AdminDashboard = () => {
   });
 
   const [newVehicleType, setNewVehicleType] = useState({
-    name: ''
+    name: '',
+    primeKilometrique: ''
   });
 
   const [passwordData, setPasswordData] = useState({
@@ -294,11 +295,16 @@ const AdminDashboard = () => {
       toast.error('Le nom du type de véhicule est obligatoire');
       return;
     }
+    if (newVehicleType.primeKilometrique === '' || isNaN(Number(newVehicleType.primeKilometrique))) {
+      toast.error('La prime kilométrique est obligatoire et doit être un nombre');
+      return;
+    }
     const { addVehicleType, updateVehicleType } = await import('../../services/vehicleTypeService');
     if (editingVehicleType) {
       const updatedVehicleType = {
         ...editingVehicleType,
-        name: newVehicleType.name
+        name: newVehicleType.name,
+        primeKilometrique: Number(newVehicleType.primeKilometrique)
       };
       await updateVehicleType(editingVehicleType.id, updatedVehicleType);
       setEditingVehicleType(null);
@@ -306,12 +312,13 @@ const AdminDashboard = () => {
     } else {
       const vehicleType = {
         name: newVehicleType.name,
+        primeKilometrique: Number(newVehicleType.primeKilometrique),
         createdAt: new Date().toISOString()
       };
       await addVehicleType(vehicleType);
       toast.success('Type de véhicule créé et synchronisé');
     }
-    setNewVehicleType({ name: '' });
+    setNewVehicleType({ name: '', primeKilometrique: '' });
     setShowCreateVehicleType(false);
   };
 
@@ -371,7 +378,8 @@ const AdminDashboard = () => {
   const handleEditVehicleType = (vehicleType: VehicleType) => {
     setEditingVehicleType(vehicleType);
     setNewVehicleType({
-      name: vehicleType.name
+      name: vehicleType.name,
+      primeKilometrique: vehicleType.primeKilometrique?.toString() ?? ''
     });
     setShowCreateVehicleType(true);
   };
@@ -1159,14 +1167,27 @@ const AdminDashboard = () => {
                         </DialogHeader>
                         <form onSubmit={handleCreateVehicleType} className="space-y-4">
                           <div>
-                            <Label htmlFor="vehicleTypeName">Nom du type *</Label>
-                            <Input
-                              id="vehicleTypeName"
-                              value={newVehicleType.name}
-                              onChange={(e) => setNewVehicleType({ ...newVehicleType, name: e.target.value })}
-                              required
-                            />
-                          </div>
+    <Label htmlFor="vehicleTypeName">Nom du type *</Label>
+    <Input
+      id="vehicleTypeName"
+      value={newVehicleType.name}
+      onChange={(e) => setNewVehicleType({ ...newVehicleType, name: e.target.value })}
+      required
+    />
+  </div>
+  <div>
+    <Label htmlFor="vehicleTypePrimeKm">Prime kilométrique *</Label>
+    <Input
+      id="vehicleTypePrimeKm"
+      type="number"
+      step="0.01"
+      min="0"
+      value={newVehicleType.primeKilometrique}
+      onChange={(e) => setNewVehicleType({ ...newVehicleType, primeKilometrique: e.target.value })}
+      required
+      placeholder="Ex: 150.00"
+    />
+  </div>
                           <div className="flex gap-2 pt-4">
                             <Button type="submit" className="flex-1">
                               {editingVehicleType ? 'Modifier' : 'Créer'}
@@ -1174,7 +1195,7 @@ const AdminDashboard = () => {
                             <Button type="button" variant="outline" onClick={() => {
                               setShowCreateVehicleType(false);
                               setEditingVehicleType(null);
-                              setNewVehicleType({ name: '' });
+                              setNewVehicleType({ name: '', primeKilometrique: '' });
                             }}>
                               Annuler
                             </Button>
@@ -1206,6 +1227,7 @@ const AdminDashboard = () => {
                       <TableHeader>
                         <TableRow style={{ fontSize: `${Math.round(14 * (zoomLevels[vehicleTypeTableFontSize] || 1))}px` }}>
                           <TableHead style={{ fontSize: `${Math.round(14 * (zoomLevels[vehicleTypeTableFontSize] || 1))}px` }}>Nom</TableHead>
+                          <TableHead style={{ fontSize: `${Math.round(14 * (zoomLevels[vehicleTypeTableFontSize] || 1))}px` }}>Prime kilométrique</TableHead>
                           <TableHead style={{ fontSize: `${Math.round(14 * (zoomLevels[vehicleTypeTableFontSize] || 1))}px` }}>Actions</TableHead>
                         </TableRow>
                       </TableHeader>
@@ -1213,6 +1235,7 @@ const AdminDashboard = () => {
                         {vehicleTypes.map((vehicleType) => (
                           <TableRow key={vehicleType.id} style={{ fontSize: `${Math.round(14 * (zoomLevels[vehicleTypeTableFontSize] || 1))}px` }}>
                             <TableCell className="font-medium" style={{ fontSize: `${Math.round(14 * (zoomLevels[vehicleTypeTableFontSize] || 1))}px` }}>{vehicleType.name}</TableCell>
+                            <TableCell style={{ fontSize: `${Math.round(14 * (zoomLevels[vehicleTypeTableFontSize] || 1))}px` }}>{vehicleType.primeKilometrique != null ? vehicleType.primeKilometrique.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'}</TableCell>
                             <TableCell style={{ fontSize: `${Math.round(14 * (zoomLevels[vehicleTypeTableFontSize] || 1))}px` }}>
                               <div className="flex gap-2">
                                 <Button 

@@ -51,12 +51,38 @@ export const addDeclaration = async (declaration, traceEntry = null): Promise<Do
 };
 
 
-// Update declaration with optional traceability entry
+// Update declaration with optional traceability entry and primeDeRoute calculation
 export const updateDeclaration = async (id, updates, traceEntry = null) => {
   const declarationRef = doc(db, 'declarations', id);
   let toUpdate = { ...updates };
   if (traceEntry) {
     toUpdate.traceability = [...(updates.traceability || []), traceEntry];
+  }
+  // Prime de route: calcul automatique si statut passe à 'valide' et chauffeur interne
+  if (toUpdate.status === 'valide') {
+    // Charger la déclaration existante pour récupérer chauffeurId et distance
+    const { getDoc } = await import('firebase/firestore');
+    const declarationSnap = await getDoc(declarationRef);
+    const declarationData = declarationSnap.data();
+    const chauffeurId = declarationData?.chauffeurId || toUpdate.chauffeurId;
+    const distance = toUpdate.distance ?? declarationData?.distance;
+    // Charger le chauffeur pour vérifier le type (interne/externe) et le type de véhicule
+    const chauffeurRef = doc(db, 'chauffeurs', chauffeurId);
+    const chauffeurSnap = await getDoc(chauffeurRef);
+    const chauffeurData = chauffeurSnap.data();
+    if (chauffeurData?.employeeType === 'interne') {
+      const vehicleTypeId = chauffeurData.vehicleType;
+      if (vehicleTypeId && distance) {
+        // Charger le type de véhicule pour récupérer primeKilometrique
+        const vehicleTypeRef = doc(db, 'vehicleTypes', vehicleTypeId);
+        const vehicleTypeSnap = await getDoc(vehicleTypeRef);
+        const vehicleTypeData = vehicleTypeSnap.data();
+        const primeKilometrique = vehicleTypeData?.primeKilometrique;
+        if (typeof primeKilometrique === 'number') {
+          toUpdate.primeDeRoute = distance * primeKilometrique;
+        }
+      }
+    }
   }
   return await updateDoc(declarationRef, toUpdate);
 };

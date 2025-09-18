@@ -82,6 +82,7 @@ export interface Declaration {
   refusalReason?: string;
   traceability?: DeclarationTrace[];
   positions?: Array<{ lat: number; lng: number; at: number }>;
+  primeDeRoute?: number;
 }
 
 export interface Warehouse {
@@ -112,6 +113,7 @@ export interface VehicleType {
   id: string;
   name: string;
   createdAt: string;
+  primeKilometrique?: number;
 }
 
 export interface FinancialRecord {
