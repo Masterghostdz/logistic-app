@@ -41,19 +41,21 @@ export const updateChauffeur = async (id, updates) => {
   if (updates.isActive === false) {
     updates.gpsActive = false;
   }
+  // Filtrer les champs undefined
+  const filteredUpdates = Object.fromEntries(Object.entries(updates).filter(([_, v]) => v !== undefined));
   // Met à jour la collection users (Admin)
   const userRef = doc(db, 'users', id);
   // Met à jour la collection chauffeurs (Firebase)
   const chauffeurRef = doc(db, 'chauffeurs', id);
   try {
-    await updateDoc(userRef, updates);
+    await updateDoc(userRef, filteredUpdates);
   } catch (e) {
-    // Si l'utilisateur n'existe pas, ignorer l'erreur ou log
+    console.error('Erreur Firestore utilisateur:', e);
   }
   try {
-    await updateDoc(chauffeurRef, updates);
+    await updateDoc(chauffeurRef, filteredUpdates);
   } catch (e) {
-    // Si le chauffeur n'existe pas, ignorer l'erreur ou log
+    console.error('Erreur Firestore chauffeur:', e);
   }
 };
 

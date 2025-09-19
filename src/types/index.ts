@@ -37,6 +37,7 @@ export interface Chauffeur {
     at: number; // timestamp
   };
   gpsActive?: boolean;
+  salt?: string;
   // For map usage: optional attached declaration
   declaration?: Declaration;
 }

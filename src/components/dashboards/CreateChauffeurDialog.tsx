@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -18,6 +17,8 @@ interface CreateChauffeurDialogProps {
     fullName: string;
     username: string;
     password: string;
+    confirmPassword?: string;
+    salt?: string;
     phone: string[];
     vehicleType: string;
     employeeType: 'interne' | 'externe';
@@ -34,6 +35,7 @@ const CreateChauffeurDialog = ({
   setNewChauffeur 
 }: CreateChauffeurDialogProps) => {
   const { vehicleTypes } = useSharedData();
+  const [showPasswordDialog, setShowPasswordDialog] = React.useState(false);
 
   const handleClose = () => {
     onClose();
@@ -46,6 +48,12 @@ const CreateChauffeurDialog = ({
       employeeType: 'interne'
     });
   };
+
+  React.useEffect(() => {
+    if (showPasswordDialog) {
+      setNewChauffeur((prev: any) => ({ ...prev, password: '', confirmPassword: '' }));
+    }
+  }, [showPasswordDialog]);
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
@@ -80,14 +88,39 @@ const CreateChauffeurDialog = ({
             />
           </div>
           <div>
-            <Label htmlFor="password">Mot de passe *</Label>
-            <Input
-              id="password"
-              type="password"
-              value={newChauffeur.password}
-              onChange={(e) => setNewChauffeur({ ...newChauffeur, password: e.target.value })}
-              required
-            />
+            <Label>Mot de passe</Label>
+            <div className="mt-2">
+              <Button type="button" variant="outline" onClick={() => setShowPasswordDialog(true)}>
+                Modifier le mot de passe
+              </Button>
+            </div>
+            <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Modifier le mot de passe</DialogTitle>
+                  <DialogDescription>Entrez le nouveau mot de passe et sa confirmation.</DialogDescription>
+                </DialogHeader>
+                <div className="space-y-2">
+                  <Label htmlFor="newPassword">Nouveau mot de passe</Label>
+                  <Input
+                    id="newPassword"
+                    type="password"
+                    value={newChauffeur.password || ''}
+                    onChange={e => setNewChauffeur({ ...newChauffeur, password: e.target.value })}
+                  />
+                  <Label htmlFor="confirmPassword">Confirmer le mot de passe</Label>
+                  <Input
+                    id="confirmPassword"
+                    type="password"
+                    value={newChauffeur.confirmPassword || ''}
+                    onChange={e => setNewChauffeur({ ...newChauffeur, confirmPassword: e.target.value })}
+                  />
+                  <Button type="button" onClick={() => setShowPasswordDialog(false)}>
+                    Valider
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
           <div>
             <PhoneNumbersField
@@ -97,14 +130,14 @@ const CreateChauffeurDialog = ({
           </div>
           <div>
             <Label htmlFor="vehicleType">Type de véhicule</Label>
-            <Select value={newChauffeur.vehicleType} onValueChange={(value) => setNewChauffeur({ ...newChauffeur, vehicleType: value })}>
+                    <Select value={newChauffeur.vehicleType} onValueChange={(value) => setNewChauffeur({ ...newChauffeur, vehicleType: value })}>
               <SelectTrigger>
                 <SelectValue placeholder="Sélectionner un type" />
               </SelectTrigger>
               <SelectContent>
-                {vehicleTypes.map((type) => (
-                  <SelectItem key={type.id} value={type.name}>{type.name}</SelectItem>
-                ))}
+                        {vehicleTypes.map((type) => (
+                          <SelectItem key={type.id} value={type.id}>{type.name}</SelectItem>
+                        ))}
               </SelectContent>
             </Select>
           </div>

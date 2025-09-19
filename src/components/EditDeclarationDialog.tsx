@@ -1,3 +1,4 @@
+import { Chauffeur } from '../types';
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from '../hooks/useTranslation';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
@@ -5,7 +6,7 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';  
 import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
-import { Declaration } from '../types';
+import { Declaration, User } from '../types';
 import { getAllRefusalReasons } from '../services/refusalReasonService';
 import SimpleDeclarationNumberForm from './SimpleDeclarationNumberForm';
 import { Badge } from './ui/badge';
@@ -16,6 +17,7 @@ interface EditDeclarationDialogProps {
   onClose: () => void;
   onSave?: (declaration: Declaration) => void;
   readOnly?: boolean;
+  chauffeurs?: Chauffeur[];
 }
 
 const EditDeclarationDialog: React.FC<EditDeclarationDialogProps> = ({
@@ -23,8 +25,14 @@ const EditDeclarationDialog: React.FC<EditDeclarationDialogProps> = ({
   isOpen,
   onClose,
   onSave,
-  readOnly = false
+  readOnly = false,
+  chauffeurs = []
 }) => {
+  // Récupérer le type de chauffeur à partir de la liste
+  const chauffeurType = declaration?.chauffeurId
+    ? chauffeurs.find((c) => c.id === declaration.chauffeurId)?.employeeType
+    : undefined;
+  // Récupérer le type de chauffeur
   const { t } = useTranslation();
 
   // Affichage du motif de refus (hook unique, bien placé)
@@ -168,16 +176,31 @@ const EditDeclarationDialog: React.FC<EditDeclarationDialogProps> = ({
               disabled={readOnly}
             />
           </div>
-          <div>
-            <Label htmlFor="deliveryFees">Frais de livraison (DZD)</Label>
-            <Input
-              id="deliveryFees"
-              type="number"
-              value={formData.deliveryFees}
-              onChange={(e) => setFormData({ ...formData, deliveryFees: e.target.value })}
-              disabled={readOnly}
-            />
-          </div>
+          {/* Frais de livraison pour chauffeur externe uniquement */}
+          {chauffeurType === 'externe' && (
+            <div>
+              <Label htmlFor="deliveryFees">Frais de livraison (DZD)</Label>
+              <Input
+                id="deliveryFees"
+                type="number"
+                value={formData.deliveryFees}
+                onChange={(e) => setFormData({ ...formData, deliveryFees: e.target.value })}
+                disabled={readOnly}
+              />
+            </div>
+          )}
+          {/* Prime de route pour chauffeur interne uniquement */}
+          {chauffeurType === 'interne' && (
+            <div>
+              <Label htmlFor="primeDeRoute">Prime de route (DZD)</Label>
+              <Input
+                id="primeDeRoute"
+                type="number"
+                value={declaration?.primeDeRoute ?? ''}
+                disabled={readOnly}
+              />
+            </div>
+          )}
           <div>
             <Label htmlFor="notes">Notes</Label>
             <Textarea

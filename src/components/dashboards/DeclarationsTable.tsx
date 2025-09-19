@@ -166,8 +166,10 @@ const DeclarationsTable = ({
                 <TableHead className={`${colWidth} whitespace-nowrap`} style={fontSizeStyle}>Numéro</TableHead>
                 <TableHead className={`${colWidth} whitespace-nowrap`} style={fontSizeStyle}>Chauffeur</TableHead>
                 <TableHead className={`${colWidthSmall} whitespace-nowrap`} style={fontSizeStyle}>Distance</TableHead>
-                <TableHead className={`${colWidth} whitespace-nowrap`} style={fontSizeStyle}>Frais</TableHead>
-                <TableHead className={`${colWidth} whitespace-nowrap`} style={fontSizeStyle}>Prime de route</TableHead>
+                {/* Affiche Frais uniquement pour chauffeur externe */}
+                <TableHead className={`${colWidth} whitespace-nowrap`} style={fontSizeStyle}>Frais de Livraison</TableHead>
+                {/* Affiche Prime de route pour interne et planificateur */}
+                <TableHead className={`${colWidth} whitespace-nowrap`} style={fontSizeStyle}>{t('declarations.primeDeRoute') === 'declarations.primeDeRoute' ? 'Prime de route' : t('declarations.primeDeRoute')}</TableHead>
                 <TableHead className={`${colWidth} whitespace-nowrap`} style={fontSizeStyle}>Créé</TableHead>
                 <TableHead className={`${colWidth} whitespace-nowrap`} style={fontSizeStyle}>Validé</TableHead>
                 <TableHead className={`${colWidthEtat} whitespace-nowrap`} style={fontSizeStyle}>État</TableHead>
@@ -207,17 +209,19 @@ const DeclarationsTable = ({
                       </div>
                     ) : '-'}
                   </TableCell>
+                  {/* Frais de Livraison : afficher uniquement pour chauffeur externe */}
                   <TableCell className={`text-right whitespace-nowrap`} style={fontSizeStyle}>
-                    {declaration.deliveryFees ? (
+                    {chauffeurTypes && chauffeurTypes[declaration.chauffeurId] === 'externe' && declaration.deliveryFees ? (
                       <div className={`flex items-center gap-1 whitespace-nowrap`} style={fontSizeStyle}>
                         <span className={`whitespace-nowrap`} style={fontSizeStyle}>{declaration.deliveryFees.toFixed(2)} DZD</span>
                         <CopyButton value={Math.floor(declaration.deliveryFees).toString()} />
                       </div>
                     ) : '-'}
                   </TableCell>
+                  {/* Prime de route : afficher pour interne et planificateur */}
                   <TableCell className={`text-center whitespace-nowrap`} style={fontSizeStyle}>
-                    {chauffeurTypes && chauffeurTypes[declaration.chauffeurId] !== 'interne' && declaration.primeDeRoute ? (
-                      <span className="font-bold text-yellow-700 bg-yellow-50 px-2 py-1 rounded" style={{ color: '#FFD700', background: '#FFFBEA' }}>{declaration.primeDeRoute.toFixed(2)} DZD</span>
+                    {(chauffeurTypes && chauffeurTypes[declaration.chauffeurId] === 'interne' && declaration.primeDeRoute) || (!chauffeurTypes && declaration.primeDeRoute) ? (
+                      <span>{declaration.primeDeRoute.toFixed(2)} DZD</span>
                     ) : '-'}
                   </TableCell>
                   <TableCell className={`whitespace-nowrap`} style={fontSizeStyle}>

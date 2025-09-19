@@ -1,6 +1,9 @@
 
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSharedData } from '../contexts/SharedDataContext';
+import { Declaration } from '../types';
+import EditDeclarationDialog from './EditDeclarationDialog';
 import { useSettings } from '../contexts/SettingsContext';
 import { Button } from './ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
@@ -20,10 +23,40 @@ interface HeaderProps {
   onProfileClick?: () => void;
   variant?: 'default' | 'profile';
   onBack?: () => void;
+  notificationCount?: number;
+  onNotificationClick?: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ onMenuToggle, showMenuButton = false, onProfileClick, variant = 'default', onBack }) => {
+const Header: React.FC<HeaderProps> = ({ onMenuToggle, showMenuButton = false, onProfileClick, variant = 'default', onBack, notificationCount = 0, onNotificationClick }) => {
+  const { declarations } = useSharedData();
+  // Ajout pour consultation déclaration
+  const [consultDeclaration, setConsultDeclaration] = useState<Declaration | null>(null);
+  // Notifications Firestore
+  const [notifState, setNotifState] = useState<any[]>([]);
   const { user, logout } = useAuth();
+  useEffect(() => {
+    async function fetchNotifications() {
+      const { getNotificationsForChauffeur } = await import('../services/notificationService');
+      if (user?.id) {
+        const notifs = await getNotificationsForChauffeur(user.id);
+        setNotifState(notifs);
+      }
+    }
+    fetchNotifications();
+  }, [user?.id]);
+
+  const handleNotifClick = async (id: string) => {
+    const { markNotificationAsRead, getNotificationsForChauffeur } = await import('../services/notificationService');
+    await markNotificationAsRead(id);
+    // Recharger les notifications pour mettre à jour l'état lu
+    if (user?.id) {
+      const notifs = await getNotificationsForChauffeur(user.id);
+      setNotifState(notifs);
+    }
+  };
+  // Un seul état pour gérer l'ouverture des deux menus glissants
+  // 'none' | 'notifications' | 'avatar'
+  const [openMenu, setOpenMenu] = useState<'none' | 'notifications' | 'avatar'>('none');
   const { t } = useTranslation();
   const [showSettings, setShowSettings] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
@@ -105,14 +138,107 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle, showMenuButton = false, o
 
           {/* Rôle et photo de profil à droite */}
           <div className="flex items-center gap-4">
-            {/* DEBUG supprimé */}
-            {/* Message de bienvenue supprimé en mobile */}
             <Badge className={`border ${getRoleBadgeColor(user?.role || '')}`}>
               {user?.role}
             </Badge>
+            {/* Notification Circle Button & Dropdown for Chauffeur */}
+            {user?.role === 'chauffeur' && (
+              <DropdownMenu open={openMenu === 'notifications'} onOpenChange={open => setOpenMenu(open ? 'notifications' : 'none')}>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    className="relative h-8 w-8 rounded-full flex items-center justify-center border border-white-600 hover:bg-white-50 transition"
+                    title="Notifications"
+                    style={{ marginRight: 0 }}
+                  >
+                    <span className="material-icons text-white-600 text-lg">notifications</span>
+                    {notifState.filter(n => !n.read && n.message.toLowerCase().includes('déclaration')).length > 0 && (
+                      <span className="absolute -top-1 -right-1 bg-orange-500 animate-pulse text-white text-xs rounded-full px-1.5 py-0.5 font-bold">
+                        {notifState.filter(n => !n.read && n.message.toLowerCase().includes('déclaration')).length}
+                      </span>
+                    )}
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56 bg-popover border-border" align="end" forceMount>
+                  <div className="max-h-80 overflow-y-auto">
+                    {notifState
+                      .filter(n => n.message.toLowerCase().includes('déclaration'))
+                      .map((notif) => {
+                        // Extraire la référence programme si présente
+                        const refMatch = notif.message.match(/DCP\/(\d{2})\/(\d{2})\/(\d+)/);
+                        let refProgramme = '';
+                        let customMessage = notif.message;
+                        let declaration;
+                        if (refMatch) {
+                          refProgramme = `DCP/${refMatch[1]}/${refMatch[2]}/${refMatch[3]}`;
+                          declaration = declarations.find((d: any) => d.year === refMatch[1] && d.month === refMatch[2] && d.programNumber === refMatch[3]);
+                        }
+                        // Si pas de refMatch, essayer de matcher par type de notification
+                        if (!refProgramme && notif.message.toLowerCase().includes('déclaration')) {
+                          // Chercher une déclaration récente
+                          declaration = declarations[0];
+                          if (declaration) {
+                            refProgramme = `DCP/${declaration.year}/${declaration.month}/${declaration.programNumber}`;
+                          }
+                        }
+                        let refColor = 'text-orange-600 font-bold';
+                        let statusColor = '';
+                        let statusText = '';
+                        if (refProgramme) {
+                          if (notif.message.toLowerCase().includes('validée')) {
+                            statusColor = 'text-green-600 font-bold';
+                            statusText = t('dashboard.validated');
+                            customMessage = `${t('notification.default', { ref: `<span class='${refColor}'>${refProgramme}</span>` })} <span class='mx-1'>est</span> <span class='${statusColor}'>${statusText}</span>`;
+                          } else if (notif.message.toLowerCase().includes('refusée')) {
+                            statusColor = 'text-red-600 font-bold';
+                            statusText = t('dashboard.refused');
+                            customMessage = `${t('notification.default', { ref: `<span class='${refColor}'>${refProgramme}</span>` })} <span class='mx-1'>est</span> <span class='${statusColor}'>${statusText}</span>`;
+                          } else {
+                            customMessage = t('notification.default', { ref: `<span class='${refColor}'>${refProgramme}</span>` });
+                          }
+                        }
+                        return (
+                          <div
+                            key={notif.id}
+                            className="relative flex flex-col px-4 py-2 border-b last:border-b-0 gap-1 border-border dark:border-border cursor-pointer"
+                            onClick={() => {
+                              handleNotifClick(notif.id);
+                              if (declaration) setConsultDeclaration(declaration);
+                            }}
+                          >
+                            <span className={notif.read ? 'text-xs text-muted-foreground' : 'text-xs font-semibold text-popover-foreground'} dangerouslySetInnerHTML={{ __html: customMessage }} />
+                            {!notif.read && (
+                              <span className="absolute top-1 right-2 h-2 w-2 rounded-full bg-orange-500 animate-pulse" />
+                            )}
+                          </div>
+                        );
+                      })
+                    }
+                    {notifState.filter(n => n.message.toLowerCase().includes('déclaration')).length === 0 && (
+                      <div className="px-4 py-2 text-muted-foreground">Aucune notification</div>
+                    )}
+                  </div>
+                </DropdownMenuContent>
+              {/* Affiche le formulaire de consultation déclaration si demandé */}
+              {consultDeclaration && (
+                <EditDeclarationDialog
+                  declaration={consultDeclaration}
+                  isOpen={!!consultDeclaration}
+                  onClose={() => setConsultDeclaration(null)}
+                  readOnly={true}
+                />
+              )}
+            </DropdownMenu>
+          )}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-8 w-8 rounded-full hover:bg-accent">
+                <Button
+                  variant="ghost"
+                  className="relative h-8 w-8 rounded-full hover:bg-accent"
+                  onClick={() => {
+                    if (openMenu === 'notifications') setOpenMenu('avatar');
+                    else setOpenMenu(openMenu === 'avatar' ? 'none' : 'avatar');
+                  }}
+                >
                   {user?.role === 'chauffeur' && user?.employeeType === 'interne' && (
                     <span
                       className="absolute inset-0 rounded-full pointer-events-none animate-glow-flicker"
@@ -162,6 +288,15 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle, showMenuButton = false, o
         open={showSettings} 
         onOpenChange={setShowSettings} 
       />
+      {/* Affiche le formulaire de consultation déclaration si demandé */}
+      {consultDeclaration && (
+        <EditDeclarationDialog
+          declaration={consultDeclaration}
+          isOpen={!!consultDeclaration}
+          onClose={() => setConsultDeclaration(null)}
+          readOnly={true}
+        />
+      )}
     </>
   );
 };

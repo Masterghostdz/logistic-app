@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useSharedData } from '../../contexts/SharedDataContext';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
@@ -26,6 +27,7 @@ interface ChauffeursTableProps {
 
 const ChauffeursTable = ({ chauffeurs, onEditChauffeur, onDeleteChauffeur, fontSize = '100' }: ChauffeursTableProps) => {
   const [localFontSize, setLocalFontSize] = useState(fontSize);
+  const { vehicleTypes } = useSharedData();
   const zoomLevels: Record<string, number> = {
     '50': 0.5,
     '60': 0.6,
@@ -95,6 +97,8 @@ const ChauffeursTable = ({ chauffeurs, onEditChauffeur, onDeleteChauffeur, fontS
               }
               // Statut connexion
               const connexion = chauffeur.isOnline ? 'En ligne' : 'Hors ligne';
+              // Map vehicleType ID to name
+              const vehicleTypeName = vehicleTypes.find(vt => vt.id === chauffeur.vehicleType)?.name || '-';
               return (
                 <TableRow key={chauffeur.id} className={rowHeight} style={fontSizeStyle}>
                   <TableCell className="font-medium" style={fontSizeStyle}>
@@ -116,7 +120,7 @@ const ChauffeursTable = ({ chauffeurs, onEditChauffeur, onDeleteChauffeur, fontS
                     </div>
                   </TableCell>
                   <TableCell style={fontSizeStyle}>
-                    <div className="text-sm truncate" style={fontSizeStyle}>{chauffeur.vehicleType || '-'}</div>
+                    <div className="text-sm truncate" style={fontSizeStyle}>{vehicleTypeName}</div>
                   </TableCell>
                   <TableCell style={fontSizeStyle}>
                     <Badge 

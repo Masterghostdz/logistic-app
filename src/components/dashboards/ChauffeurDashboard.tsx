@@ -49,7 +49,43 @@ import { doc, updateDoc } from 'firebase/firestore';
 import { db as firestore } from '../../services/firebaseClient';
 
 const ChauffeurDashboard = () => {
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [showNotifications, setShowNotifications] = useState(false);
+  // Sync unread count to window for Header badge
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      (window as any).unreadChauffeurNotifications = unreadCount;
+    }
+  }, [unreadCount]);
+  // Listen for notification button click from Header
+  useEffect(() => {
+    const handler = () => setShowNotifications(true);
+    window.addEventListener('showChauffeurNotifications', handler);
+    return () => window.removeEventListener('showChauffeurNotifications', handler);
+  }, []);
+  // Mark notification as read
+  const handleMarkAsRead = async (id: string) => {
+    const { markNotificationAsRead } = await import('../../services/notificationService');
+    await markNotificationAsRead(id);
+    // Refresh notifications
+    const { getNotificationsForChauffeur } = await import('../../services/notificationService');
+    const notifs = await getNotificationsForChauffeur(auth.user.id);
+    setNotifications(notifs);
+    setUnreadCount(notifs.filter((n: any) => !n.read).length);
+  };
   const { t, settings } = useTranslation();
+  const auth = useAuth();
+  useEffect(() => {
+    async function fetchNotifications() {
+      if (!auth?.user?.id) return;
+      const { getNotificationsForChauffeur } = await import('../../services/notificationService');
+      const notifs = await getNotificationsForChauffeur(auth.user.id);
+      setNotifications(notifs);
+      setUnreadCount(notifs.filter((n: any) => !n.read).length);
+    }
+    fetchNotifications();
+  }, [auth?.user?.id]);
   const [gpsActive, setGpsActive] = useState(false);
   const [gpsPosition, setGpsPosition] = useState<{ lat: number; lng: number; accuracy?: number } | null>(null);
   // Hooks d'état GPS doivent être déclarés en tout premier
@@ -71,7 +107,6 @@ const ChauffeurDashboard = () => {
       })();
     }
   }, [gpsActive, settings.gpsActivationRequestEnabled]);
-  const auth = useAuth();
   // TOUS les hooks doivent être appelés avant tout return !
   // Heartbeat Firestore: met à jour lastActive toutes les 60s
   useEffect(() => {
@@ -1047,7 +1082,14 @@ const ChauffeurDashboard = () => {
                                   <TableRow className="border-border hover:bg-muted/50">
                                     <TableHead className="text-foreground text-xs sm:text-sm whitespace-nowrap">{t('declarations.number')}</TableHead>
                                     <TableHead className="text-foreground text-xs sm:text-sm whitespace-nowrap">{t('declarations.distance')}</TableHead>
-                                    <TableHead className="text-foreground text-xs sm:text-sm whitespace-nowrap">{t('declarations.deliveryFees')}</TableHead>
+                                    {/* Affiche Frais de Livraison uniquement si chauffeur externe */}
+                                    {auth?.user?.employeeType === 'externe' && (
+                                      <TableHead className="text-foreground text-xs sm:text-sm whitespace-nowrap">{t('declarations.deliveryFees')}</TableHead>
+                                    )}
+                                    {/* Affiche Prime de route uniquement si chauffeur interne */}
+                                    {auth?.user?.employeeType === 'interne' && (
+                                      <TableHead className="text-foreground text-xs sm:text-sm whitespace-nowrap">{t('declarations.primeDeRoute') === 'declarations.primeDeRoute' ? 'Prime de route' : t('declarations.primeDeRoute')}</TableHead>
+                                    )}
                                     <TableHead className="text-foreground text-xs sm:text-sm whitespace-nowrap">{t('declarations.status')}</TableHead>
                                     <TableHead className="text-foreground text-xs sm:text-sm whitespace-nowrap">{t('declarations.createdDate')}</TableHead>
                                     <TableHead className="text-foreground text-xs sm:text-sm whitespace-nowrap">{t('declarations.actions')}</TableHead>
@@ -1062,9 +1104,22 @@ const ChauffeurDashboard = () => {
                                       <TableCell className="text-foreground text-xs sm:text-sm whitespace-nowrap">
                                         {declaration.distance ? `${declaration.distance} km` : '-'}
                                       </TableCell>
-                                      <TableCell className="text-foreground text-xs sm:text-sm whitespace-nowrap">
-                                        {declaration.deliveryFees ? `${declaration.deliveryFees} DZD` : '-'}
-                                      </TableCell>
+                                      {/* Frais de Livraison uniquement pour externe */}
+                                      {auth?.user?.employeeType === 'externe' && (
+                                        <TableCell className="text-foreground text-xs sm:text-sm whitespace-nowrap">
+                                          {declaration.deliveryFees ? `${declaration.deliveryFees} DZD` : '-'}
+                                        </TableCell>
+                                      )}
+                                      {/* Prime de route uniquement pour interne */}
+                                      {auth?.user?.employeeType === 'interne' && (
+                                        <TableCell className="text-xs sm:text-sm whitespace-nowrap">
+                                          {declaration.primeDeRoute ? (
+                                            <span style={{ color: '#FFD700', fontWeight: 'bold' }}>
+                                              {declaration.primeDeRoute.toFixed(2)} DZD
+                                            </span>
+                                          ) : '-'}
+                                        </TableCell>
+                                      )}
                                       <TableCell className="whitespace-nowrap">
                                         {getStatusBadge(declaration.status, declaration)}
                                       </TableCell>
@@ -1151,6 +1206,36 @@ const ChauffeurDashboard = () => {
         <div className="flex min-h-[calc(100vh-4rem)] relative">
           {/* Badge En ligne en haut à droite, absolute, hors sidebar */}
           <div className="absolute top-0 right-0 m-2 z-10 flex items-center gap-2">
+      {/* Notification Modal/Dropdown */}
+      {showNotifications && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setShowNotifications(false)}>
+          <div className="bg-white rounded-lg shadow-lg p-4 max-w-md w-full" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-2">
+              <h2 className="text-lg font-bold">Notifications</h2>
+              <button className="text-gray-500 hover:text-gray-700" onClick={() => setShowNotifications(false)}>
+                <span className="material-icons">close</span>
+              </button>
+            </div>
+            {notifications.length === 0 ? (
+              <div className="text-center text-muted-foreground py-4">Aucune notification</div>
+            ) : (
+              <ul className="divide-y divide-gray-200">
+                {notifications.map((notif) => (
+                  <li key={notif.id} className={`py-2 px-1 flex flex-col ${notif.read ? 'bg-gray-50' : 'bg-blue-50'}`}>
+                    <div className="flex justify-between items-center">
+                      <span className="font-medium text-sm">{notif.message || notif.title || 'Notification'}</span>
+                      {!notif.read && (
+                        <button className="ml-2 px-2 py-1 text-xs bg-blue-600 text-white rounded" onClick={() => handleMarkAsRead(notif.id)}>Marquer comme lu</button>
+                      )}
+                    </div>
+                    <span className="text-xs text-gray-400 mt-1">{notif.createdAt ? new Date(notif.createdAt).toLocaleString() : ''}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+      )}
             <span
               className="flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700 shadow"
               title={isOnline ? 'Connecté au cloud' : 'Hors ligne'}
@@ -1311,14 +1396,19 @@ const ChauffeurDashboard = () => {
                             />
                           </div>
                           <div>
-                            <Label htmlFor="deliveryFees" className="text-foreground text-sm">{t('declarations.deliveryFees')}</Label>
-                            <Input
-                              id="deliveryFees"
-                              type="number"
-                              value={formData.deliveryFees}
-                              onChange={(e) => setFormData({ ...formData, deliveryFees: e.target.value })}
-                              className="bg-background border-border text-foreground text-sm w-full mt-1"
-                            />
+                            {/* Champ Frais de Livraison affiché uniquement pour chauffeur externe */}
+                            {auth?.user?.employeeType === 'externe' && (
+                              <>
+                                <Label htmlFor="deliveryFees" className="text-foreground text-sm">{t('declarations.deliveryFees')}</Label>
+                                <Input
+                                  id="deliveryFees"
+                                  type="number"
+                                  value={formData.deliveryFees}
+                                  onChange={(e) => setFormData({ ...formData, deliveryFees: e.target.value })}
+                                  className="bg-background border-border text-foreground text-sm w-full mt-1"
+                                />
+                              </>
+                            )}
                           </div>
                           <div>
                             <Label htmlFor="notes" className="text-foreground text-sm">{t('declarations.notes')}</Label>
@@ -1493,7 +1583,14 @@ const ChauffeurDashboard = () => {
                                   <TableRow className="border-border hover:bg-muted/50">
                                     <TableHead className="text-foreground text-xs sm:text-sm whitespace-nowrap">{t('declarations.number')}</TableHead>
                                     <TableHead className="text-foreground text-xs sm:text-sm whitespace-nowrap">{t('declarations.distance')}</TableHead>
-                                    <TableHead className="text-foreground text-xs sm:text-sm whitespace-nowrap">{t('declarations.deliveryFees')}</TableHead>
+                                    {/* Affiche Frais de Livraison uniquement si chauffeur externe */}
+                                    {auth?.user?.employeeType === 'externe' && (
+                                      <TableHead className="text-foreground text-xs sm:text-sm whitespace-nowrap">{t('declarations.deliveryFees')}</TableHead>
+                                    )}
+                                    {/* Affiche Prime de route uniquement si chauffeur interne */}
+                                    {auth?.user?.employeeType === 'interne' && (
+                                      <TableHead className="text-foreground text-xs sm:text-sm whitespace-nowrap">{t('declarations.primeDeRoute') === 'declarations.primeDeRoute' ? 'Prime de route' : t('declarations.primeDeRoute')}</TableHead>
+                                    )}
                                     <TableHead className="text-foreground text-xs sm:text-sm whitespace-nowrap">{t('declarations.status')}</TableHead>
                                     <TableHead className="text-foreground text-xs sm:text-sm whitespace-nowrap">{t('declarations.createdDate')}</TableHead>
                                     <TableHead className="text-foreground text-xs sm:text-sm whitespace-nowrap">{t('declarations.actions')}</TableHead>
@@ -1508,9 +1605,22 @@ const ChauffeurDashboard = () => {
                                       <TableCell className="text-foreground text-xs sm:text-sm whitespace-nowrap">
                                         {declaration.distance ? `${declaration.distance} km` : '-'}
                                       </TableCell>
-                                      <TableCell className="text-foreground text-xs sm:text-sm whitespace-nowrap">
-                                        {declaration.deliveryFees ? `${declaration.deliveryFees} DZD` : '-'}
-                                      </TableCell>
+                                      {/* Frais de Livraison uniquement pour externe */}
+                                      {auth?.user?.employeeType === 'externe' && (
+                                        <TableCell className="text-foreground text-xs sm:text-sm whitespace-nowrap">
+                                          {declaration.deliveryFees ? `${declaration.deliveryFees} DZD` : '-'}
+                                        </TableCell>
+                                      )}
+                                      {/* Prime de route uniquement pour interne */}
+                                      {auth?.user?.employeeType === 'interne' && (
+                                        <TableCell className="text-xs sm:text-sm whitespace-nowrap">
+                                          {declaration.primeDeRoute ? (
+                                            <span style={{ color: '#FFD700', fontWeight: 'bold' }}>
+                                              {declaration.primeDeRoute.toFixed(2)} DZD
+                                            </span>
+                                          ) : '-'}
+                                        </TableCell>
+                                      )}
                                       <TableCell className="whitespace-nowrap">
                                         {getStatusBadge(declaration.status, declaration)}
                                       </TableCell>

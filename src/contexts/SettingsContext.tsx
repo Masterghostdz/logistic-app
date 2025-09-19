@@ -1,5 +1,6 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+const userAgent: string = navigator.userAgent;
 import { Settings } from '../types';
 
 interface SettingsContextType {
@@ -11,6 +12,7 @@ interface SettingsContextType {
   setHeartbeatPositionImmediate?: (value: boolean) => void;
   setGpsActivationRequestEnabled?: (value: boolean) => void;
   settings: Settings;
+  userAgent?: string;
   updateSettings: (newSettings: Partial<Settings>) => void;
   setHeartbeatOnlineInterval: (value: number) => void;
   setHeartbeatGpsInterval: (value: number) => void;
@@ -20,10 +22,28 @@ interface SettingsContextType {
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
 
 export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  // Détection automatique du mode d'affichage
+  // userAgent déjà déclaré en haut du fichier
+  function detectViewMode() {
+    // Si Windows, Mac, Linux, toujours Desktop
+    if (/Windows|Macintosh|Linux/i.test(userAgent)) {
+      return 'desktop';
+    }
+    // Si Android, iPhone, iPad, etc. → Mobile
+    if (/Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent)) {
+      return 'mobile';
+    }
+    // Sinon, utilise la taille d'écran
+    if (typeof window !== 'undefined' && window.innerWidth < 800) {
+      return 'mobile';
+    }
+    return 'desktop';
+  }
+
   const [settings, setSettings] = useState<Settings>({
     language: 'fr',
     theme: 'light',
-    viewMode: 'desktop',
+    viewMode: detectViewMode(),
     tableFontSize: '80',
     heartbeatOnlineInterval: 60,
     heartbeatGpsInterval: 60,
@@ -36,6 +56,19 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
     heartbeatPositionImmediate: true,
     gpsActivationRequestEnabled: true
   });
+
+  // Met à jour le mode d'affichage à chaque entrée ou changement de taille d'écran
+  useEffect(() => {
+    function handleResizeOrAgent() {
+      const newMode = detectViewMode();
+      setSettings(prev => ({ ...prev, viewMode: newMode }));
+    }
+    window.addEventListener('resize', handleResizeOrAgent);
+    handleResizeOrAgent(); // recalcul immédiat à l'entrée
+    return () => {
+      window.removeEventListener('resize', handleResizeOrAgent);
+    };
+  }, []);
   const setHeartbeatOnlineEnabled = (value: boolean) => updateSettings({ heartbeatOnlineEnabled: value });
   const setHeartbeatOnlineImmediate = (value: boolean) => updateSettings({ heartbeatOnlineImmediate: value });
   const setHeartbeatGpsEnabled = (value: boolean) => updateSettings({ heartbeatGpsEnabled: value });
@@ -43,6 +76,12 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
   const setHeartbeatPositionEnabled = (value: boolean) => updateSettings({ heartbeatPositionEnabled: value });
   const setHeartbeatPositionImmediate = (value: boolean) => updateSettings({ heartbeatPositionImmediate: value });
   const setGpsActivationRequestEnabled = (value: boolean) => updateSettings({ gpsActivationRequestEnabled: value });
+
+  // Empêche la modification manuelle du mode d'affichage
+  useEffect(() => {
+    const autoMode = detectViewMode();
+    setSettings(prev => ({ ...prev, viewMode: autoMode }));
+  }, [userAgent, window.innerWidth]);
 
   useEffect(() => {
     // Charger les paramètres depuis Firestore puis localStorage
@@ -67,7 +106,7 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
             ...prev,
             language: parsedSettings.language || 'fr',
             theme: parsedSettings.theme || 'light',
-            viewMode: parsedSettings.viewMode || 'desktop',
+            viewMode: parsedSettings.viewMode || detectViewMode(),
             tableFontSize: parsedSettings.tableFontSize || '80',
             heartbeatOnlineInterval: parsedSettings.heartbeatOnlineInterval || 60,
             heartbeatGpsInterval: parsedSettings.heartbeatGpsInterval || 60,
@@ -124,6 +163,7 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
   return (
     <SettingsContext.Provider value={{
       settings,
+      userAgent,
       updateSettings,
       setHeartbeatOnlineInterval,
       setHeartbeatGpsInterval,

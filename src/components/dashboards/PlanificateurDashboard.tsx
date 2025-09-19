@@ -107,6 +107,15 @@ const PlanificateurDashboard = () => {
       };
       const { updateDeclaration } = await import('../../services/declarationService');
       await updateDeclaration(refusalDeclarationId, updatedDeclaration);
+      // Add notification for chauffeur
+      const { addNotification } = await import('../../services/notificationService');
+      await addNotification({
+  chauffeurId: declaration.chauffeurId,
+  declarationId: declaration.id,
+  message: `Votre déclaration a été refusée. Motif: ${reason.label || reason.id}`,
+  createdAt: new Date().toISOString(),
+  read: false
+      });
       toast.success('Déclaration refusée');
     }
     setRefusalDialogOpen(false);
@@ -360,19 +369,27 @@ const PlanificateurDashboard = () => {
 
     if (editingChauffeur) {
       // Modification d'un chauffeur existant (Firestore)
+      let passwordHash = editingChauffeur.password;
+      let salt = editingChauffeur.salt || Math.random().toString(36).substring(2, 15);
+      if (newChauffeur.password) {
+        passwordHash = await (await import('../../utils/authUtils')).simpleHash(newChauffeur.password, salt);
+      }
       const updatedChauffeur: Chauffeur = {
         ...editingChauffeur,
         firstName,
         lastName,
         fullName: `${newChauffeur.employeeType === 'externe' ? 'TP - ' : ''}${newChauffeur.fullName}`,
         username: newChauffeur.username,
-        password: newChauffeur.password,
+        password: passwordHash,
+        salt: salt,
         phone: newChauffeur.phone,
         vehicleType: newChauffeur.vehicleType,
         employeeType: newChauffeur.employeeType
       };
       const { updateChauffeur } = await import('../../services/chauffeurService');
+      const { updateUser } = await import('../../services/userService');
       await updateChauffeur(editingChauffeur.id, updatedChauffeur);
+      await updateUser(editingChauffeur.id, { passwordHash, salt });
       setEditingChauffeur(null);
       toast.success('Chauffeur modifié avec succès');
     } else {
@@ -468,6 +485,15 @@ const PlanificateurDashboard = () => {
       };
       const { updateDeclaration } = await import('../../services/declarationService');
     await updateDeclaration(id, updatedDeclaration);
+    // Add notification for chauffeur
+    const { addNotification } = await import('../../services/notificationService');
+    await addNotification({
+  chauffeurId: declaration.chauffeurId,
+  declarationId: declaration.id,
+  message: `Votre déclaration a été validée.`,
+  createdAt: new Date().toISOString(),
+  read: false
+    });
     toast.success('Déclaration validée');
     }
   };
@@ -945,7 +971,7 @@ const PlanificateurDashboard = () => {
                   searchPlaceholder="Rechercher par nom ou ville..."
                   filterPlaceholder="Filtrer..."
                   searchColumn={searchColumn}
-                  onSearchColumnChange={value => setSearchColumn(value as 'number' | 'chauffeurName')}
+                  onSearchColumnChange={col => setSearchColumn(col as 'number' | 'chauffeurName')}
                   searchColumnOptions={[
                     { value: 'number', label: 'Numéro' },
                     { value: 'warehouseName', label: 'Entrepôt' }
@@ -992,7 +1018,7 @@ const PlanificateurDashboard = () => {
                   searchPlaceholder={t('chauffeurs.searchPlaceholder')}
                   filterPlaceholder={t('chauffeurs.filterPlaceholder')}
                   searchColumn={searchColumn}
-                  onSearchColumnChange={value => setSearchColumn(value as 'number' | 'chauffeurName')}
+                  onSearchColumnChange={col => setSearchColumn(col as 'number' | 'chauffeurName')}
                   searchColumnOptions={[
                     { value: 'number', label: t('chauffeurs.columnNumber') },
                     { value: 'chauffeurName', label: t('chauffeurs.columnChauffeur') }

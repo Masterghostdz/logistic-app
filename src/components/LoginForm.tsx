@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useFirestoreConnectionStatus } from '../services/useFirestoreConnectionStatus';
 import { useIsOnline } from '../services/useIsOnline';
 import { Button } from './ui/button';
@@ -19,7 +19,29 @@ const LoginForm = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
   const { t } = useTranslation();
-  const { settings, updateSettings } = useSettings();
+  const { settings, updateSettings, userAgent } = useSettings();
+  // Force le recalcul du mode à chaque rendu du LoginForm
+  React.useEffect(() => {
+    if (settings.viewMode !== undefined) {
+      const ua = navigator.userAgent;
+      let mode: 'mobile' | 'desktop' = 'desktop';
+      if (/Windows|Macintosh|Linux/i.test(ua)) {
+        mode = 'desktop';
+      } else if (/Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua)) {
+        mode = 'mobile';
+      } else if (typeof window !== 'undefined' && window.innerWidth < 800) {
+        mode = 'mobile';
+      }
+      if (settings.viewMode !== mode) {
+        updateSettings({ viewMode: mode });
+      }
+    }
+  }, []);
+  // Log technique pour le mode d'affichage détecté
+  useEffect(() => {
+    // Affiche dans la console le mode détecté
+    console.log('Mode d\'affichage détecté:', settings.viewMode);
+  }, [settings.viewMode]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,6 +61,13 @@ const LoginForm = () => {
 
   return (
     <div className="min-h-screen flex flex-col justify-center items-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-4 relative">
+      {/* Affichage du mode détecté pour l'utilisateur */}
+      <div className="absolute top-2 right-2 bg-white/80 dark:bg-gray-900/80 px-3 py-2 rounded shadow text-xs text-gray-700 dark:text-gray-200 z-10 min-w-[220px]">
+        <div>
+          <span className="font-semibold">Mode détecté :</span>
+          <span className={settings.viewMode === 'mobile' ? 'text-orange-600 font-bold ml-1' : 'text-blue-600 font-bold ml-1'}>{settings.viewMode === 'mobile' ? 'Mobile' : 'Desktop'}</span>
+        </div>
+      </div>
       <Card className="w-full max-w-md relative overflow-visible">
         {/* Language selector inside Card, centered at the top */}
         <div className="flex justify-center mt-4 mb-2">

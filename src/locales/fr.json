@@ -1,0 +1,7 @@
+{
+  "notification.validated": "Déclaration de {ref} est Validée",
+  "notification.refused": "Déclaration de {ref} est Réfusée",
+  "notification.default": "Déclaration de {ref}",
+  "notification.noPaymentReceipts": "Aucun reçu de paiement",
+  "notification.none": "Aucune notification"
+}

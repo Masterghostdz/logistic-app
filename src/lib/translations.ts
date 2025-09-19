@@ -1,5 +1,12 @@
 export const translations = {
   fr: {
+    notification: {
+      validated: "Déclaration de {ref} est Validée",
+      refused: "Déclaration de {ref} est Réfusée",
+      default: "Déclaration de {ref}",
+      noPaymentReceipts: "Aucun reçu de paiement",
+      none: "Aucune notification"
+    },
     roles: {
       admin: "Administrateur",
       planificateur: "Planificateur",
@@ -92,6 +99,13 @@ export const translations = {
   paymentReceipts: "Reçus de paiement (photos)",
   noPaymentReceipts: "Aucun reçu de paiement",
   en: {
+    notification: {
+      validated: "Declaration {ref} is Validated",
+      refused: "Declaration {ref} is Refused",
+      default: "Declaration {ref}",
+      noPaymentReceipts: "No payment receipt",
+      none: "No notification"
+    },
     roles: {
       admin: "Administrator",
       planificateur: "Planner",
@@ -125,6 +139,7 @@ export const translations = {
   confirmDeleteDescription: "Are you sure you want to delete this declaration? This action is irreversible.",
   paymentReceipts: "Payment receipts (photos)",
   noPaymentReceipts: "No payment receipt",
+      primeDeRoute: "Road bonus",
       // ...existing keys...
     },
     // ...existing code...
@@ -163,6 +178,7 @@ export const translations = {
   confirmDeleteDescription: "هل أنت متأكد أنك تريد حذف هذا التصريح؟ هذا الإجراء لا يمكن التراجع عنه.",
   paymentReceipts: "إيصالات الدفع (صور)",
   noPaymentReceipts: "لا يوجد إيصال دفع",
+      primeDeRoute: "منحة الطريق",
       // ...existing keys...
     },
     // ...existing code...
