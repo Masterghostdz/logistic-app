@@ -88,7 +88,9 @@ export const translations = {
   onRoad: "En route",
   pending: "En Attent",
   validated: "Validé",
-  refused: "Refusé"
+  refused: "Refusé",
+  online: "En ligne",
+  offline: "Hors ligne"
     },
     // Declarations
   declarations: {
@@ -396,7 +398,9 @@ export const translations = {
   onRoad: "On Road",
   pending: "Pending",
   validated: "Validated",
-  refused: "Refused"
+  refused: "Refused",
+  online: "Online",
+  offline: "Offline"
     },
     // Declarations
     declarations: {
@@ -611,7 +615,9 @@ export const translations = {
   onRoad: "في الطريق",
   pending: "معلق",
   validated: "مؤكد",
-  refused: "مرفوض"
+  refused: "مرفوض",
+  online: "متصل",
+  offline: "غير متصل"
     },
     // Declarations
     declarations: {

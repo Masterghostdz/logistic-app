@@ -608,11 +608,11 @@ const PlanificateurDashboard = () => {
           <div className="flex min-h-[calc(100vh-4rem)] relative">
             {/* Badge en ligne en haut à droite, desktop uniquement */}
             <span
-              className="absolute top-0 right-0 m-2 z-10 flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700 shadow"
-              title={isOnline ? 'Connecté au cloud' : 'Hors ligne'}
+              className={`absolute top-0 ${settings.language === 'ar' ? 'left-0' : 'right-0'} m-2 z-10 flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700 shadow`}
+              title={isOnline ? t('dashboard.online') : t('dashboard.offline')}
             >
               <span className="inline-block w-2 h-2 rounded-full bg-green-500"></span>
-              En ligne
+              {isOnline ? t('dashboard.online') : t('dashboard.offline')}
             </span>
             <PlanificateurSidebar activeTab={activeTab} onTabChange={setActiveTab} hasPendingClients={hasPendingClients} />
             <div className="flex-1 p-6 pt-16 overflow-auto">
@@ -635,10 +635,10 @@ const PlanificateurDashboard = () => {
           <div className="flex px-2 pt-3 mb-2">
             <span
               className="flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700 shadow"
-              title={isOnline ? 'Connecté au cloud' : 'Hors ligne'}
+              title={isOnline ? t('dashboard.online') : t('dashboard.offline')}
             >
               <span className="inline-block w-2 h-2 rounded-full bg-green-500"></span>
-              En ligne
+              {isOnline ? t('dashboard.online') : t('dashboard.offline')}
             </span>
           </div>
           <PlanificateurSidebar activeTab={activeTab} onTabChange={setActiveTab} hasPendingClients={hasPendingClients} />
@@ -710,10 +710,10 @@ const PlanificateurDashboard = () => {
         <div className="flex px-2 pt-3 mb-2">
           <span
             className="flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700 shadow"
-            title={isOnline ? 'Connecté au cloud' : 'Hors ligne'}
+            title={isOnline ? t('dashboard.online') : t('dashboard.offline')}
           >
             <span className="inline-block w-2 h-2 rounded-full bg-green-500"></span>
-            En ligne
+            {isOnline ? t('dashboard.online') : t('dashboard.offline')}
           </span>
         </div>
       ) : null}
@@ -723,13 +723,22 @@ const PlanificateurDashboard = () => {
           {/* Badge En ligne en haut à droite du bloc content, sous le header, à l'intérieur mais hors de la sidebar (desktop uniquement) */}
           {viewMode !== 'mobile' && (
             <span
-              className="absolute top-0 right-0 m-2 z-10 flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700 shadow"
-              title={isOnline ? 'Connecté au cloud' : 'Hors ligne'}
+              className={`absolute top-0 ${settings.language === 'ar' ? 'left-0' : 'right-0'} m-2 z-10 flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700 shadow`}
+              title={isOnline ? t('dashboard.online') : t('dashboard.offline')}
             >
               <span className="inline-block w-2 h-2 rounded-full bg-green-500"></span>
-              En ligne
+              {isOnline ? t('dashboard.online') : t('dashboard.offline')}
             </span>
           )}
+          {activeTab === 'tracage' && viewMode === 'desktop' && (
+  <span
+    className={`absolute top-0 ${settings.language === 'ar' ? 'left-0' : 'right-0'} m-2 z-10 flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700 shadow`}
+    title={isOnline ? t('dashboard.online') : t('dashboard.offline')}
+  >
+    <span className="inline-block w-2 h-2 rounded-full bg-green-500"></span>
+    {isOnline ? t('dashboard.online') : t('dashboard.offline')}
+  </span>
+)}
           {/* ...existing code for tabs and content... */}
             {activeTab === 'dashboard' && (
               <div className="space-y-6">

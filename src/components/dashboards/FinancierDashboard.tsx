@@ -1,4 +1,3 @@
-
 const FinancierDashboard = () => {
   // Heartbeat Firestore: met à jour lastOnline toutes les 60s
   const auth = useAuth();

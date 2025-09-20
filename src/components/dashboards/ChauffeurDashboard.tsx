@@ -518,13 +518,19 @@ const ChauffeurDashboard = () => {
       {/* Badge En ligne + GPS : mobile sous le header, desktop en haut à droite (absolute, hors sidebar) */}
       {isMobile ? (
         <>
-          <div className="flex px-2 pt-3 mb-2 items-center gap-2">
+          <div
+            className="flex px-2 pt-3 mb-2 items-center gap-2"
+            style={{
+              flexDirection: settings.language === 'ar' ? 'row-reverse' : 'row',
+              justifyContent: settings.language === 'ar' ? 'flex-start' : undefined
+            }}
+          >
             <span
               className="flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700 shadow"
-              title={isOnline ? 'Connecté au cloud' : 'Hors ligne'}
+              title={isOnline ? t('dashboard.online') : t('dashboard.offline')}
             >
               <span className="inline-block w-2 h-2 rounded-full bg-green-500"></span>
-              En ligne
+              {isOnline ? t('dashboard.online') : t('dashboard.offline')}
             </span>
             {/* GPS Button (mobile, à côté du badge) */}
             <Button
@@ -721,7 +727,6 @@ const ChauffeurDashboard = () => {
                           <div className="flex items-center gap-2 px-4 py-2 bg-red-100 border-b-2 border-red-500 text-red-700 font-semibold rounded-t-md mb-2">
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636l-1.414 1.414A7.975 7.975 0 0012 6c-2.21 0-4.21.896-5.95 2.364l-1.414-1.414A9.969 9.969 0 0112 4c2.761 0 5.261 1.12 7.071 2.929zM4.222 19.778A9.969 9.969 0 0112 20c2.761 0 5.261-1.12 7.071-2.929l-1.414-1.414A7.975 7.975 0 0112 18c-2.21 0-4.21-.896-5.95-2.364l-1.414 1.414z" />
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                             </svg>
                             <span>{t('declarations.breakdown')}</span>
                           </div>
@@ -1205,89 +1210,59 @@ const ChauffeurDashboard = () => {
       ) : (
         <div className="flex min-h-[calc(100vh-4rem)] relative">
           {/* Badge En ligne en haut à droite, absolute, hors sidebar */}
-          <div className="absolute top-0 right-0 m-2 z-10 flex items-center gap-2">
-      {/* Notification Modal/Dropdown */}
-      {showNotifications && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setShowNotifications(false)}>
-          <div className="bg-white rounded-lg shadow-lg p-4 max-w-md w-full" onClick={e => e.stopPropagation()}>
-            <div className="flex justify-between items-center mb-2">
-              <h2 className="text-lg font-bold">Notifications</h2>
-              <button className="text-gray-500 hover:text-gray-700" onClick={() => setShowNotifications(false)}>
-                <span className="material-icons">close</span>
-              </button>
-            </div>
-            {notifications.length === 0 ? (
-              <div className="text-center text-muted-foreground py-4">Aucune notification</div>
-            ) : (
-              <ul className="divide-y divide-gray-200">
-                {notifications.map((notif) => (
-                  <li key={notif.id} className={`py-2 px-1 flex flex-col ${notif.read ? 'bg-gray-50' : 'bg-blue-50'}`}>
-                    <div className="flex justify-between items-center">
-                      <span className="font-medium text-sm">{notif.message || notif.title || 'Notification'}</span>
-                      {!notif.read && (
-                        <button className="ml-2 px-2 py-1 text-xs bg-blue-600 text-white rounded" onClick={() => handleMarkAsRead(notif.id)}>Marquer comme lu</button>
-                      )}
-                    </div>
-                    <span className="text-xs text-gray-400 mt-1">{notif.createdAt ? new Date(notif.createdAt).toLocaleString() : ''}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </div>
-      )}
-            <span
-              className="flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700 shadow"
-              title={isOnline ? 'Connecté au cloud' : 'Hors ligne'}
-            >
-              <span className="inline-block w-2 h-2 rounded-full bg-green-500"></span>
-              En ligne
-            </span>
-            {/* GPS Button (toujours visible, desktop et mobile) */}
-            <Button
-              type="button"
-              className={
-                `ml-2 flex items-center justify-center w-8 h-8 rounded-full border-2 transition-all ` +
-                (gpsActive
-                  ? 'bg-green-500 border-green-600 shadow-lg ring-2 ring-green-300 animate-pulse'
-                  : 'bg-red-500 border-red-600')
-              }
-              style={{ boxShadow: gpsActive ? '0 0 8px 2px #22c55e' : 'none' }}
-              title={gpsActive ? 'Désactiver le GPS' : 'Activer le GPS'}
-              onClick={async e => {
-                if (gpsActive) {
-                  setShowGpsConfirm(true);
-                } else {
-                  const pos = await getCurrentPosition();
-                  if (pos) {
-                    setGpsPosition(pos);
-                    setGpsActive(true);
-                  } else {
-                    setGpsActive(false);
-                    setGpsPosition(null);
-                    toast({ title: 'Accès à la position refusé ou indisponible', variant: 'destructive' });
-                  }
-                }
-              }}
-            >
-              <span className="material-icons text-white text-lg">gps_fixed</span>
-            </Button>
-            {/* Confirmation dialog uniquement pour la désactivation */}
-            <AlertDialog open={showGpsConfirm} onOpenChange={setShowGpsConfirm}>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Désactiver le GPS ?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Êtes-vous sûr de vouloir désactiver le GPS ?
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel onClick={() => setShowGpsConfirm(false)}>Annuler</AlertDialogCancel>
-                  <AlertDialogAction onClick={() => { setGpsActive(false); setGpsPosition(null); setShowGpsConfirm(false); }}>Désactiver</AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </div>
+          {!isMobile && (
+  <div className={`absolute top-0 ${settings.language === 'ar' ? 'left-0' : 'right-0'} m-2 z-10 flex items-center gap-2`}>
+    <span
+      className="flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700 shadow"
+      title={isOnline ? t('dashboard.online') : t('dashboard.offline')}
+    >
+      <span className="inline-block w-2 h-2 rounded-full bg-green-500"></span>
+      {isOnline ? t('dashboard.online') : t('dashboard.offline')}
+    </span>
+    <Button
+      type="button"
+      className={
+        `ml-2 flex items-center justify-center w-8 h-8 rounded-full border-2 transition-all ` +
+        (gpsActive
+          ? 'bg-green-500 border-green-600 shadow-lg ring-2 ring-green-300 animate-pulse'
+          : 'bg-red-500 border-red-600')
+      }
+      style={{ boxShadow: gpsActive ? '0 0 8px 2px #22c55e' : 'none' }}
+      title={gpsActive ? 'Désactiver le GPS' : 'Activer le GPS'}
+      onClick={async e => {
+        if (gpsActive) {
+          setShowGpsConfirm(true);
+        } else {
+          const pos = await getCurrentPosition();
+          if (pos) {
+            setGpsPosition(pos);
+            setGpsActive(true);
+          } else {
+            setGpsActive(false);
+            setGpsPosition(null);
+            toast({ title: 'Accès à la position refusé ou indisponible', variant: 'destructive' });
+          }
+        }
+      }}
+    >
+      <span className="material-icons text-white text-lg">gps_fixed</span>
+    </Button>
+    <AlertDialog open={showGpsConfirm} onOpenChange={setShowGpsConfirm}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Désactiver le GPS ?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Êtes-vous sûr de vouloir désactiver le GPS ?
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel onClick={() => setShowGpsConfirm(false)}>Annuler</AlertDialogCancel>
+          <AlertDialogAction onClick={() => { setGpsActive(false); setGpsPosition(null); setShowGpsConfirm(false); }}>Désactiver</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  </div>
+)}
           <ChauffeurSidebar activeTab={activeTab} onTabChange={(tab) => setActiveTab(tab as 'dashboard' | 'tracage')} />
           <div className="flex-1 p-6 pt-16 overflow-auto">
             {/* ...existing code for dashboard/tracage/content... */}
@@ -1371,8 +1346,7 @@ const ChauffeurDashboard = () => {
                             <div className="flex items-center gap-2 px-4 py-2 bg-red-100 border-b-2 border-red-500 text-red-700 font-semibold rounded-t-md mb-2">
                               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636l-1.414 1.414A7.975 7.975 0 0012 6c-2.21 0-4.21.896-5.95 2.364l-1.414-1.414A9.969 9.969 0 0112 4c2.761 0 5.261 1.12 7.071 2.929zM4.222 19.778A9.969 9.969 0 0112 20c2.761 0 5.261-1.12 7.071-2.929l-1.414-1.414A7.975 7.975 0 0112 18c-2.21 0-4.21-.896-5.95-2.364l-1.414 1.414z" />
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                              </svg>
+                            </svg>
                               <span>{t('declarations.breakdown')}</span>
                             </div>
                           )}

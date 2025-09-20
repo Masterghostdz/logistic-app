@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '.
 import { Edit, Trash2 } from 'lucide-react';
 import { Chauffeur } from '../../types';
 import PasswordField from '../PasswordField';
+import { useTranslation } from '../../hooks/useTranslation';
 
 interface ChauffeurWithStatus extends Chauffeur {
   isEnPanne?: boolean;
@@ -28,6 +29,7 @@ interface ChauffeursTableProps {
 const ChauffeursTable = ({ chauffeurs, onEditChauffeur, onDeleteChauffeur, fontSize = '100' }: ChauffeursTableProps) => {
   const [localFontSize, setLocalFontSize] = useState(fontSize);
   const { vehicleTypes } = useSharedData();
+  const { t, settings } = useTranslation();
   const zoomLevels: Record<string, number> = {
     '50': 0.5,
     '60': 0.6,
@@ -96,7 +98,7 @@ const ChauffeursTable = ({ chauffeurs, onEditChauffeur, onDeleteChauffeur, fontS
                 statut = 'Inactif';
               }
               // Statut connexion
-              const connexion = chauffeur.isOnline ? 'En ligne' : 'Hors ligne';
+              const connexion = chauffeur.isOnline ? t('dashboard.online') : t('dashboard.offline');
               // Map vehicleType ID to name
               const vehicleTypeName = vehicleTypes.find(vt => vt.id === chauffeur.vehicleType)?.name || '-';
               return (
@@ -154,20 +156,33 @@ const ChauffeursTable = ({ chauffeurs, onEditChauffeur, onDeleteChauffeur, fontS
                   </TableCell>
                   {/* Connexion column */}
                   <TableCell style={fontSizeStyle}>
-                    <span
-                      title={chauffeur.isOnline ? 'En ligne' : 'Hors ligne'}
-                      style={{
-                        display: 'inline-block',
-                        width: 14,
-                        height: 14,
-                        borderRadius: '50%',
-                        background: chauffeur.isOnline ? '#22c55e' : '#ef4444',
-                        boxShadow: chauffeur.isOnline
-                          ? '0 0 8px 2px #22c55e, 0 2px 6px rgba(34,197,94,0.3)'
-                          : '0 0 6px 1px #ef4444, 0 2px 6px rgba(239,68,68,0.3)',
-                        margin: '0 auto',
-                      }}
-                    />
+                    <div style={{ display: 'flex', flexDirection: 'row', justifyContent: settings.language === 'ar' ? 'flex-end' : 'center', alignItems: 'center', gap: 8 }}>
+                      <span
+                        title={connexion}
+                        style={{
+                          display: 'inline-block',
+                          width: 14,
+                          height: 14,
+                          borderRadius: '50%',
+                          background: chauffeur.isOnline ? '#22c55e' : '#ef4444',
+                          boxShadow: chauffeur.isOnline
+                            ? '0 0 8px 2px #22c55e, 0 2px 6px rgba(34,197,94,0.3)'
+                            : '0 0 6px 1px #ef4444, 0 2px 6px rgba(239,68,68,0.3)',
+                        }}
+                      />
+                      <span
+                        className="material-icons"
+                        title={chauffeur.gpsActive ? 'GPS activé' : 'GPS désactivé'}
+                        style={{
+                          color: chauffeur.gpsActive ? '#22c55e' : '#ef4444',
+                          fontSize: '20px',
+                          verticalAlign: 'middle',
+                          display: 'inline-block',
+                        }}
+                      >
+                        gps_fixed
+                      </span>
+                    </div>
                   </TableCell>
                   {/* Statut column */}
                   <TableCell style={fontSizeStyle}>
