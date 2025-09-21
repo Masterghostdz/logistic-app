@@ -20,6 +20,7 @@ import { db as firestore } from '../../services/firebaseClient';
 import { useSharedData } from '../../contexts/SharedDataContext';
 import SearchAndFilter from '../SearchAndFilter';
 import ProfilePage from '../ProfilePage';
+import { Badge } from '../ui/badge';
 import TracageSection from '../TracageSection';
 import WarehouseTable from './WarehouseTable';
 import Header from '../Header';
@@ -36,6 +37,7 @@ import ClientMapDialog from './ClientMapDialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from '../../hooks/useTranslation';
+import useTableZoom from '../../hooks/useTableZoom';
 
 const PlanificateurDashboard = () => {
   // Heartbeat Firestore: met à jour lastOnline toutes les 60s
@@ -57,6 +59,7 @@ const PlanificateurDashboard = () => {
   const [editingDeclaration, setEditingDeclaration] = useState<Declaration | null>(null);
   // Utilise le mode d'affichage global depuis les settings
   const { settings, updateSettings } = useSettings();
+  const { badgeClass, badgeStyle } = useTableZoom();
   // Le style est sélectionné selon le paramètre settings.viewMode
   const viewMode = settings.viewMode || 'desktop';
   // Synchronisation temps réel des entrepôts depuis Firestore
@@ -102,7 +105,7 @@ const PlanificateurDashboard = () => {
         status: 'refuse' as const,
         refusalReason: reason.id,
         validatedAt: new Date().toISOString(),
-        validatedBy: 'Planificateur',
+  validatedBy: t('roles.planificateur') || 'Planificateur',
         traceability: [...(declaration.traceability || []), traceEntry],
       };
       const { updateDeclaration } = await import('../../services/declarationService');
@@ -480,7 +483,7 @@ const PlanificateurDashboard = () => {
         ...declaration,
         status: 'valide' as const,
         validatedAt: new Date().toISOString(),
-        validatedBy: 'Planificateur',
+  validatedBy: t('roles.planificateur') || 'Planificateur',
         traceability: [...(declaration.traceability || []), traceEntry],
       };
       const { updateDeclaration } = await import('../../services/declarationService');
@@ -518,12 +521,27 @@ const PlanificateurDashboard = () => {
       action: t('traceability.modified'), // Ex: "Déclaration modifiée"
       date: new Date().toISOString(),
     };
+    // Find the original declaration to compare status
+    const originalDeclaration = declarations.find(d => d.id === updatedDeclaration.id);
     const newDeclaration = {
       ...updatedDeclaration,
       traceability: [...(updatedDeclaration.traceability || []), traceEntry],
     };
     const { updateDeclaration } = await import('../../services/declarationService');
     await updateDeclaration(updatedDeclaration.id, newDeclaration);
+
+    // If status changed to 'en_panne', create notification for planificateur
+    if (originalDeclaration && originalDeclaration.status !== 'en_panne' && updatedDeclaration.status === 'en_panne') {
+      const { addNotification } = await import('../../services/notificationService');
+      await addNotification({
+        chauffeurId: updatedDeclaration.chauffeurId,
+        declarationId: updatedDeclaration.id,
+        message: `Chauffeur '${updatedDeclaration.chauffeurName}' a tombé en panne dans le programme '${updatedDeclaration.programNumber || updatedDeclaration.number || ''}/${updatedDeclaration.month}/${updatedDeclaration.year}'`,
+        createdAt: new Date().toISOString(),
+        read: false
+      });
+    }
+
     setEditingDeclaration(null);
     toast.success('Déclaration mise à jour');
   };
@@ -608,11 +626,13 @@ const PlanificateurDashboard = () => {
           <div className="flex min-h-[calc(100vh-4rem)] relative">
             {/* Badge en ligne en haut à droite, desktop uniquement */}
             <span
-              className={`absolute top-0 ${settings.language === 'ar' ? 'left-0' : 'right-0'} m-2 z-10 flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700 shadow`}
+              className={`absolute top-0 ${settings.language === 'ar' ? 'left-0' : 'right-0'} m-2 z-10`}
               title={isOnline ? t('dashboard.online') : t('dashboard.offline')}
             >
-              <span className="inline-block w-2 h-2 rounded-full bg-green-500"></span>
-              {isOnline ? t('dashboard.online') : t('dashboard.offline')}
+              <Badge size="md" style={{...badgeStyle}} className={`${badgeClass} items-center gap-2 bg-green-100 text-green-700`}> 
+                <span className="inline-block w-2 h-2 rounded-full bg-green-500"></span>
+                {isOnline ? t('dashboard.online') : t('dashboard.offline')}
+              </Badge>
             </span>
             <PlanificateurSidebar activeTab={activeTab} onTabChange={setActiveTab} hasPendingClients={hasPendingClients} />
             <div className="flex-1 p-6 pt-16 overflow-auto">
@@ -633,13 +653,10 @@ const PlanificateurDashboard = () => {
           <Header onProfileClick={handleProfileClick} />
           {/* Badge en ligne mobile : juste sous le header */}
           <div className="flex px-2 pt-3 mb-2">
-            <span
-              className="flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700 shadow"
-              title={isOnline ? t('dashboard.online') : t('dashboard.offline')}
-            >
+            <Badge size="md" style={{...badgeStyle}} className={`${badgeClass} items-center gap-2 bg-green-100 text-green-700`} title={isOnline ? t('dashboard.online') : t('dashboard.offline')}>
               <span className="inline-block w-2 h-2 rounded-full bg-green-500"></span>
               {isOnline ? t('dashboard.online') : t('dashboard.offline')}
-            </span>
+            </Badge>
           </div>
           <PlanificateurSidebar activeTab={activeTab} onTabChange={setActiveTab} hasPendingClients={hasPendingClients} />
           <div className="p-6">
@@ -708,13 +725,10 @@ const PlanificateurDashboard = () => {
       {/* Badge en ligne : mobile sous le header, desktop à droite de la sidebar, sous le header */}
       {viewMode === 'mobile' ? (
         <div className="flex px-2 pt-3 mb-2">
-          <span
-            className="flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700 shadow"
-            title={isOnline ? t('dashboard.online') : t('dashboard.offline')}
-          >
-            <span className="inline-block w-2 h-2 rounded-full bg-green-500"></span>
+          <Badge size="sm" style={{...badgeStyle, fontSize: 12, padding: '0.08rem 0.4rem'}} className={`${badgeClass} items-center gap-1 bg-green-100 text-green-700`} title={isOnline ? t('dashboard.online') : t('dashboard.offline')}>
+            <span className="inline-block w-1.5 h-1.5 rounded-full bg-green-500"></span>
             {isOnline ? t('dashboard.online') : t('dashboard.offline')}
-          </span>
+          </Badge>
         </div>
       ) : null}
       <div className={viewMode === 'mobile' ? 'flex flex-col h-auto gap-2' : 'flex flex-row min-h-[calc(100vh-4rem)] relative'}>
@@ -722,28 +736,26 @@ const PlanificateurDashboard = () => {
         <div className="flex-1 p-6 pt-16 overflow-auto relative">
           {/* Badge En ligne en haut à droite du bloc content, sous le header, à l'intérieur mais hors de la sidebar (desktop uniquement) */}
           {viewMode !== 'mobile' && (
-            <span
-              className={`absolute top-0 ${settings.language === 'ar' ? 'left-0' : 'right-0'} m-2 z-10 flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700 shadow`}
-              title={isOnline ? t('dashboard.online') : t('dashboard.offline')}
-            >
-              <span className="inline-block w-2 h-2 rounded-full bg-green-500"></span>
-              {isOnline ? t('dashboard.online') : t('dashboard.offline')}
-            </span>
+            <div className={`absolute top-0 ${settings.language === 'ar' ? 'left-0' : 'right-0'} m-2 z-10`}>
+              <Badge size="md" style={{...badgeStyle}} className={`${badgeClass} items-center gap-2 bg-green-100 text-green-700`} title={isOnline ? t('dashboard.online') : t('dashboard.offline')}>
+                <span className="inline-block w-2 h-2 rounded-full bg-green-500"></span>
+                {isOnline ? t('dashboard.online') : t('dashboard.offline')}
+              </Badge>
+            </div>
           )}
           {activeTab === 'tracage' && viewMode === 'desktop' && (
-  <span
-    className={`absolute top-0 ${settings.language === 'ar' ? 'left-0' : 'right-0'} m-2 z-10 flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700 shadow`}
-    title={isOnline ? t('dashboard.online') : t('dashboard.offline')}
-  >
-    <span className="inline-block w-2 h-2 rounded-full bg-green-500"></span>
-    {isOnline ? t('dashboard.online') : t('dashboard.offline')}
-  </span>
+  <div className={`absolute top-0 ${settings.language === 'ar' ? 'left-0' : 'right-0'} m-2 z-10`}>
+  <Badge size="md" style={{...badgeStyle}} className={`${badgeClass} items-center gap-2 bg-green-100 text-green-700`} title={isOnline ? t('dashboard.online') : t('dashboard.offline')}>
+      <span className="inline-block w-2 h-2 rounded-full bg-green-500"></span>
+      {isOnline ? t('dashboard.online') : t('dashboard.offline')}
+    </Badge>
+  </div>
 )}
           {/* ...existing code for tabs and content... */}
             {activeTab === 'dashboard' && (
               <div className="space-y-6">
                 <div className="mb-4">
-                  <h1 className="text-2xl font-bold text-foreground text-left">Tableau de bord - Planificateur</h1>
+                  <h1 className={`text-2xl font-bold text-foreground ${settings.language === 'ar' ? 'text-right' : 'text-left'}`}>{t('planificateur.dashboardTitle')}</h1>
                 </div>
                 {/* Toujours aligné à gauche pour En Attente, Déclarations récentes prend toute la largeur */}
                 <div className="w-full max-w-xl">
@@ -762,7 +774,7 @@ const PlanificateurDashboard = () => {
                 </div>
                 <Card className="w-full">
                   <CardHeader>
-                    <CardTitle>Déclarations récentes</CardTitle>
+                    <CardTitle>{t('planificateur.recentDeclarations')}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
@@ -788,7 +800,7 @@ const PlanificateurDashboard = () => {
               <div className="space-y-6">
                 {/* Titre au-dessus de la barre de recherche */}
                 <div className="flex items-center justify-between mb-2">
-                  <h2 className="text-2xl font-bold">Gestion des Déclarations</h2>
+                  <h2 className="text-2xl font-bold">{t('planificateur.declarationsTitle')}</h2>
                 </div>
                 <SearchAndFilter
                   searchValue={searchValue}
@@ -796,18 +808,18 @@ const PlanificateurDashboard = () => {
                   filterValue={filterStatus}
                   onFilterChange={setFilterStatus}
                   filterOptions={[ 
-                    { value: 'en_route', label: 'En Route' },
-                    { value: 'en_cours', label: 'En Attente' },
-                    { value: 'valide', label: 'Validé' },
-                    { value: 'refuse', label: 'Refusé' }
+                    { value: 'en_route', label: t('dashboard.onRoad') || 'En Route' },
+                    { value: 'en_cours', label: t('dashboard.pending') || 'En Attente' },
+                    { value: 'valide', label: t('dashboard.validated') || 'Validé' },
+                    { value: 'refuse', label: t('dashboard.refused') || 'Refusé' }
                   ]}
-                  searchPlaceholder="Rechercher par numéro ou chauffeur..."
-                  filterPlaceholder="Filtrer par état..."
+                  searchPlaceholder={t('chauffeurs.searchPlaceholder') || 'Rechercher par numéro ou chauffeur...'}
+                  filterPlaceholder={t('planificateur.filterPlaceholder') || 'Filtrer par état...'}
                   searchColumn={searchColumn}
                   onSearchColumnChange={value => setSearchColumn(value as 'number' | 'chauffeurName')}
                   searchColumnOptions={[
-                    { value: 'number', label: 'Numéro' },
-                    { value: 'chauffeurName', label: 'Chauffeur' }
+                    { value: 'number', label: t('search.columnNumber') || 'Numéro' },
+                    { value: 'chauffeurName', label: t('chauffeurs.columnChauffeur') || 'Chauffeur' }
                   ]}
                 />
                 {/* Table responsive pour mobile, zoom intégré dans le CardHeader */}
@@ -865,12 +877,12 @@ const PlanificateurDashboard = () => {
             {activeTab === 'entrepots' && (
               <div className="space-y-6">
                 <div className="flex items-center justify-between mb-2">
-                  <h2 className="text-2xl font-bold">Gestion des Entrepôts</h2>
+                  <h2 className="text-2xl font-bold">{t('planificateur.warehousesTitle')}</h2>
                   <Dialog open={showCreateWarehouse} onOpenChange={setShowCreateWarehouse}>
                     <DialogTrigger asChild>
                       <Button className="flex items-center gap-2" onClick={() => setShowCreateWarehouse(true)}>
                         <Plus className="h-4 w-4" />
-                        Ajouter
+                        {t('planificateur.add')}
                       </Button>
                     </DialogTrigger>
                     <DialogContent>
@@ -888,7 +900,7 @@ const PlanificateurDashboard = () => {
                           />
                         </div>
                         <div>
-                          <Label htmlFor="companyId">Société *</Label>
+                          <Label htmlFor="companyId">{t('planificateur.company')}</Label>
                           <Select
                             value={newWarehouse.companyId || ''}
                             onValueChange={value => {
@@ -910,11 +922,11 @@ const PlanificateurDashboard = () => {
                           <PhoneNumbersField
                             phones={newWarehouse.phone}
                             onChange={phones => setNewWarehouse({ ...newWarehouse, phone: phones })}
-                            label="Numéros de téléphone"
+                            label={t('planificateur.phoneNumbers')}
                           />
                         </div>
                         <div>
-                          <Label htmlFor="warehouseStatus">Statut *</Label>
+                          <Label htmlFor="warehouseStatus">{t('planificateur.status')}</Label>
                           <Select
                             value={newWarehouse.status || 'active'}
                             onValueChange={value => setNewWarehouse({ ...newWarehouse, status: value })}
@@ -923,8 +935,8 @@ const PlanificateurDashboard = () => {
                               <SelectValue placeholder="Sélectionner le statut" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="active">Actif</SelectItem>
-                              <SelectItem value="inactive">Inactif</SelectItem>
+                              <SelectItem value="active">{t('warehouses.active') || t('chauffeurs.active') || 'Actif'}</SelectItem>
+                              <SelectItem value="inactive">{t('warehouses.inactive') || t('chauffeurs.inactive') || 'Inactif'}</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
@@ -976,9 +988,9 @@ const PlanificateurDashboard = () => {
                   onSearchChange={setSearchValue}
                   filterValue={filterStatus}
                   onFilterChange={setFilterStatus}
-                  filterOptions={[{ value: 'actif', label: 'Actif' }, { value: 'inactif', label: 'Inactif' }]}
-                  searchPlaceholder="Rechercher par nom ou ville..."
-                  filterPlaceholder="Filtrer..."
+                  filterOptions={[{ value: 'actif', label: t('warehouses.active') || t('chauffeurs.active') || 'Actif' }, { value: 'inactif', label: t('warehouses.inactive') || t('chauffeurs.inactive') || 'Inactif' }]}
+                  searchPlaceholder={t('warehouses.searchPlaceholder') || t('common.searchPlaceholder') || 'Rechercher par nom ou ville...'}
+                  filterPlaceholder={t('common.filterPlaceholder') || 'Filtrer...'}
                   searchColumn={searchColumn}
                   onSearchColumnChange={col => setSearchColumn(col as 'number' | 'chauffeurName')}
                   searchColumnOptions={[
@@ -1038,6 +1050,7 @@ const PlanificateurDashboard = () => {
                   onEditChauffeur={handleEditChauffeur}
                   onDeleteChauffeur={handleDeleteChauffeur}
                   fontSize={tableFontSize as '40' | '50' | '60' | '70' | '80' | '90' | '100'}
+                  showPosition={false}
                 />
                 <AlertDialog open={!!chauffeurToDelete} onOpenChange={open => { if (!open) setChauffeurToDelete(null); }}>
                   <AlertDialogContent style={{ zIndex: 10000, position: 'fixed' }} aria-describedby="delete-chauffeur-desc">
@@ -1061,7 +1074,7 @@ const PlanificateurDashboard = () => {
             {activeTab === 'clients' && (
               <div className="space-y-6">
                 <div className="flex items-center justify-between mb-2">
-                  <h2 className="text-2xl font-bold">Gestion des Clients</h2>
+                  <h2 className="text-2xl font-bold">{t('planificateur.clientsTitle')}</h2>
                   <Button 
                     className="flex items-center gap-2"
                     onClick={() => { setEditingClient(null); setShowEditClient(true); }}
@@ -1077,8 +1090,8 @@ const PlanificateurDashboard = () => {
                   filterValue={filterStatus}
                   onFilterChange={setFilterStatus}
                   filterOptions={[]}
-                  searchPlaceholder="Rechercher par nom..."
-                  filterPlaceholder="Filtrer..."
+                  searchPlaceholder={t('clients.searchPlaceholder') || t('common.searchPlaceholder') || 'Rechercher par nom...'}
+                  filterPlaceholder={t('common.filterPlaceholder') || 'Filtrer...'}
                   searchColumn={searchColumn}
                   onSearchColumnChange={value => setSearchColumn(value as 'number' | 'chauffeurName')}
                   searchColumnOptions={[

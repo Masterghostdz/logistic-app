@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useSharedData } from '../../contexts/SharedDataContext';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
@@ -8,6 +8,7 @@ import { Edit, Trash2 } from 'lucide-react';
 import { Chauffeur } from '../../types';
 import PasswordField from '../PasswordField';
 import { useTranslation } from '../../hooks/useTranslation';
+import useTableZoom from '../../hooks/useTableZoom';
 
 interface ChauffeurWithStatus extends Chauffeur {
   isEnPanne?: boolean;
@@ -24,33 +25,13 @@ interface ChauffeursTableProps {
   onEditChauffeur: (chauffeur: Chauffeur) => void;
   onDeleteChauffeur: (id: string) => void;
   fontSize?: '40' | '50' | '60' | '70' | '80' | '90' | '100';
+  showPosition?: boolean;
 }
 
-const ChauffeursTable = ({ chauffeurs, onEditChauffeur, onDeleteChauffeur, fontSize = '100' }: ChauffeursTableProps) => {
-  const [localFontSize, setLocalFontSize] = useState(fontSize);
+const ChauffeursTable = ({ chauffeurs, onEditChauffeur, onDeleteChauffeur, fontSize = '100', showPosition = true }: ChauffeursTableProps) => {
+  const { localFontSize, setLocalFontSize, fontSizeStyle, rowHeight, iconSize, cellPaddingClass, badgeClass, badgeStyle, getMinWidthForChars } = useTableZoom(fontSize as any);
   const { vehicleTypes } = useSharedData();
   const { t, settings } = useTranslation();
-  const zoomLevels: Record<string, number> = {
-    '50': 0.5,
-    '60': 0.6,
-    '80': 0.8,
-    '90': 0.9,
-    '100': 1.0
-  };
-  const zoom = zoomLevels[localFontSize];
-  const fontSizeStyle = { fontSize: `${Math.round(14 * zoom)}px` };
-  const rowHeight = `h-[${Math.round(40 * zoom)}px]`;
-  // iconSize dynamique comme dans DeclarationsTable
-  const baseIcon = 18;
-  const zoomLevelsGlobal = {
-    '50': 0.5,
-    '60': 0.6,
-    '80': 0.8,
-    '90': 0.9,
-    '100': 1.0
-  };
-  const zoomGlobal = zoomLevelsGlobal[String(localFontSize)] ?? 1.0;
-  const iconSize = `h-[${Math.round(baseIcon * zoomGlobal)}px] w-[${Math.round(baseIcon * zoomGlobal)}px]`;
   return (
     <Card>
       <CardContent className="p-0">
@@ -59,7 +40,7 @@ const ChauffeursTable = ({ chauffeurs, onEditChauffeur, onDeleteChauffeur, fontS
           <label className="mr-2 text-xs text-muted-foreground">Zoom :</label>
           <select
             value={localFontSize}
-            onChange={e => setLocalFontSize(e.target.value as typeof fontSize)}
+            onChange={e => setLocalFontSize(e.target.value as any)}
             className="border rounded px-2 py-1 text-xs bg-background"
             title="Zoom sur la taille d'écriture du tableau"
           >
@@ -70,80 +51,88 @@ const ChauffeursTable = ({ chauffeurs, onEditChauffeur, onDeleteChauffeur, fontS
             <option value="50">50%</option>
           </select>
         </div>
-        <Table>
-          <TableHeader>
+        <Table data-rtl={settings.language === 'ar'}>
+          <TableHeader dir={settings.language === 'ar' ? 'rtl' : 'ltr'} data-rtl={settings.language === 'ar'}>
             <TableRow style={fontSizeStyle}>
-              <TableHead className="w-[140px]" style={fontSizeStyle}>Nom complet</TableHead>
-              <TableHead className="w-[100px]" style={fontSizeStyle}>Utilisateur</TableHead>
-              <TableHead className="w-[90px]" style={fontSizeStyle}>Mot de passe</TableHead>
-              <TableHead className="w-[120px]" style={fontSizeStyle}>Téléphone</TableHead>
-              <TableHead className="w-[100px]" style={fontSizeStyle}>Véhicule</TableHead>
-              <TableHead className="w-[60px]" style={fontSizeStyle}>Type</TableHead>
-              <TableHead className="w-[120px]" style={fontSizeStyle}>Position</TableHead>
-              <TableHead className="w-[90px]" style={fontSizeStyle}>GPS</TableHead>
-              <TableHead className="w-[90px]" style={fontSizeStyle}>Connexion</TableHead>
-              <TableHead className="w-[90px]" style={fontSizeStyle}>Statut</TableHead>
-              <TableHead className="w-[80px]" style={fontSizeStyle}>Actions</TableHead>
+              <TableHead data-rtl={settings.language === 'ar'} className={`${getMinWidthForChars(20)} ${cellPaddingClass}`} style={fontSizeStyle}>{t('chauffeurs.fullName')}</TableHead>
+              <TableHead data-rtl={settings.language === 'ar'} className={`${getMinWidthForChars(10)} ${cellPaddingClass}`} style={fontSizeStyle}>{t('chauffeurs.username')}</TableHead>
+              <TableHead data-rtl={settings.language === 'ar'} className={`${getMinWidthForChars(8)} ${cellPaddingClass}`} style={fontSizeStyle}>{t('forms.password') /* Mot de passe */}</TableHead>
+              <TableHead data-rtl={settings.language === 'ar'} className={`${getMinWidthForChars(12)} ${cellPaddingClass}`} style={fontSizeStyle}>{t('chauffeurs.phone')}</TableHead>
+              <TableHead data-rtl={settings.language === 'ar'} className={`${getMinWidthForChars(12)} ${cellPaddingClass}`} style={fontSizeStyle}>{t('chauffeurs.vehicleType')}</TableHead>
+              <TableHead data-rtl={settings.language === 'ar'} className={`${getMinWidthForChars(8)} ${cellPaddingClass}`} style={fontSizeStyle}>{t('chauffeurs.employeeType')}</TableHead>
+              {showPosition ? (
+                <TableHead data-rtl={settings.language === 'ar'} className={`${getMinWidthForChars(12)} ${cellPaddingClass}`} style={fontSizeStyle}>{t('chauffeurs.position')}</TableHead>
+              ) : null}
+              <TableHead data-rtl={settings.language === 'ar'} className={`${getMinWidthForChars(6)} ${cellPaddingClass}`} style={fontSizeStyle}>{t('chauffeurs.gps') || 'GPS'}</TableHead>
+              <TableHead data-rtl={settings.language === 'ar'} className={`${getMinWidthForChars(8)} ${cellPaddingClass} text-center`} style={fontSizeStyle}>{t('chauffeurs.connexion') || t('dashboard.online')}</TableHead>
+              <TableHead data-rtl={settings.language === 'ar'} className={`${getMinWidthForChars(10)} ${cellPaddingClass}`} style={fontSizeStyle}>{t('chauffeurs.status')}</TableHead>
+              <TableHead data-rtl={settings.language === 'ar'} className={`${getMinWidthForChars(10)} ${cellPaddingClass}`} style={fontSizeStyle}>{t('chauffeurs.actions')}</TableHead>
             </TableRow>
           </TableHeader>
-          <TableBody>
+          <TableBody dir={settings.language === 'ar' ? 'rtl' : 'ltr'} data-rtl={settings.language === 'ar'}>
             {chauffeurs.map((chauffeur) => {
               // Statut métier uniquement (exemple : En Panne, Actif, Inactif)
+              const statutEnPanne = t('chauffeurs.enPanne') || 'En Panne';
+              const statutActif = t('chauffeurs.active') || 'Actif';
+              const statutInactif = t('chauffeurs.inactive') || 'Inactif';
               let statut = '-';
               if (chauffeur.isEnPanne) {
-                statut = 'En Panne';
+                statut = statutEnPanne;
               } else if (chauffeur.isActive) {
-                statut = 'Actif';
+                statut = statutActif;
               } else {
-                statut = 'Inactif';
+                statut = statutInactif;
               }
               // Statut connexion
               const connexion = chauffeur.isOnline ? t('dashboard.online') : t('dashboard.offline');
               // Map vehicleType ID to name
               const vehicleTypeName = vehicleTypes.find(vt => vt.id === chauffeur.vehicleType)?.name || '-';
               return (
-                <TableRow key={chauffeur.id} className={rowHeight} style={fontSizeStyle}>
-                  <TableCell className="font-medium" style={fontSizeStyle}>
-                    <div className="truncate text-sm" style={fontSizeStyle}>
-                      {chauffeur.employeeType === 'externe' ? 'TP - ' : ''}{chauffeur.firstName} {chauffeur.lastName}
+                <TableRow key={chauffeur.id} className={`${rowHeight}`} style={fontSizeStyle}>
+                  <TableCell data-rtl={settings.language === 'ar'} className={`font-medium ${cellPaddingClass}`} style={fontSizeStyle}>
+                    <div className="whitespace-nowrap" style={fontSizeStyle}>
+                      {chauffeur.employeeType === 'externe' ? t('chauffeurs.tpPrefix') : ''}{chauffeur.firstName} {chauffeur.lastName}
                     </div>
                   </TableCell>
-                  <TableCell style={fontSizeStyle}>
-                    <div className="truncate text-sm" style={fontSizeStyle}>{chauffeur.username}</div>
+                  <TableCell data-rtl={settings.language === 'ar'} style={fontSizeStyle} className={`${cellPaddingClass}`}>
+                    <div className="whitespace-nowrap" style={fontSizeStyle}>{chauffeur.username}</div>
                   </TableCell>
-                  <TableCell style={fontSizeStyle}>
-                    <span className="tracking-widest text-lg select-none" aria-label="Mot de passe masqué" style={fontSizeStyle}>••••••••</span>
+                  <TableCell data-rtl={settings.language === 'ar'} style={fontSizeStyle} className={`${cellPaddingClass}`}>
+                    <span className="tracking-widest text-lg select-none whitespace-nowrap" aria-label={t('forms.passwordMasked') || 'Mot de passe masqué'} style={fontSizeStyle}>••••••••</span>
                   </TableCell>
-                  <TableCell style={fontSizeStyle}>
-                    <div className="space-y-1" style={fontSizeStyle}>
+                  <TableCell data-rtl={settings.language === 'ar'} style={fontSizeStyle} className={`${cellPaddingClass}`}>
+                    <div className="space-y-1">
                       {chauffeur.phone.map((p, index) => (
-                        <div key={index} className="text-sm truncate" style={fontSizeStyle}>{p}</div>
+                        <div key={index} className="whitespace-nowrap" style={fontSizeStyle}>{p}</div>
                       ))}
                     </div>
                   </TableCell>
-                  <TableCell style={fontSizeStyle}>
-                    <div className="text-sm truncate" style={fontSizeStyle}>{vehicleTypeName}</div>
+                  <TableCell data-rtl={settings.language === 'ar'} style={fontSizeStyle} className={`${cellPaddingClass}`}>
+                    <div className="whitespace-nowrap" style={fontSizeStyle}>{vehicleTypeName}</div>
                   </TableCell>
-                  <TableCell style={fontSizeStyle}>
-                    <Badge 
+                  <TableCell data-rtl={settings.language === 'ar'} style={fontSizeStyle} className={`${cellPaddingClass}`}>
+                    <Badge
+                      size="md"
                       variant={chauffeur.employeeType === 'interne' ? 'default' : 'secondary'}
-                      className="text-xs"
-                      style={fontSizeStyle}
+                      className={`${badgeClass}`}
+                      style={{ ...badgeStyle }}
                     >
-                      {chauffeur.employeeType === 'interne' ? 'Int.' : 'Ext.'}
+                      {chauffeur.employeeType === 'interne' ? t('chauffeurs.employeeTypeShort.interne') : t('chauffeurs.employeeTypeShort.externe')}
                     </Badge>
                   </TableCell>
                   {/* Position column */}
-                  <TableCell style={fontSizeStyle}>
-                    {typeof chauffeur.latitude === 'number' && typeof chauffeur.longitude === 'number'
-                      ? `${chauffeur.latitude.toFixed(5)}, ${chauffeur.longitude.toFixed(5)}`
-                      : '-'}
-                  </TableCell>
+                  {showPosition ? (
+                    <TableCell data-rtl={settings.language === 'ar'} style={fontSizeStyle} className={`${cellPaddingClass}`}>
+                      {typeof chauffeur.latitude === 'number' && typeof chauffeur.longitude === 'number'
+                        ? `${chauffeur.latitude.toFixed(5)}, ${chauffeur.longitude.toFixed(5)}`
+                        : '-'}
+                    </TableCell>
+                  ) : null}
                   {/* GPS column */}
-                  <TableCell style={fontSizeStyle}>
+                  <TableCell data-rtl={settings.language === 'ar'} style={fontSizeStyle} className={`${cellPaddingClass}`}>
                     <span
                       className="material-icons"
-                      title={chauffeur.gpsActive ? 'GPS activé' : 'GPS désactivé'}
+                      title={chauffeur.gpsActive ? t('chauffeurs.gpsEnabled') : t('chauffeurs.gpsDisabled')}
                       style={{
                         color: chauffeur.gpsActive ? '#22c55e' : '#ef4444',
                         fontSize: '20px',
@@ -155,14 +144,14 @@ const ChauffeursTable = ({ chauffeurs, onEditChauffeur, onDeleteChauffeur, fontS
                     </span>
                   </TableCell>
                   {/* Connexion column */}
-                  <TableCell style={fontSizeStyle}>
-                    <div style={{ display: 'flex', flexDirection: 'row', justifyContent: settings.language === 'ar' ? 'flex-end' : 'center', alignItems: 'center', gap: 8 }}>
+                  <TableCell data-rtl={settings.language === 'ar'} className={`min-w-[70px] whitespace-nowrap ${cellPaddingClass} text-center`} style={fontSizeStyle}>
+                    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                       <span
                         title={connexion}
                         style={{
                           display: 'inline-block',
-                          width: 14,
-                          height: 14,
+                          width: 16,
+                          height: 16,
                           borderRadius: '50%',
                           background: chauffeur.isOnline ? '#22c55e' : '#ef4444',
                           boxShadow: chauffeur.isOnline
@@ -170,38 +159,34 @@ const ChauffeursTable = ({ chauffeurs, onEditChauffeur, onDeleteChauffeur, fontS
                             : '0 0 6px 1px #ef4444, 0 2px 6px rgba(239,68,68,0.3)',
                         }}
                       />
-                      <span
-                        className="material-icons"
-                        title={chauffeur.gpsActive ? 'GPS activé' : 'GPS désactivé'}
-                        style={{
-                          color: chauffeur.gpsActive ? '#22c55e' : '#ef4444',
-                          fontSize: '20px',
-                          verticalAlign: 'middle',
-                          display: 'inline-block',
-                        }}
-                      >
-                        gps_fixed
-                      </span>
                     </div>
                   </TableCell>
                   {/* Statut column */}
-                  <TableCell style={fontSizeStyle}>
-                    <Badge 
-                      className="text-xs"
-                      style={fontSizeStyle}
-                      variant={statut === 'Actif' ? 'default' : statut === 'En Panne' ? 'destructive' : 'outline'}
+                  <TableCell data-rtl={settings.language === 'ar'} className={`whitespace-nowrap ${cellPaddingClass}`} style={fontSizeStyle}>
+                    <Badge
+                      size="md"
+                      className={`${badgeClass}`}
+                      style={{ ...badgeStyle }}
+                      // Use localized labels for comparisons so AR/EN/FR behave consistently
+                      variant={(() => {
+                        const activeLabel = t('chauffeurs.active');
+                        const enPanneLabel = t('chauffeurs.enPanne');
+                        if (statut === activeLabel) return 'default';
+                        if (statut === enPanneLabel) return 'destructive';
+                        return 'outline';
+                      })()}
                     >
                       {statut}
                     </Badge>
                   </TableCell>
-                  <TableCell style={fontSizeStyle}>
+                  <TableCell data-rtl={settings.language === 'ar'} className={`min-w-[90px] ${cellPaddingClass}`} style={fontSizeStyle}>
                     <div className="flex gap-1" style={fontSizeStyle}>
-                      <Button 
+                        <Button 
                         size="sm" 
                         variant="outline"
                         className={`p-0 ${iconSize} min-w-0`}
                         onClick={() => onEditChauffeur(chauffeur)}
-                        title="Modifier"
+                        title={t('forms.edit')}
                       >
                         <Edit className={`${iconSize} min-w-0`} />
                       </Button>
@@ -210,7 +195,7 @@ const ChauffeursTable = ({ chauffeurs, onEditChauffeur, onDeleteChauffeur, fontS
                         variant="outline"
                         className={`p-0 ${iconSize} min-w-0 text-red-600 hover:text-red-700`}
                         onClick={() => onDeleteChauffeur(chauffeur.id)}
-                        title="Supprimer"
+                        title={t('forms.delete')}
                       >
                         <Trash2 className={`${iconSize} min-w-0`} />
                       </Button>

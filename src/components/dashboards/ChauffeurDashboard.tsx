@@ -10,6 +10,7 @@ import CameraPreviewModal from '../CameraPreviewModal';
 import { useAuth } from '../../contexts/AuthContext';
 import { useSharedData } from '../../contexts/SharedDataContext';
 import { useTranslation } from '../../hooks/useTranslation';
+import useTableZoom from '../../hooks/useTableZoom';
 import { toast } from '../ui/use-toast';
 import { useIsMobile } from '../../hooks/use-mobile';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
@@ -452,22 +453,24 @@ const ChauffeurDashboard = () => {
     }));
   };
 
+  const { badgeClass, badgeStyle } = useTableZoom();
+
   // Modifie getStatusBadge pour ouvrir le dialog si refusé
   const getStatusBadge = (status: string, declaration?: Declaration) => {
     switch (status) {
       case 'en_route':
-        return <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">{t('dashboard.onRoad')}</Badge>;
+  return <Badge size="md" style={{ ...badgeStyle }} className={`${badgeClass} bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200`}>{t('dashboard.onRoad')}</Badge>;
       case 'en_panne':
-        return <Badge className="bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200">{t('declarations.breakdown')}</Badge>;
+  return <Badge size="md" style={{ ...badgeStyle }} className={`${badgeClass} bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200`}>{t('declarations.breakdown')}</Badge>;
       case 'en_cours':
-        return <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">{t('dashboard.pending')}</Badge>;
+  return <Badge size="md" style={{ ...badgeStyle }} className={`${badgeClass} bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200`}>{t('dashboard.pending')}</Badge>;
       case 'valide':
-        return <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">{t('dashboard.validated')}</Badge>;
+  return <Badge size="md" style={{ ...badgeStyle }} className={`${badgeClass} bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200`}>{t('dashboard.validated')}</Badge>;
       case 'refuse':
         return (
           <button
             type="button"
-            className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 cursor-pointer underline rounded-full px-2.5 py-0.5 text-xs font-semibold inline-flex items-center border border-transparent focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+            className={`${badgeClass} cursor-pointer underline bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 border border-transparent focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2`}
             style={{ minWidth: 0 }}
             onClick={async (e) => {
               e.stopPropagation();
@@ -489,7 +492,7 @@ const ChauffeurDashboard = () => {
           </button>
         );
       default:
-        return <Badge variant="outline">{status}</Badge>;
+  return <Badge size="md" variant="outline" style={{ ...badgeStyle }} className={badgeClass}>{status}</Badge>;
     }
   };
 
@@ -525,13 +528,10 @@ const ChauffeurDashboard = () => {
               justifyContent: settings.language === 'ar' ? 'flex-start' : undefined
             }}
           >
-            <span
-              className="flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700 shadow"
-              title={isOnline ? t('dashboard.online') : t('dashboard.offline')}
-            >
+            <Badge style={{...badgeStyle, padding: '0.00em 0.6em', minWidth: '44px', fontSize: badgeStyle.fontSize}} className={`${badgeClass} items-center gap-2 bg-green-100 text-green-700`} title={isOnline ? t('dashboard.online') : t('dashboard.offline')}>
               <span className="inline-block w-2 h-2 rounded-full bg-green-500"></span>
               {isOnline ? t('dashboard.online') : t('dashboard.offline')}
-            </span>
+            </Badge>
             {/* GPS Button (mobile, à côté du badge) */}
             <Button
               type="button"
@@ -688,6 +688,28 @@ const ChauffeurDashboard = () => {
                                     status: 'en_panne',
                                     traceability: [...(enRouteDeclaration.traceability || []), traceEntry],
                                   });
+                                  // Ajout notification Firestore pour planificateur
+                                  try {
+                                    const notificationData = {
+                                      chauffeurId: enRouteDeclaration.chauffeurId,
+                                      declarationId: enRouteDeclaration.id,
+                                      message: `Chauffeur '${enRouteDeclaration.chauffeurName}' a tombé en panne dans le programme '${enRouteDeclaration.programNumber || enRouteDeclaration.number || ''}/${enRouteDeclaration.month}/${enRouteDeclaration.year}'`,
+                                      createdAt: new Date().toISOString(),
+                                      read: false
+                                    };
+                                    console.log('DEBUG addNotification en_panne:', notificationData);
+                                    const { addNotification } = await import('../../services/notificationService');
+                                    await addNotification(notificationData);
+                                  } catch (e) {
+                                    console.error('Erreur lors de l\'ajout de la notification en_panne:', e);
+                                    if (typeof toast === 'function') {
+                                      toast({
+                                        title: 'Erreur lors de la notification',
+                                        description: 'Impossible d\'enregistrer la notification de panne. Contactez un administrateur.',
+                                        variant: 'destructive',
+                                      });
+                                    }
+                                  }
                                   setEnRouteDeclaration(null);
                                   setIsCreating(false);
                                   setFormData({
@@ -1212,13 +1234,10 @@ const ChauffeurDashboard = () => {
           {/* Badge En ligne en haut à droite, absolute, hors sidebar */}
           {!isMobile && (
   <div className={`absolute top-0 ${settings.language === 'ar' ? 'left-0' : 'right-0'} m-2 z-10 flex items-center gap-2`}>
-    <span
-      className="flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700 shadow"
-      title={isOnline ? t('dashboard.online') : t('dashboard.offline')}
-    >
-      <span className="inline-block w-2 h-2 rounded-full bg-green-500"></span>
+  <Badge size="sm" style={{...badgeStyle, fontSize: 12, padding: '0.08rem 0.4rem'}} className={`${badgeClass} items-center gap-1 bg-green-100 text-green-700`} title={isOnline ? t('dashboard.online') : t('dashboard.offline')}>
+      <span className="inline-block w-1.5 h-1.5 rounded-full bg-green-500"></span>
       {isOnline ? t('dashboard.online') : t('dashboard.offline')}
-    </span>
+    </Badge>
     <Button
       type="button"
       className={
@@ -1313,17 +1332,30 @@ const ChauffeurDashboard = () => {
                                       status: 'en_panne',
                                       traceability: [...(enRouteDeclaration.traceability || []), traceEntry],
                                     });
-                                    setEnRouteDeclaration(null);
-                                    setIsCreating(false);
-                                    setFormData({
-                                      distance: '',
-                                      deliveryFees: '',
-                                      notes: '',
-                                      number: '',
-                                      year: '',
-                                      month: '',
-                                      programNumber: ''
-                                    });
+                                    // Ajout notification Firestore pour planificateur (desktop)
+                                    try {
+                                      const notificationData = {
+                                        chauffeurId: enRouteDeclaration.chauffeurId,
+                                        declarationId: enRouteDeclaration.id,
+                                        message: `Chauffeur '${enRouteDeclaration.chauffeurName}' a tombé en panne dans le programme '${enRouteDeclaration.programNumber || enRouteDeclaration.number || ''}/${enRouteDeclaration.month}/${enRouteDeclaration.year}'`,
+                                        createdAt: new Date().toISOString(),
+                                        read: false
+                                      };
+                                      console.log('DEBUG addNotification en_panne (desktop):', notificationData);
+                                      const { addNotification } = await import('../../services/notificationService');
+                                      await addNotification(notificationData);
+                                    } catch (e) {
+                                      console.error('Erreur lors de l\'ajout de la notification en_panne (desktop):', e);
+                                      if (typeof toast === 'function') {
+                                        toast({
+                                          title: 'Erreur lors de la notification',
+                                          description: 'Impossible d\'enregistrer la notification de panne (desktop). Contactez un administrateur.',
+                                          variant: 'destructive',
+                                        });
+                                      }
+                                    }
+                                    // Ne pas fermer le formulaire ni réinitialiser l'état local ici
+                                    // La synchro Firestore (useEffect) s'en charge automatiquement
                                   }
                                 }}
                               >

@@ -1,6 +1,20 @@
+
+// Récupère les notifications pour le planificateur : uniquement les déclarations en panne
+export const getNotificationsForPlanificateur = async (planificateurId) => {
+  // On suppose que toutes les notifications sont visibles pour le planificateur
+  // et qu'on filtre sur le message ou un champ status si disponible
+  const q = query(notificationsCollection);
+  const snapshot = await getDocs(q);
+  // Filtrer uniquement les notifications liées à une déclaration en panne
+  return snapshot.docs
+    .map(doc => ({ id: doc.id, ...doc.data() }))
+    .filter((n: any) =>
+      (n.message && (n.message.toLowerCase().includes('panne') || n.message.toLowerCase().includes('breakdown')))
+    );
+};
+
 import { db } from './firebaseClient';
 import { collection, addDoc, getDocs, query, where, updateDoc, doc } from 'firebase/firestore';
-
 const notificationsCollection = collection(db, 'notifications');
 
 export const addNotification = async (notification) => {

@@ -4,7 +4,9 @@ import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { Edit, Trash2, ZoomIn, MapPin, Check } from 'lucide-react';
+import { useTranslation } from '../../hooks/useTranslation';
 import { Client } from '../../types/client';
+import useTableZoom from '../../hooks/useTableZoom';
 
 interface ClientsTableProps {
   clients: Client[];
@@ -17,22 +19,9 @@ interface ClientsTableProps {
 }
 
 const ClientsTable = ({ clients, onEditClient, onConsultClient, onDeleteClient, onZoomClient, onValidateClient, fontSize = '100' }: ClientsTableProps) => {
-  const [localFontSize, setLocalFontSize] = useState(fontSize);
-  const zoomLevels: Record<string, number> = {
-    '50': 0.5,
-    '60': 0.6,
-    '80': 0.8,
-    '90': 0.9,
-    '100': 1.0
-  };
-  const zoom = zoomLevels[localFontSize];
-  const fontSizeStyle = { fontSize: `${Math.round(14 * zoom)}px` };
-  const badgeFontSize = { fontSize: `${Math.round(100 * zoom)}%` };
-  const rowHeight = `h-[${Math.round(40 * zoom)}px]`;
-  const baseIcon = 18;
-  const zoomGlobal = zoomLevels[String(localFontSize)] ?? 1.0;
-  const iconSize = `h-[${Math.round(baseIcon * zoomGlobal)}px] w-[${Math.round(baseIcon * zoomGlobal)}px]`;
-  // Correction portée props
+  const { t } = useTranslation();
+  // Use the table zoom hook directly so the selector controls the shared zoom helpers
+  const { localFontSize, setLocalFontSize, fontSizeStyle, rowHeight, iconSize, badgeClass, badgeStyle, cellPaddingClass, getMinWidthForChars } = useTableZoom(fontSize as any);
   return (
     <Card>
       <CardContent className="p-0">
@@ -41,7 +30,7 @@ const ClientsTable = ({ clients, onEditClient, onConsultClient, onDeleteClient, 
           <label className="mr-2 text-xs text-muted-foreground">Zoom :</label>
           <select
             value={localFontSize}
-            onChange={e => setLocalFontSize(e.target.value as typeof fontSize)}
+            onChange={e => setLocalFontSize(e.target.value as any)}
             className="border rounded px-2 py-1 text-xs bg-background"
             title="Zoom sur la taille d'écriture du tableau"
           >
@@ -55,17 +44,17 @@ const ClientsTable = ({ clients, onEditClient, onConsultClient, onDeleteClient, 
         <Table>
           <TableHeader>
             <TableRow style={fontSizeStyle}>
-              <TableHead className="w-[140px]" style={fontSizeStyle}>Nom</TableHead>
-              <TableHead className="w-[120px]" style={fontSizeStyle}>Mobile</TableHead>
-              <TableHead className="w-[140px]" style={fontSizeStyle}>Créateur</TableHead>
-              <TableHead className="w-[90px]" style={fontSizeStyle}>Statut</TableHead>
-              <TableHead className="w-[80px]" style={fontSizeStyle}>Actions</TableHead>
+              <TableHead className={`${getMinWidthForChars(14)} ${cellPaddingClass} whitespace-normal`} style={fontSizeStyle}>{t('clients.name')}</TableHead>
+              <TableHead className={`${getMinWidthForChars(10)} ${cellPaddingClass} whitespace-normal`} style={fontSizeStyle}>{t('forms.mobile')}</TableHead>
+              <TableHead className={`${getMinWidthForChars(12)} ${cellPaddingClass} whitespace-normal`} style={fontSizeStyle}>{t('clients.creator')}</TableHead>
+              <TableHead className={`${getMinWidthForChars(8)} ${cellPaddingClass} whitespace-normal`} style={fontSizeStyle}>{t('clients.status')}</TableHead>
+              <TableHead className={`${getMinWidthForChars(8)} ${cellPaddingClass} whitespace-normal`} style={fontSizeStyle}>{t('clients.actions')}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {clients.map((client) => (
               <TableRow key={client.id} className={rowHeight} style={fontSizeStyle}>
-                <TableCell className="font-medium" style={fontSizeStyle}>
+                <TableCell className={`font-medium ${cellPaddingClass}`} style={fontSizeStyle}>
                   <button
                     type="button"
                     className="truncate text-sm text-blue-600 hover:underline bg-transparent border-0 p-0 m-0 cursor-pointer"
@@ -75,50 +64,50 @@ const ClientsTable = ({ clients, onEditClient, onConsultClient, onDeleteClient, 
                     {client.name}
                   </button>
                 </TableCell>
-                <TableCell style={fontSizeStyle}>
+                <TableCell className={`${cellPaddingClass}`} style={fontSizeStyle}>
                   <div className="truncate text-sm" style={fontSizeStyle}>{client.mobile || <span className="text-xs text-muted-foreground">-</span>}</div>
                 </TableCell>
-                <TableCell style={fontSizeStyle}>
+                <TableCell className={`${cellPaddingClass}`} style={fontSizeStyle}>
                   {client.createur ? (
                     <span className="truncate text-sm font-semibold text-gray-800 dark:text-gray-200">{client.createur}</span>
                   ) : (
                     <span className="text-xs text-muted-foreground">-</span>
                   )}
                 </TableCell>
-                <TableCell style={fontSizeStyle}>
+                <TableCell className={`${cellPaddingClass}`} style={fontSizeStyle}>
                   {client.status === 'pending' && (
-                    <Badge className="rounded-full font-semibold bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200" style={badgeFontSize}>Créé</Badge>
+                <Badge size="md" style={{ ...badgeStyle }} className={`${badgeClass} rounded-full font-semibold bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200`}>Créé</Badge>
                   )}
                   {client.status === 'validated' && (
-                    <Badge className="rounded-full font-semibold bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200" style={badgeFontSize}>Validé</Badge>
+                <Badge size="md" style={{ ...badgeStyle }} className={`${badgeClass} rounded-full font-semibold bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200`}>Validé</Badge>
                   )}
                   {client.status === 'modifie' && (
-                    <Badge className="rounded-full font-semibold bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200" style={badgeFontSize}>Modifié</Badge>
+                <Badge size="md" style={{ ...badgeStyle }} className={`${badgeClass} rounded-full font-semibold bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200`}>Modifié</Badge>
                   )}
                   {client.status === 'rejected' && (
-                    <Badge className="rounded-full font-semibold bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200" style={badgeFontSize}>Rejeté</Badge>
+                <Badge size="md" style={{ ...badgeStyle }} className={`${badgeClass} rounded-full font-semibold bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200`}>Rejeté</Badge>
                   )}
                   {client.status === 'archived' && (
-                    <Badge className="rounded-full font-semibold bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200" style={badgeFontSize}>Archivé</Badge>
+                <Badge size="md" style={{ ...badgeStyle }} className={`${badgeClass} rounded-full font-semibold bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200`}>Archivé</Badge>
                   )}
                 </TableCell>
-                <TableCell style={fontSizeStyle}>
+                <TableCell className={`${cellPaddingClass}`} style={fontSizeStyle}>
                   <div className="flex gap-1" style={fontSizeStyle}>
                     <Button 
                       size="sm" 
                       variant="outline"
                       className={`p-0 ${iconSize} min-w-0`}
                       onClick={() => onZoomClient(client)}
-                      title="Voir sur la carte"
+                      title={t('clients.viewOnMap')}
                     >
                       <MapPin className={`${iconSize} min-w-0`} />
                     </Button>
-                    <Button 
+                      <Button 
                       size="sm" 
                       variant="outline"
                       className={`p-0 ${iconSize} min-w-0`}
                       onClick={() => onEditClient(client)}
-                      title="Modifier"
+                      title={t('forms.edit')}
                     >
                       <Edit className={`${iconSize} min-w-0`} />
                     </Button>
@@ -127,17 +116,17 @@ const ClientsTable = ({ clients, onEditClient, onConsultClient, onDeleteClient, 
                       variant="outline"
                       className={`p-0 ${iconSize} min-w-0 text-red-600 hover:text-red-700`}
                       onClick={() => onDeleteClient(client.id)}
-                      title="Supprimer"
+                      title={t('forms.delete')}
                     >
                       <Trash2 className={`${iconSize} min-w-0`} />
                     </Button>
                     {client.status === 'pending' && onValidateClient && (
-                      <Button
+                        <Button
                         size="sm"
                         variant="outline"
                         className={`p-0 text-green-600 hover:text-green-700 ${iconSize}`}
                         onClick={() => onValidateClient(client)}
-                        title="Valider le client"
+                        title={t('clients.validate')}
                       >
                         <Check className={`${iconSize} min-w-0`} />
                       </Button>

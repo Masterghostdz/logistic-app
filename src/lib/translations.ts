@@ -1,5 +1,16 @@
 export const translations = {
   fr: {
+    planificateur: {
+      clientsTitle: "Gestion des Clients",
+      dashboardTitle: "Tableau de bord - Planificateur",
+      recentDeclarations: "Déclarations récentes",
+      declarationsTitle: "Gestion des Déclarations",
+      warehousesTitle: "Gestion des Entrepôts",
+      add: "Ajouter",
+      company: "Société",
+      phoneNumbers: "Numéros de téléphone",
+      status: "Statut"
+    },
     notification: {
       validated: "Déclaration de {ref} est Validée",
       refused: "Déclaration de {ref} est Réfusée",
@@ -11,7 +22,9 @@ export const translations = {
       admin: "Administrateur",
       planificateur: "Planificateur",
       chauffeur: "Chauffeur",
-      client: "Client"
+      client: "Client",
+      financier: "Financier",
+      financier_unite: "Financier Unité"
     },
     buttons: {
       myClients: "Mes clients",
@@ -26,30 +39,47 @@ export const translations = {
       viewWarehouses: "Voir la liste des entrepôts",
       createWarehouse: "Créer un nouvel entrepôt"
     },
+    common: {
+      searchPlaceholder: "Rechercher...",
+      filterPlaceholder: "Filtrer..."
+    },
+    admin: {
+      fullName: "Nom complet",
+      username: "Nom d'utilisateur",
+      role: "Rôle",
+      lastLogin: "Connexion",
+      phone: "Téléphone",
+      password: "Mot de passe",
+      actions: "Actions"
+    },
+    companies: {
+      name: "Nom",
+      address: "Adresse",
+      phone: "Téléphone",
+      email: "Email",
+      actions: "Actions"
+    },
+    vehicleTypes: {
+      name: "Nom",
+      primeKilometrique: "Prime kilométrique",
+      actions: "Actions"
+    },
     tabs: {
+      dashboard: "Tableau de bord",
+      declarations: "Déclarations",
       tracage: "Traçage",
       warehouses: "Entrepôts",
       clients: "Clients",
       chauffeurs: "Chauffeurs"
     },
-    // Header
     header: {
       title: "Logigrine",
-      profile: "Profil",
-      settings: "Paramètres",
-      logout: "Déconnexion",
-      welcome: "Bienvenue"
+      profile: "Profile",
+      settings: "Settings",
+      logout: "Logout",
+      welcome: "Welcome"
     },
     // Navigation
-    nav: {
-      dashboard: "Tableau de bord",
-      declarations: "Déclarations",
-      chauffeurs: "Chauffeurs",
-      warehouses: "Entrepôts",
-      financial: "Financier",
-      users: "Utilisateurs",
-  // settings key removed (duplicate)
-    },
     // Authentication
     auth: {
       login: "Connexion",
@@ -69,6 +99,8 @@ export const translations = {
     },
     // Dashboard
     dashboard: {
+    clickToFilter: "Cliquez pour filtrer",
+    breakdownDetected: "Déclarations en panne détectées",
       selectRefusalReason: "Sélectionner un motif de refus",
       selectReasonPlaceholder: "Choisir un motif...",
   overview: "Vue d'ensemble",
@@ -91,67 +123,59 @@ export const translations = {
   refused: "Refusé",
   online: "En ligne",
   offline: "Hors ligne"
+    ,
+  breakdown: "En panne"
     },
     // Declarations
   declarations: {
       confirmCancelTitle: "Confirmer l’annulation",
       confirmCancelDescription: "Êtes-vous sûr de vouloir annuler la création de cette déclaration ? Les informations saisies seront perdues.",
       confirmDeleteTitle: "Confirmer la suppression",
-  confirmDeleteDescription: "Êtes-vous sûr de vouloir supprimer cette déclaration ? Cette action est irréversible.",
-  paymentReceipts: "Reçus de paiement (photos)",
-  noPaymentReceipts: "Aucun reçu de paiement",
-  en: {
-    notification: {
-      validated: "Declaration {ref} is Validated",
-      refused: "Declaration {ref} is Refused",
-      default: "Declaration {ref}",
-      noPaymentReceipts: "No payment receipt",
-      none: "No notification"
+      confirmDeleteDescription: "Êtes-vous sûr de vouloir supprimer cette déclaration ? Cette action est irréversible.",
+      paymentReceipts: "Reçus de paiement (photos)",
+      noPaymentReceipts: "Aucun reçu de paiement",
+      // Table headers & labels
+      number: "Numéro",
+      chauffeur: "Chauffeur",
+      chauffeurName: "Nom du chauffeur",
+      date: "Date",
+      createdDate: "Date de création",
+      validated: "Validé",
+      distance: "Distance (km)",
+      deliveryFees: "Frais de livraison (DZD)",
+      primeDeRoute: "Prime de route",
+      notes: "Notes",
+      photos: "Photos justificatives",
+      status: "Statut",
+      actions: "Actions",
+      edit: "Modifier",
+      delete: "Supprimer",
+      validate: "Valider",
+      refuse: "Refuser",
+      searchPlaceholder: "Rechercher par numéro, notes...",
+      filterPlaceholder: "Filtrer par statut",
+      noDeclarations: "Aucune déclaration trouvée",
+      noDeclarationsWithFilters: "Aucune déclaration trouvée avec ces critères",
+      confirmDelete: "Êtes-vous sûr de vouloir supprimer cette déclaration ?",
+      programNumberRequired: "Le numéro de programme doit contenir 4 chiffres",
+      distanceOrFeesRequired: "Veuillez renseigner soit la distance soit les frais de livraison",
+      referenceAlreadyExists: "Une déclaration avec cette référence existe déjà pour ce chauffeur.",
+      breakdownConfirm: "Êtes-vous sûr de vouloir signaler une panne pour cette déclaration ? Cette action est irréversible.",
+      breakdownSuccess: "Déclaration signalée en panne."
     },
-    roles: {
-      admin: "Administrator",
-      planificateur: "Planner",
-      chauffeur: "Driver",
-      client: "Client"
-    },
-    buttons: {
-      myClients: "My Clients",
-      add: "Add",
-      settings: "Settings",
-      centerMap: "Center map",
-      gps: "GPS",
-      screenshot: "Screenshot",
-      mapMode: "Map mode",
-      listMode: "List mode",
-      changeLayer: "Change map background",
-      viewWarehouses: "View warehouse list",
-      createWarehouse: "Create new warehouse"
-    },
-    tabs: {
-      tracage: "Traceability",
-      warehouses: "Warehouses",
-      clients: "Clients",
-      chauffeurs: "Drivers"
-    },
-    // ...existing code...
-  declarations: {
-      confirmCancelTitle: "Confirm cancellation",
-      confirmCancelDescription: "Are you sure you want to cancel the creation of this declaration? Entered information will be lost.",
-      confirmDeleteTitle: "Confirm deletion",
-  confirmDeleteDescription: "Are you sure you want to delete this declaration? This action is irreversible.",
-  paymentReceipts: "Payment receipts (photos)",
-  noPaymentReceipts: "No payment receipt",
-      primeDeRoute: "Road bonus",
-      // ...existing keys...
-    },
-    // ...existing code...
-  },
   ar: {
+    // planificateur moved to final `ar` block to avoid duplication
     roles: {
       admin: "مسؤول",
       planificateur: "مخطط",
       chauffeur: "سائق",
+      financier: "المالي",
+      financier_unite: "مالي الوحدة",
       client: "عميل"
+    },
+    common: {
+      searchPlaceholder: "ابحث...",
+      filterPlaceholder: "تصفية..."
     },
     buttons: {
       myClients: "عملائي",
@@ -167,12 +191,13 @@ export const translations = {
       createWarehouse: "إنشاء مستودع جديد"
     },
     tabs: {
+      dashboard: "لوحة القيادة",
+      declarations: "التصريحات",
       tracage: "التتبع",
       warehouses: "المستودعات",
       clients: "العملاء",
       chauffeurs: "السائقين"
     },
-    // ...existing code...
   declarations: {
       confirmCancelTitle: "تأكيد الإلغاء",
       confirmCancelDescription: "هل أنت متأكد أنك تريد إلغاء إنشاء هذا التصريح؟ سيتم فقدان المعلومات المدخلة.",
@@ -183,16 +208,7 @@ export const translations = {
       primeDeRoute: "منحة الطريق",
       // ...existing keys...
     },
-    // ...existing code...
-  },
-      title: "Mes déclarations",
-      new: "Nouvelle déclaration",
-      number: "Numéro",
-      date: "Date",
-      distance: "Distance (km)",
-      deliveryFees: "Frais de livraison (DZD)",
-      notes: "Notes",
-      photos: "Photos justificatives",
+        // tabs property moved to root of language object
       status: "Statut",
       actions: "Actions",
       edit: "Modifier",
@@ -220,18 +236,29 @@ export const translations = {
     },
     // Chauffeurs
     chauffeurs: {
-      title: "Gestion des chauffeurs",
-      new: "Nouveau chauffeur",
+  title: "Gestion des chauffeurs",
+  add: "Ajouter",
+  new: "Nouveau chauffeur",
       firstName: "Prénom",
       lastName: "Nom",
       email: "Email",
       phone: "Téléphone",
       vehicleType: "Type de véhicule",
       employeeType: "Type d'employé",
+      employeeTypeShort: {
+        interne: "Int.",
+        externe: "Ext."
+      },
+      fullName: "Nom complet",
+      username: "Nom d'utilisateur",
+      position: "Position",
+      gps: "GPS",
+      enPanne: "En Panne",
       internal: "Interne",
       external: "Externe (TP)",
-      active: "Actif",
-      inactive: "Inactif",
+  active: "Actif",
+  inactive: "Inactif",
+  connexion: "Connexion",
       searchPlaceholder: "Rechercher par nom ou téléphone...",
       filterPlaceholder: "Filtrer...",
       columnNumber: "Numéro",
@@ -240,6 +267,12 @@ export const translations = {
       deleteDesc: "Êtes-vous sûr de vouloir supprimer ce chauffeur ? Cette action est irréversible.",
       cancel: "Annuler",
       delete: "Supprimer",
+      gpsEnabled: "GPS activé",
+      gpsDisabled: "GPS désactivé",
+      tpPrefix: "TP - "
+      ,
+      actions: "Actions",
+      status: "Statut"
     },
     // Warehouses
     warehouses: {
@@ -249,10 +282,16 @@ export const translations = {
       company: "Société",
       phone: "Téléphone",
       address: "Adresse",
+      active: "Actif",
+      inactive: "Inactif",
+      status: "Statut",
+      actions: "Actions",
       coordinates: "Coordonnées GPS",
       latitude: "Latitude",
       longitude: "Longitude",
-      map: "Carte des entrepôts"
+      map: "Carte des entrepôts",
+      searchPlaceholder: "Rechercher par nom ou ville...",
+      filterPlaceholder: "Filtrer..."
     },
     // Financial
     financial: {
@@ -271,6 +310,8 @@ export const translations = {
       cph_est: "CPH Est",
       cph_ouest: "CPH Ouest",
       cph_centre: "CPH Centre"
+      ,
+      save: "Enregistrer"
     },
     // Forms
     forms: {
@@ -286,30 +327,48 @@ export const translations = {
       required: "Champ requis",
       success: "Opération réussie",
       error: "Erreur lors de l'opération",
-      name: "Nom",
-      mobile: "Téléphone mobile",
+  name: "Nom",
+  firstName: "Prénom",
+  mobile: "Téléphone mobile",
       phonePlaceholder: "Numéro de téléphone",
       photo: "Photo",
       geolocation: "Position géographique",
       address: "Adresse",
-      addressPlaceholder: "Adresse du client"
+      addressPlaceholder: "Adresse du client",
+      passwordMasked: "Mot de passe masqué"
+      ,
+      actions: "Actions",
+      password: "Mot de passe"
+    },
+    clients: {
+      name: "Nom",
+      searchPlaceholder: "Rechercher par nom...",
+      creator: "Créateur",
+      status: "Statut",
+      actions: "Actions",
+      viewOnMap: "Voir sur la carte",
+      validate: "Valider"
+    },
+    profile: {
+      title: "Mon Profil",
+      personalInfo: "Informations personnelles",
+      contactAndVehicle: "Contact & Véhicule",
+      notProvided: "Non renseigné",
+      userNotFound: "Utilisateur non trouvé"
     },
     // Settings
     settings: {
       title: "Paramètres",
       description: "Personnalisez votre expérience utilisateur et le mode d'affichage.",
       viewMode: "Mode d'affichage",
-      language: "Langue",
       theme: "Thème",
       light: "Clair",
       dark: "Sombre",
       changePassword: "Changer le mot de passe",
       currentPassword: "Mot de passe actuel",
       newPassword: "Nouveau mot de passe",
-      confirmPassword: "Confirmer le mot de passe"
-    },
-    // Vehicle types
-    vehicles: {
+      confirmPassword: "Confirmer le mot de passe",
+      language: "Langue",
       mini_vehicule: "Mini véhicule",
       fourgon: "Fourgon",
       camion_2_5t: "Camion 2.5T",
@@ -342,14 +401,37 @@ export const translations = {
     }
   },
   en: {
-    // Header
+    roles: {
+      admin: "Administrator",
+      planificateur: "Planner",
+      chauffeur: "Driver",
+      financier: "Financial",
+      financier_unite: "Unit Financial",
+      client: "Client"
+    },
+    common: {
+      searchPlaceholder: "Search...",
+      filterPlaceholder: "Filter..."
+    },
+    planificateur: {
+      clientsTitle: "Clients Management",
+      dashboardTitle: "Planner Dashboard",
+      recentDeclarations: "Recent Declarations",
+      declarationsTitle: "Declarations Management",
+      warehousesTitle: "Warehouses Management",
+      add: "Add",
+      company: "Company",
+      phoneNumbers: "Phone Numbers",
+      status: "Status"
+    },
+    // planificateur duplicate removed
     header: {
-      title: "Logigrine",
       profile: "Profile",
       settings: "Settings",
-      logout: "Logout",
-      welcome: "Welcome"
+      logout: "Logout"
     },
+    // settings duplicate removed
+    // planificateur duplicate removed
     // Navigation
     nav: {
       dashboard: "Dashboard",
@@ -369,6 +451,28 @@ export const translations = {
       invalidCredentials: "Invalid credentials",
       welcome: "Welcome to Logigrine",
       subtitle: "Logistics Management System"
+    },
+    // Admin table headers
+    admin: {
+      fullName: "Full Name",
+      username: "Username",
+      role: "Role",
+      lastLogin: "Last Login",
+      phone: "Phone",
+      password: "Password",
+      actions: "Actions"
+    },
+    companies: {
+      name: "Name",
+      address: "Address",
+      phone: "Phone",
+      email: "Email",
+      actions: "Actions"
+    },
+    vehicleTypes: {
+      name: "Name",
+      primeKilometrique: "Kilometric allowance",
+      actions: "Actions"
     },
     // Login status band
     login: {
@@ -406,6 +510,7 @@ export const translations = {
     declarations: {
       title: "My Declarations",
       new: "New Declaration",
+      chauffeur: "Driver",
       number: "Number",
       date: "Date",
       distance: "Distance (km)",
@@ -427,6 +532,7 @@ export const translations = {
   breakdownButton: "Report breakdown",
       createdDate: "Created Date",
       searchPlaceholder: "Search by number, notes...",
+  chauffeurName: "Driver Name",
       filterPlaceholder: "Filter by status",
       noDeclarations: "No declarations found",
       noDeclarationsWithFilters: "No declarations found with these criteria",
@@ -439,18 +545,29 @@ export const translations = {
     },
     // Chauffeurs
     chauffeurs: {
-      title: "Driver Management",
-      new: "New Driver",
+  title: "Driver Management",
+  add: "Add",
+  new: "New Driver",
       firstName: "First Name",
       lastName: "Last Name",
       email: "Email",
       phone: "Phone",
       vehicleType: "Vehicle Type",
       employeeType: "Employee Type",
+      employeeTypeShort: {
+        interne: "Int.",
+        externe: "Ext."
+      },
+      fullName: "Full Name",
+      username: "Username",
+      position: "Position",
+      gps: "GPS",
+      enPanne: "Breakdown",
       internal: "Internal",
       external: "External (TP)",
-      active: "Active",
-      inactive: "Inactive",
+  active: "Active",
+  inactive: "Inactive",
+  connexion: "Connection",
       searchPlaceholder: "Search by name or phone...",
       filterPlaceholder: "Filter...",
       columnNumber: "Number",
@@ -459,6 +576,12 @@ export const translations = {
       deleteDesc: "Are you sure you want to delete this driver? This action is irreversible.",
       cancel: "Cancel",
       delete: "Delete",
+      gpsEnabled: "GPS enabled",
+      gpsDisabled: "GPS disabled",
+      tpPrefix: "TP - "
+      ,
+      actions: "Actions",
+      status: "Status"
     },
     // Warehouses
     warehouses: {
@@ -468,10 +591,16 @@ export const translations = {
       company: "Company",
       phone: "Phone",
       address: "Address",
+      active: "Active",
+      inactive: "Inactive",
+      status: "Status",
+      actions: "Actions",
       coordinates: "GPS Coordinates",
       latitude: "Latitude",
       longitude: "Longitude",
-      map: "Warehouse Map"
+      map: "Warehouse Map",
+      searchPlaceholder: "Search by name or city...",
+      filterPlaceholder: "Filter..."
     },
     // Financial
     financial: {
@@ -490,6 +619,8 @@ export const translations = {
       cph_est: "CPH East",
       cph_ouest: "CPH West",
       cph_centre: "CPH Center"
+      ,
+      save: "Save"
     },
     // Forms
     forms: {
@@ -505,17 +636,39 @@ export const translations = {
       required: "Required field",
       success: "Operation successful",
       error: "Operation error",
-      name: "Name",
-      mobile: "Mobile phone",
+  name: "Name",
+  firstName: "First Name",
+  mobile: "Mobile phone",
       phonePlaceholder: "Phone number",
       photo: "Photo",
       geolocation: "Geolocation",
       address: "Address",
-      addressPlaceholder: "Client address"
+      addressPlaceholder: "Client address",
+      passwordMasked: "Password masked"
+      ,
+      actions: "Actions",
+      password: "Password"
+    },
+    clients: {
+      name: "Name",
+      creator: "Creator",
+      status: "Status",
+      actions: "Actions",
+      viewOnMap: "View on map",
+      validate: "Validate"
+    },
+    profile: {
+      title: "My Profile",
+      personalInfo: "Personal Information",
+      contactAndVehicle: "Contact & Vehicle",
+      notProvided: "Not provided",
+      userNotFound: "User not found"
     },
     // Settings
     settings: {
       title: "Settings",
+      description: "Customize your user experience and display mode.",
+      viewMode: "Display mode",
       language: "Language",
       theme: "Theme",
       light: "Light",
@@ -524,6 +677,14 @@ export const translations = {
       currentPassword: "Current Password",
       newPassword: "New Password",
       confirmPassword: "Confirm Password"
+    },
+    tabs: {
+      dashboard: "Dashboard",
+      declarations: "Declarations",
+      tracage: "Traceability",
+      warehouses: "Warehouses",
+      clients: "Clients",
+      chauffeurs: "Drivers"
     },
     // Vehicle types
     vehicles: {
@@ -559,6 +720,34 @@ export const translations = {
     }
   },
   ar: {
+    roles: {
+      admin: "مسؤول",
+      planificateur: "مخطط",
+      chauffeur: "سائق",
+      financier: "المالي",
+      financier_unite: "مالي الوحدة",
+      client: "عميل"
+    },
+    tabs: {
+      dashboard: "لوحة القيادة",
+      declarations: "التصريحات",
+      tracage: "التتبع",
+      warehouses: "المستودعات",
+      clients: "العملاء",
+      chauffeurs: "السائقين"
+    },
+    // Planificateur translations (moved/merged here so final `ar` block contains them)
+    planificateur: {
+      clientsTitle: "إدارة العملاء",
+      dashboardTitle: "لوحة تحكم المخطط",
+      recentDeclarations: "التصريحات الحديثة",
+      declarationsTitle: "إدارة التصريحات",
+      warehousesTitle: "إدارة المستودعات",
+      add: "إضافة",
+      company: "الشركة",
+      phoneNumbers: "أرقام الهاتف",
+      status: "الحالة"
+    },
     // Header
     header: {
       title: "لوجيجرين",
@@ -587,6 +776,28 @@ export const translations = {
       welcome: "مرحبا بك في لوجيجرين",
       subtitle: "نظام إدارة اللوجستيات"
     },
+    // Admin table headers
+    admin: {
+      fullName: "الاسم الكامل",
+      username: "اسم المستخدم",
+      role: "الدور",
+      lastLogin: "آخر اتصال",
+      phone: "الهاتف",
+      password: "كلمة المرور",
+      actions: "الإجراءات"
+    },
+      companies: {
+        name: "الاسم",
+        address: "العنوان",
+        phone: "الهاتف",
+        email: "البريد الإلكتروني",
+        actions: "الإجراءات"
+      },
+      vehicleTypes: {
+        name: "الاسم",
+        primeKilometrique: "علاوة المسافة",
+        actions: "الإجراءات"
+      },
     // Login status band
     login: {
       connected: "أنت متصل",
@@ -623,6 +834,7 @@ export const translations = {
     declarations: {
       title: "تصريحاتي",
       new: "تصريح جديد",
+      chauffeur: "سائق",
       number: "الرقم",
       date: "التاريخ",
       distance: "المسافة (كم)",
@@ -644,6 +856,7 @@ export const translations = {
   breakdownButton: "الإبلاغ عن عطل تقني",
       createdDate: "تاريخ الإنشاء",
       searchPlaceholder: "البحث بالرقم أو الملاحظات...",
+  chauffeurName: "اسم السائق",
       filterPlaceholder: "تصفية حسب الحالة",
       noDeclarations: "لا توجد تصريحات",
       noDeclarationsWithFilters: "لا توجد تصريحات بهذه المعايير",
@@ -656,18 +869,29 @@ export const translations = {
     },
     // Chauffeurs
     chauffeurs: {
-      title: "إدارة السائقين",
-      new: "سائق جديد",
+  title: "إدارة السائقين",
+  add: "إضافة",
+  new: "سائق جديد",
       firstName: "الاسم الأول",
       lastName: "اسم العائلة",
       email: "البريد الإلكتروني",
       phone: "الهاتف",
       vehicleType: "نوع المركبة",
       employeeType: "نوع الموظف",
+      employeeTypeShort: {
+        interne: "داخلي",
+        externe: "خارجي"
+      },
+      fullName: "الاسم الكامل",
+      username: "اسم المستخدم",
+      position: "المنصب",
+      gps: "GPS",
+      enPanne: "عطل تقني",
       internal: "داخلي",
       external: "خارجي (TP)",
-      active: "نشط",
-      inactive: "غير نشط",
+  active: "نشط",
+  inactive: "غير نشط",
+  connexion: "الاتصال",
       searchPlaceholder: "البحث بالاسم أو الهاتف...",
       filterPlaceholder: "تصفية...",
       columnNumber: "الرقم",
@@ -676,6 +900,12 @@ export const translations = {
       deleteDesc: "هل أنت متأكد أنك تريد حذف هذا السائق؟ هذا الإجراء لا يمكن التراجع عنه.",
       cancel: "إلغاء",
       delete: "حذف",
+      gpsEnabled: "GPS مفعل",
+      gpsDisabled: "GPS معطل",
+      tpPrefix: "TP - "
+      ,
+      actions: "الإجراءات",
+      status: "الحالة"
     },
     // Warehouses
     warehouses: {
@@ -685,10 +915,16 @@ export const translations = {
       company: "الشركة",
       phone: "الهاتف",
       address: "العنوان",
+      active: "نشط",
+      inactive: "غير نشط",
+      status: "الحالة",
+      actions: "الإجراءات",
       coordinates: "إحداثيات نظام GPS",
       latitude: "خط العرض",
       longitude: "خط الطول",
-      map: "خريطة المستودعات"
+      map: "خريطة المستودعات",
+      searchPlaceholder: "ابحث بالاسم أو المدينة...",
+      filterPlaceholder: "تصفية..."
     },
     // Financial
     financial: {
@@ -707,6 +943,8 @@ export const translations = {
       cph_est: "CPH الشرق",
       cph_ouest: "CPH الغرب",
       cph_centre: "CPH الوسط"
+      ,
+      save: "حفظ"
     },
     // Forms
     forms: {
@@ -722,21 +960,44 @@ export const translations = {
       required: "حقل مطلوب",
       success: "نجحت العملية",
       error: "خطأ في العملية",
-      name: "الاسم",
-      mobile: "الهاتف المحمول",
+  name: "الاسم",
+  firstName: "الاسم الأول",
+  mobile: "الهاتف المحمول",
       phonePlaceholder: "رقم الهاتف",
       photo: "صورة",
       geolocation: "الموقع الجغرافي",
       address: "العنوان",
-      addressPlaceholder: "عنوان العميل"
+      addressPlaceholder: "عنوان العميل",
+      passwordMasked: "كلمة المرور مخفية"
+      ,
+      actions: "الإجراءات",
+      password: "كلمة المرور"
+    },
+    clients: {
+      name: "الاسم",
+      searchPlaceholder: "ابحث بالاسم...",
+      creator: "المنشئ",
+      status: "الحالة",
+      actions: "الإجراءات",
+      viewOnMap: "عرض على الخريطة",
+      validate: "تأكيد"
+    },
+    profile: {
+      title: "الملف الشخصي",
+      personalInfo: "المعلومات الشخصية",
+      contactAndVehicle: "الاتصال والمركبة",
+      notProvided: "غير متوفر",
+      userNotFound: "المستخدم غير موجود"
     },
     // Settings
     settings: {
       title: "الإعدادات",
-      language: "اللغة",
-      theme: "المظهر",
-      light: "فاتح",
-      dark: "داكن",
+      description: "خصص تجربتك وطريقة العرض.",
+      viewMode: "وضع العرض",
+  light: "فاتح",
+  dark: "داكن",
+  language: "اللغة",
+  theme: "المظهر",
       changePassword: "تغيير كلمة المرور",
       currentPassword: "كلمة المرور الحالية",
       newPassword: "كلمة المرور الجديدة",
@@ -778,6 +1039,7 @@ export const translations = {
 };
 
 export const getTranslation = (key: string, language: 'fr' | 'en' | 'ar') => {
+  const originalLanguage = language;
   const keys = key.split('.');
   let translation: any = translations[language];
 
@@ -789,6 +1051,7 @@ export const getTranslation = (key: string, language: 'fr' | 'en' | 'ar') => {
       break;
     }
   }
+  console.log('[getTranslation]', { key, language: originalLanguage, value: translation });
 
   // Fallback mechanism: FR → EN → AR, with recursion protection
   const tried = new Set<string>();

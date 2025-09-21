@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { useTranslation } from '../../hooks/useTranslation';
 import { useSettings } from '../../contexts/SettingsContext';
 import { Button } from '../ui/button';
 import { 
@@ -19,25 +20,27 @@ const PlanificateurSidebar = ({ activeTab, onTabChange, hasPendingClients }: Pla
   // Utilise le paramètre settings.viewMode pour le mode mobile/desktop
   const { settings } = useSettings();
   const viewMode = settings.viewMode || 'desktop';
+  const { t } = useTranslation();
+  console.log('Sidebar language:', settings.language);
   if (viewMode === 'mobile') {
     return (
       <nav className="flex flex-row justify-center items-center gap-8 py-3 px-4 bg-white dark:bg-gray-900 rounded-full shadow-lg w-full border-2 border-blue-400 dark:border-blue-600 overflow-x-auto">
         <button
-          aria-label="Tableau de bord"
+          aria-label={t('tabs.dashboard')}
           onClick={() => onTabChange('dashboard')}
           className={`rounded-full p-2 transition-all ${activeTab === 'dashboard' ? 'bg-blue-600 text-white shadow-lg scale-110' : 'bg-gray-100 text-gray-600'} flex items-center justify-center h-10 w-10`}
         >
           <ClipboardList className="h-[22px] w-[22px]" />
         </button>
         <button
-          aria-label="Déclarations"
+          aria-label={t('tabs.declarations')}
           onClick={() => onTabChange('declarations')}
           className={`rounded-full p-2 transition-all ${activeTab === 'declarations' ? 'bg-blue-600 text-white shadow-lg scale-110' : 'bg-gray-100 text-gray-600'} flex items-center justify-center h-10 w-10`}
         >
           <FileText className="h-[22px] w-[22px]" />
         </button>
         <button
-          aria-label="Entrepôts"
+          aria-label={t('tabs.warehouses')}
           onClick={() => onTabChange('entrepots')}
           className={`rounded-full p-2 transition-all ${activeTab === 'entrepots' ? 'bg-blue-600 text-white shadow-lg scale-110' : 'bg-gray-100 text-gray-600'} flex items-center justify-center h-10 w-10`}
         >
@@ -45,7 +48,7 @@ const PlanificateurSidebar = ({ activeTab, onTabChange, hasPendingClients }: Pla
           <svg xmlns="http://www.w3.org/2000/svg" className="h-[22px] w-[22px]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><rect x="3" y="7" width="18" height="13" rx="2" strokeWidth="2" /><path d="M3 7l9-4 9 4" strokeWidth="2" /></svg>
         </button>
         <button
-          aria-label="Chauffeurs"
+          aria-label={t('tabs.chauffeurs')}
           onClick={() => onTabChange('chauffeurs')}
           className={`rounded-full p-2 transition-all ${activeTab === 'chauffeurs' ? 'bg-blue-600 text-white shadow-lg scale-110' : 'bg-gray-100 text-gray-600'} flex items-center justify-center h-10 w-10`}
         >
@@ -53,7 +56,7 @@ const PlanificateurSidebar = ({ activeTab, onTabChange, hasPendingClients }: Pla
           <svg xmlns="http://www.w3.org/2000/svg" className="h-[28px] w-[28px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></svg>
         </button>
         <button
-          aria-label="Clients"
+          aria-label={t('tabs.clients')}
           onClick={() => onTabChange('clients')}
           className={`relative rounded-full p-2 transition-all flex items-center justify-center h-10 w-10
             ${activeTab === 'clients' ? 'bg-blue-600 text-white shadow-lg scale-110' : 'bg-gray-100 text-gray-600'}
@@ -82,7 +85,7 @@ const PlanificateurSidebar = ({ activeTab, onTabChange, hasPendingClients }: Pla
           onClick={() => onTabChange('dashboard')}
         >
           <ClipboardList className="mr-2 h-4 w-4" />
-          Tableau de bord
+          {t('tabs.dashboard')}
         </Button>
         <Button
           variant={activeTab === 'declarations' ? 'default' : 'ghost'}
@@ -90,7 +93,7 @@ const PlanificateurSidebar = ({ activeTab, onTabChange, hasPendingClients }: Pla
           onClick={() => onTabChange('declarations')}
         >
           <FileText className="mr-2 h-4 w-4" />
-          Déclarations
+          {t('tabs.declarations')}
         </Button>
         <Button
           variant={activeTab === 'entrepots' ? 'default' : 'ghost'}
@@ -99,7 +102,7 @@ const PlanificateurSidebar = ({ activeTab, onTabChange, hasPendingClients }: Pla
         >
           {/* Icone d'entrepot (warehouse) Lucide: Package */}
           <svg xmlns="http://www.w3.org/2000/svg" className="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><rect x="3" y="7" width="18" height="13" rx="2" strokeWidth="2" /><path d="M3 7l9-4 9 4" strokeWidth="2" /></svg>
-          Entrepôts
+          {t('tabs.warehouses')}
         </Button>
         <Button
           variant={activeTab === 'chauffeurs' ? 'default' : 'ghost'}
@@ -108,7 +111,7 @@ const PlanificateurSidebar = ({ activeTab, onTabChange, hasPendingClients }: Pla
         >
           {/* Icone Lucide Truck adaptée véhicule marchandise */}
           <svg xmlns="http://www.w3.org/2000/svg" className="mr-2 h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></svg>
-          Chauffeurs
+          {t('tabs.chauffeurs')}
         </Button>
         <Button
           variant={activeTab === 'clients' ? 'default' : 'ghost'}
@@ -116,8 +119,7 @@ const PlanificateurSidebar = ({ activeTab, onTabChange, hasPendingClients }: Pla
           onClick={() => onTabChange('clients')}
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><circle cx="12" cy="8" r="4" strokeWidth="2" /><path d="M4 20c0-2.5 3.5-4 8-4s8 1.5 8 4" strokeWidth="2" /></svg>
-          Clients
-          {/* Point orange supprimé */}
+          {t('tabs.clients')}
         </Button>
         <Button
           variant={activeTab === 'tracage' ? 'default' : 'ghost'}
@@ -125,7 +127,7 @@ const PlanificateurSidebar = ({ activeTab, onTabChange, hasPendingClients }: Pla
           onClick={() => onTabChange('tracage')}
         >
           <MapPin className="mr-2 h-4 w-4" />
-          Traçage
+          {t('tabs.tracage')}
         </Button>
       </nav>
     </div>

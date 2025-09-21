@@ -4,10 +4,12 @@ import { Button } from './ui/button';
 import { Sheet, SheetContent, SheetTrigger } from './ui/sheet';
 import { Menu, User, Sun, Moon } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { useTranslation } from '../hooks/useTranslation';
 import { useTheme } from 'next-themes';
 
 const MobileHeader = () => {
   const { user, logout } = useAuth();
+  const { t } = useTranslation();
   const { theme, setTheme } = useTheme();
   const [isOpen, setIsOpen] = useState(false);
 
@@ -49,7 +51,7 @@ const MobileHeader = () => {
                   <div>
                     <div className="font-medium">{user?.fullName}</div>
                     <div className="text-sm text-muted-foreground capitalize">
-                      {user?.role}
+                      {t(`roles.${user?.role}`) || user?.role}
                     </div>
                   </div>
                 </div>

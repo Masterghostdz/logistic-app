@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect } from 'react';
 import { useSharedData } from '../contexts/SharedDataContext';
 import { Declaration } from '../types';
@@ -9,6 +7,7 @@ import { Button } from './ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu';
 import { Badge } from './ui/badge';
+import useTableZoom from '../hooks/useTableZoom';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from '../hooks/useTranslation';
 import { User, Settings, LogOut, Menu } from 'lucide-react';
@@ -36,22 +35,34 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle, showMenuButton = false, o
   const { user, logout } = useAuth();
   useEffect(() => {
     async function fetchNotifications() {
-      const { getNotificationsForChauffeur } = await import('../services/notificationService');
-      if (user?.id) {
+      if (user?.role === 'planificateur') {
+        const { getNotificationsForPlanificateur } = await import('../services/notificationService');
+        const notifs = await getNotificationsForPlanificateur(user.id);
+        setNotifState(notifs);
+      } else if (user?.role === 'chauffeur') {
+        const { getNotificationsForChauffeur } = await import('../services/notificationService');
         const notifs = await getNotificationsForChauffeur(user.id);
         setNotifState(notifs);
       }
     }
-    fetchNotifications();
-  }, [user?.id]);
+    if (user?.id) fetchNotifications();
+  }, [user?.id, user?.role]);
 
   const handleNotifClick = async (id: string) => {
-    const { markNotificationAsRead, getNotificationsForChauffeur } = await import('../services/notificationService');
-    await markNotificationAsRead(id);
-    // Recharger les notifications pour mettre à jour l'état lu
-    if (user?.id) {
-      const notifs = await getNotificationsForChauffeur(user.id);
-      setNotifState(notifs);
+    if (user?.role === 'planificateur') {
+      const { markNotificationAsRead, getNotificationsForPlanificateur } = await import('../services/notificationService');
+      await markNotificationAsRead(id);
+      if (user?.id) {
+        const notifs = await getNotificationsForPlanificateur(user.id);
+        setNotifState(notifs);
+      }
+    } else if (user?.role === 'chauffeur') {
+      const { markNotificationAsRead, getNotificationsForChauffeur } = await import('../services/notificationService');
+      await markNotificationAsRead(id);
+      if (user?.id) {
+        const notifs = await getNotificationsForChauffeur(user.id);
+        setNotifState(notifs);
+      }
     }
   };
   // Un seul état pour gérer l'ouverture des deux menus glissants
@@ -112,12 +123,17 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle, showMenuButton = false, o
     return <ProfilePage onBack={() => setShowProfile(false)} />;
   }
 
+  const { badgeClass, badgeStyle } = useTableZoom();
+  // Compute a safe, translated role label to avoid rendering 'undefined'
+  const roleKey = user?.role || '';
+  const roleLabel = roleKey ? (t(`roles.${roleKey}`) || roleKey) : '';
+
   return (
     <>
       <header className="border-b border-border bg-card shadow-sm">
   <div className="flex h-16 items-center justify-between pl-1 pr-4 lg:pl-3 lg:pr-6">
           {/* Logo à gauche */}
-          <div className="flex items-center gap-2">
+          <div className={`flex items-center gap-2 flex-1 ${settings.viewMode === 'mobile' ? 'pr-12' : 'pr-6 lg:pr-10'} min-w-0`}>
             {showMenuButton && (
               <Button
                 variant="ghost"
@@ -137,103 +153,89 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle, showMenuButton = false, o
           </div>
 
           {/* Rôle et photo de profil à droite */}
-          <div className="flex items-center gap-4">
-            <Badge className={`border ${getRoleBadgeColor(user?.role || '')}`}>
-              {user?.role}
-            </Badge>
-            {/* Notification Circle Button & Dropdown for Chauffeur */}
-            {user?.role === 'chauffeur' && (
+          <div className={`flex items-center ml-auto ${settings.viewMode === 'mobile' ? 'gap-2' : 'gap-4'}`}>
+              <Badge size="md" className={`${badgeClass} border ${getRoleBadgeColor(roleKey)}`} style={{ ...(badgeStyle || {}), ...(settings.viewMode === 'mobile' ? { fontSize: '12px', padding: '0.12rem 0.45rem' } : {}) }}>
+                {roleLabel}
+              </Badge>
+            {/* Notification Circle Button & Dropdown for Chauffeur & Planificateur */}
+            {(user?.role === 'chauffeur' || user?.role === 'planificateur') && (
               <DropdownMenu open={openMenu === 'notifications'} onOpenChange={open => setOpenMenu(open ? 'notifications' : 'none')}>
                 <DropdownMenuTrigger asChild>
                   <button
-                    className="relative h-8 w-8 rounded-full flex items-center justify-center border border-white-600 hover:bg-white-50 transition"
+                    className={`relative ${settings.viewMode === 'mobile' ? 'h-7 w-7' : 'h-8 w-8'} rounded-full flex items-center justify-center border border-white-600 hover:bg-white-50 transition`}
                     title="Notifications"
                     style={{ marginRight: 0 }}
                   >
                     <span className="material-icons text-white-600 text-lg">notifications</span>
-                    {notifState.filter(n => !n.read && n.message.toLowerCase().includes('déclaration')).length > 0 && (
+                    {notifState.filter(n => !n.read).length > 0 && (
                       <span className="absolute -top-1 -right-1 bg-orange-500 animate-pulse text-white text-xs rounded-full px-1.5 py-0.5 font-bold">
-                        {notifState.filter(n => !n.read && n.message.toLowerCase().includes('déclaration')).length}
+                        {notifState.filter(n => !n.read).length}
                       </span>
                     )}
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-56 bg-popover border-border" align="end" forceMount>
                   <div className="max-h-80 overflow-y-auto">
-                    {notifState
-                      .filter(n => n.message.toLowerCase().includes('déclaration'))
-                      .map((notif) => {
-                        // Extraire la référence programme si présente
+                    {notifState.length > 0 ? notifState.map((notif) => {
+                      let declaration = null;
+                      let message = notif.message;
+                      if (user?.role === 'planificateur' && notif.declarationId) {
+                        declaration = declarations.find((d: any) => d.id === notif.declarationId);
+                        if (declaration && declaration.status === 'en_panne') {
+                          const chauffeurName = declaration.chauffeurName || 'Inconnu';
+                          const refProgramme = declaration.programNumber && declaration.year && declaration.month
+                            ? `DCP/${declaration.year}/${declaration.month}/${declaration.programNumber}`
+                            : '';
+                          message = `Chauffeur "${chauffeurName}" a tombé en panne dans le programme "${refProgramme}"`;
+                        } else {
+                          // Ne pas afficher si la déclaration n'est pas en panne
+                          return null;
+                        }
+                      } else if (user?.role === 'chauffeur') {
+                        // ...logique existante pour chauffeur...
                         const refMatch = notif.message.match(/DCP\/(\d{2})\/(\d{2})\/(\d+)/);
-                        let refProgramme = '';
-                        let customMessage = notif.message;
-                        let declaration;
                         if (refMatch) {
-                          refProgramme = `DCP/${refMatch[1]}/${refMatch[2]}/${refMatch[3]}`;
                           declaration = declarations.find((d: any) => d.year === refMatch[1] && d.month === refMatch[2] && d.programNumber === refMatch[3]);
-                        }
-                        // Si pas de refMatch, essayer de matcher par type de notification
-                        if (!refProgramme && notif.message.toLowerCase().includes('déclaration')) {
-                          // Chercher une déclaration récente
+                        } else {
                           declaration = declarations[0];
-                          if (declaration) {
-                            refProgramme = `DCP/${declaration.year}/${declaration.month}/${declaration.programNumber}`;
-                          }
                         }
-                        let refColor = 'text-orange-600 font-bold';
-                        let statusColor = '';
-                        let statusText = '';
-                        if (refProgramme) {
-                          if (notif.message.toLowerCase().includes('validée')) {
-                            statusColor = 'text-green-600 font-bold';
-                            statusText = t('dashboard.validated');
-                            customMessage = `${t('notification.default', { ref: `<span class='${refColor}'>${refProgramme}</span>` })} <span class='mx-1'>est</span> <span class='${statusColor}'>${statusText}</span>`;
-                          } else if (notif.message.toLowerCase().includes('refusée')) {
-                            statusColor = 'text-red-600 font-bold';
-                            statusText = t('dashboard.refused');
-                            customMessage = `${t('notification.default', { ref: `<span class='${refColor}'>${refProgramme}</span>` })} <span class='mx-1'>est</span> <span class='${statusColor}'>${statusText}</span>`;
-                          } else {
-                            customMessage = t('notification.default', { ref: `<span class='${refColor}'>${refProgramme}</span>` });
-                          }
-                        }
-                        return (
-                          <div
-                            key={notif.id}
-                            className="relative flex flex-col px-4 py-2 border-b last:border-b-0 gap-1 border-border dark:border-border cursor-pointer"
-                            onClick={() => {
-                              handleNotifClick(notif.id);
-                              if (declaration) setConsultDeclaration(declaration);
-                            }}
-                          >
-                            <span className={notif.read ? 'text-xs text-muted-foreground' : 'text-xs font-semibold text-popover-foreground'} dangerouslySetInnerHTML={{ __html: customMessage }} />
-                            {!notif.read && (
-                              <span className="absolute top-1 right-2 h-2 w-2 rounded-full bg-orange-500 animate-pulse" />
-                            )}
-                          </div>
-                        );
-                      })
-                    }
-                    {notifState.filter(n => n.message.toLowerCase().includes('déclaration')).length === 0 && (
+                      }
+                      return (
+                        <div
+                          key={notif.id}
+                          className="relative flex flex-col px-4 py-2 border-b last:border-b-0 gap-1 border-border dark:border-border cursor-pointer"
+                          onClick={() => {
+                            handleNotifClick(notif.id);
+                            if (declaration) setConsultDeclaration(declaration);
+                          }}
+                        >
+                          <span className={notif.read ? 'text-xs text-muted-foreground' : 'text-xs font-semibold text-popover-foreground'}>{message}</span>
+                          {!notif.read && (
+                            <span className="absolute top-1 right-2 h-2 w-2 rounded-full bg-orange-500 animate-pulse" />
+                          )}
+                        </div>
+                      );
+                    }) : (
                       <div className="px-4 py-2 text-muted-foreground">Aucune notification</div>
                     )}
                   </div>
                 </DropdownMenuContent>
-              {/* Affiche le formulaire de consultation déclaration si demandé */}
-              {consultDeclaration && (
-                <EditDeclarationDialog
-                  declaration={consultDeclaration}
-                  isOpen={!!consultDeclaration}
-                  onClose={() => setConsultDeclaration(null)}
-                  readOnly={true}
-                />
-              )}
-            </DropdownMenu>
-          )}
+                {/* Affiche le formulaire de consultation déclaration si demandé */}
+                {consultDeclaration && (
+                  <EditDeclarationDialog
+                    declaration={consultDeclaration}
+                    isOpen={!!consultDeclaration}
+                    onClose={() => setConsultDeclaration(null)}
+                    readOnly={true}
+                  />
+                )}
+              </DropdownMenu>
+            )}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
-                  className="relative h-8 w-8 rounded-full hover:bg-accent"
+                  className={`relative ${settings.viewMode === 'mobile' ? 'h-7 w-7' : 'h-8 w-8'} rounded-full hover:bg-accent`}
                   onClick={() => {
                     if (openMenu === 'notifications') setOpenMenu('avatar');
                     else setOpenMenu(openMenu === 'avatar' ? 'none' : 'avatar');

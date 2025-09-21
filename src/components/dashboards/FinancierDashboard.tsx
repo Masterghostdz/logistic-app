@@ -14,6 +14,7 @@ const FinancierDashboard = () => {
   }, [auth?.user?.id]);
   const { user } = useAuth();
   const { t, settings } = useTranslation();
+  const { badgeClass, badgeStyle } = useTableZoom();
   const [records, setRecords] = useState<FinancialRecord[]>([]);
   const [showNewRecord, setShowNewRecord] = useState(false);
   const [formData, setFormData] = useState({
@@ -234,12 +235,12 @@ const FinancierDashboard = () => {
                   <div className="flex items-center gap-4">
                     <div className="text-right">
                       <div className="font-medium">{record.amount.toLocaleString()} FCFA</div>
-                      <Badge className={record.type === 'remboursement' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}>
+                      <Badge size="md" style={{ ...badgeStyle }} className={`${badgeClass} ${record.type === 'remboursement' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>
                         {t(`financial.${record.type}`)}
                       </Badge>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Badge className={record.status === 'en_attente' ? 'bg-orange-100 text-orange-800' : 'bg-green-100 text-green-800'}>
+                      <Badge size="md" style={{ ...badgeStyle }} className={`${badgeClass} ${record.status === 'en_attente' ? 'bg-orange-100 text-orange-800' : 'bg-green-100 text-green-800'}`}>
                         {t(`financial.${record.status}`)}
                       </Badge>
                       {record.status === 'en_attente' && (
@@ -264,6 +265,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
+import useTableZoom from '../../hooks/useTableZoom';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';

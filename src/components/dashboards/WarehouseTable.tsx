@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useTranslation } from '../../hooks/useTranslation';
 import { Warehouse } from "../../types";
 import { Eye, Pencil, Trash2 } from "lucide-react";
 import { Button } from "../ui/button";
@@ -7,6 +8,7 @@ import { Badge } from "../ui/badge";
 import { Card, CardContent } from "../ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "../ui/dialog";
+import useTableZoom from '../../hooks/useTableZoom';
 
 interface WarehouseTableProps {
   warehouses: Warehouse[];
@@ -18,31 +20,22 @@ interface WarehouseTableProps {
 }
 
 const WarehouseTable: React.FC<WarehouseTableProps> = ({ warehouses, onCreate, onEdit, onDelete, onConsult, fontSize = '80' }) => {
-  const [localFontSize, setLocalFontSize] = useState(fontSize);
-  const zoomLevels: Record<string, number> = {
-    '50': 0.5,
-    '60': 0.6,
-    '80': 0.8,
-    '90': 0.9,
-    '100': 1.0
-  };
-  const zoom = zoomLevels[localFontSize];
-  const fontSizeStyle = { fontSize: `${Math.round(14 * zoom)}px` };
-  const rowHeight = `h-[${Math.round(40 * zoom)}px`;
+  const { t } = useTranslation();
+  const {
+    localFontSize,
+    setLocalFontSize,
+    fontSizeStyle,
+    rowHeight,
+    iconSize,
+    cellPaddingClass,
+    badgeClass,
+    badgeStyle,
+    getMinWidthForChars
+  } = useTableZoom(fontSize as any);
   // Le parent gère la recherche et le filtre, ici on affiche tout
   const filtered = warehouses;
 
-  // iconSize dynamique comme dans DeclarationsTable
-  const baseIcon = 18;
-  const zoomLevelsGlobal = {
-    '50': 0.5,
-    '60': 0.6,
-    '80': 0.8,
-    '90': 0.9,
-    '100': 1.0
-  };
-  const zoomGlobal = zoomLevelsGlobal[String(localFontSize)] ?? 1.0;
-  const iconSize = `h-[${Math.round(baseIcon * zoomGlobal)}px] w-[${Math.round(baseIcon * zoomGlobal)}px]`;
+  // iconSize and spacing provided by useTableZoom
   return (
     <>
       <div className="flex items-center justify-end mb-2">
@@ -67,12 +60,12 @@ const WarehouseTable: React.FC<WarehouseTableProps> = ({ warehouses, onCreate, o
         <Table>
           <TableHeader>
             <TableRow className={rowHeight} style={fontSizeStyle}>
-              <TableHead className="w-[160px]" style={fontSizeStyle}>Nom</TableHead>
-              <TableHead className="w-[120px]" style={fontSizeStyle}>Société</TableHead>
-              <TableHead className="w-[120px]" style={fontSizeStyle}>Téléphone</TableHead>
-              <TableHead className="w-[180px]" style={fontSizeStyle}>Adresse</TableHead>
-              <TableHead className="w-[80px]" style={fontSizeStyle}>Statut</TableHead>
-              <TableHead className="w-[120px]" style={fontSizeStyle}>Actions</TableHead>
+              <TableHead className={`${getMinWidthForChars(12)} ${cellPaddingClass} whitespace-nowrap`} style={fontSizeStyle}>{t('warehouses.name') || 'Nom'}</TableHead>
+              <TableHead className={`${getMinWidthForChars(10)} ${cellPaddingClass} whitespace-nowrap`} style={fontSizeStyle}>{t('warehouses.company') || 'Société'}</TableHead>
+              <TableHead className={`${getMinWidthForChars(8)} ${cellPaddingClass} whitespace-nowrap`} style={fontSizeStyle}>{t('warehouses.phone') || 'Téléphone'}</TableHead>
+              <TableHead className={`${getMinWidthForChars(18)} ${cellPaddingClass} whitespace-nowrap`} style={fontSizeStyle}>{t('warehouses.address') || 'Adresse'}</TableHead>
+              <TableHead className={`${getMinWidthForChars(6)} ${cellPaddingClass} whitespace-nowrap`} style={fontSizeStyle}>{t('warehouses.status') || 'Statut'}</TableHead>
+              <TableHead className={`${getMinWidthForChars(8)} ${cellPaddingClass} whitespace-nowrap`} style={fontSizeStyle}>{t('warehouses.actions') || 'Actions'}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -83,20 +76,20 @@ const WarehouseTable: React.FC<WarehouseTableProps> = ({ warehouses, onCreate, o
             ) : (
               filtered.map(wh => (
                 <TableRow key={wh.id} className={rowHeight} style={fontSizeStyle}>
-                  <TableCell className="font-medium cursor-pointer hover:underline" style={fontSizeStyle} onClick={() => onConsult(wh)}>
+                  <TableCell className={`font-medium cursor-pointer hover:underline ${getMinWidthForChars(12)} ${cellPaddingClass} whitespace-nowrap`} style={fontSizeStyle} onClick={() => onConsult(wh)}>
                     {wh.name}
                   </TableCell>
-                  <TableCell style={fontSizeStyle}>{wh.companyName}</TableCell>
-                  <TableCell style={fontSizeStyle}>{wh.phone && wh.phone.length > 0 ? wh.phone[0] : '-'}</TableCell>
-                  <TableCell style={fontSizeStyle}>{wh.address}</TableCell>
-                  <TableCell style={fontSizeStyle}>
+                  <TableCell className={`${getMinWidthForChars(10)} ${cellPaddingClass} whitespace-nowrap`} style={fontSizeStyle}>{wh.companyName}</TableCell>
+                  <TableCell className={`${getMinWidthForChars(8)} ${cellPaddingClass} whitespace-nowrap`} style={fontSizeStyle}>{wh.phone && wh.phone.length > 0 ? wh.phone[0] : '-'}</TableCell>
+                  <TableCell className={`${getMinWidthForChars(18)} ${cellPaddingClass} whitespace-nowrap`} style={fontSizeStyle}>{wh.address}</TableCell>
+                  <TableCell className={`${cellPaddingClass} whitespace-nowrap`} style={fontSizeStyle}>
                     {wh.isActive ? (
-                      <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold bg-green-100 text-green-700 border border-green-300 shadow">Actif</span>
+                      <Badge size="md" style={{ ...badgeStyle }} className={`${badgeClass} font-semibold bg-green-100 text-green-700 border border-green-300 shadow`}>{t('warehouses.active') || t('chauffeurs.active') || 'Actif'}</Badge>
                     ) : (
-                      <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold bg-red-100 text-red-700 border border-red-300 shadow">Inactif</span>
+                      <Badge size="md" style={{ ...badgeStyle }} className={`${badgeClass} font-semibold bg-red-100 text-red-700 border border-red-300 shadow`}>{t('warehouses.inactive') || t('chauffeurs.inactive') || 'Inactif'}</Badge>
                     )}
                   </TableCell>
-                  <TableCell style={fontSizeStyle}>
+                  <TableCell className={`${cellPaddingClass} whitespace-nowrap`} style={fontSizeStyle}>
                     <div className="flex gap-1" style={fontSizeStyle}>
                       <Button size="sm" variant="outline" className={`p-0 ${iconSize} min-w-0`} onClick={() => onConsult(wh)} title="Consulter">
                         <Eye className={`${iconSize} min-w-0`} />

@@ -2,10 +2,12 @@ import { useAuth } from '../../contexts/AuthContext';
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from '../ui/alert-dialog';
 
 import React, { useState, useEffect } from 'react';
+import AdminSidebar from './AdminSidebar';
 import { useSettings } from '../../contexts/SettingsContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
+import useTableZoom from '../../hooks/useTableZoom';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
@@ -35,6 +37,7 @@ import { simpleHash } from '../../utils/authUtils';
 import RefusalReasonsConfig from '../admin/RefusalReasonsConfig';
 import { db } from '../../services/firebaseClient';
 import { doc, updateDoc } from 'firebase/firestore';
+import { useTranslation } from '../../hooks/useTranslation';
 
 const zoomLevels = {
   '40': 0.75,
@@ -47,36 +50,8 @@ const zoomLevels = {
 };
 
 const AdminDashboard = () => {
-  // Heartbeat Firestore: met à jour lastOnline toutes les 60s
-  const auth = useAuth();
-  useEffect(() => {
-    if (!auth?.user?.id) return;
-    const userRef = doc(db, 'users', auth.user.id);
-    const interval = setInterval(() => {
-      updateDoc(userRef, { lastOnline: Date.now(), isOnline: true });
-    }, 60000);
-    updateDoc(userRef, { lastOnline: Date.now(), isOnline: true });
-    return () => clearInterval(interval);
-  }, [auth?.user?.id]);
-  const [userTableFontSize, setUserTableFontSize] = useState(() => localStorage.getItem('userTableFontSize') || '80');
-  const [companyTableFontSize, setCompanyTableFontSize] = useState(() => localStorage.getItem('companyTableFontSize') || '80');
-  const [vehicleTypeTableFontSize, setVehicleTypeTableFontSize] = useState(() => localStorage.getItem('vehicleTypeTableFontSize') || '80');
-
-  // Enregistre le zoom choisi dans le localStorage
-  const handleUserTableZoom = (value) => {
-    setUserTableFontSize(value);
-    localStorage.setItem('userTableFontSize', value);
-  };
-  const handleCompanyTableZoom = (value) => {
-    setCompanyTableFontSize(value);
-    localStorage.setItem('companyTableFontSize', value);
-  };
-  const handleVehicleTypeTableZoom = (value) => {
-    setVehicleTypeTableFontSize(value);
-    localStorage.setItem('vehicleTypeTableFontSize', value);
-  };
+  const { t, settings } = useTranslation();
   const {
-    settings,
     updateSettings,
     setHeartbeatOnlineInterval,
     setHeartbeatGpsInterval,
@@ -89,6 +64,56 @@ const AdminDashboard = () => {
     setHeartbeatPositionImmediate,
     setGpsActivationRequestEnabled
   } = useSettings();
+  // Heartbeat Firestore: met à jour lastOnline toutes les 60s
+  const auth = useAuth();
+  useEffect(() => {
+    if (!auth?.user?.id) return;
+    const userRef = doc(db, 'users', auth.user.id);
+    const interval = setInterval(() => {
+      updateDoc(userRef, { lastOnline: Date.now(), isOnline: true });
+    }, 60000);
+    updateDoc(userRef, { lastOnline: Date.now(), isOnline: true });
+    return () => clearInterval(interval);
+  }, [auth?.user?.id]);
+  const [userTableFontSize, setUserTableFontSize] = useState(() => localStorage.getItem('userTableFontSize') || '80');
+  const { localFontSize: userLocalFontSize, setLocalFontSize: setUserLocalFontSize, fontSizeStyle: userFontSizeStyle, rowHeight: userRowHeight } = useTableZoom(userTableFontSize as any);
+  const [companyTableFontSize, setCompanyTableFontSize] = useState(() => localStorage.getItem('companyTableFontSize') || '80');
+  const [vehicleTypeTableFontSize, setVehicleTypeTableFontSize] = useState(() => localStorage.getItem('vehicleTypeTableFontSize') || '80');
+  const { localFontSize: vehicleTypeLocalFontSize, setLocalFontSize: setVehicleTypeLocalFontSize, fontSizeStyle: vehicleTypeFontSizeStyle, rowHeight: vehicleTypeRowHeight, iconSize: vehicleTypeIconSize } = useTableZoom(vehicleTypeTableFontSize as any);
+
+  // Enregistre le zoom choisi dans le localStorage
+  const handleUserTableZoom = (value) => {
+    setUserTableFontSize(value);
+    localStorage.setItem('userTableFontSize', value);
+    // Also update the hook's local font size so consumers of useTableZoom react immediately
+    try {
+      // setUserLocalFontSize comes from useTableZoom(...) above
+      setUserLocalFontSize?.(value as any);
+    } catch (e) {
+      // noop if unavailable for some reason
+    }
+  };
+  const handleCompanyTableZoom = (value) => {
+    setCompanyTableFontSize(value);
+    localStorage.setItem('companyTableFontSize', value);
+  };
+  const handleVehicleTypeTableZoom = (value) => {
+    setVehicleTypeTableFontSize(value);
+    localStorage.setItem('vehicleTypeTableFontSize', value);
+  };
+  // const {
+  //   updateSettings,
+  //   setHeartbeatOnlineInterval,
+  //   setHeartbeatGpsInterval,
+  //   setHeartbeatPositionInterval,
+  //   setHeartbeatOnlineEnabled,
+  //   setHeartbeatOnlineImmediate,
+  //   setHeartbeatGpsEnabled,
+  //   setHeartbeatGpsImmediate,
+  //   setHeartbeatPositionEnabled,
+  //   setHeartbeatPositionImmediate,
+  //   setGpsActivationRequestEnabled
+  // } = useSettings();
   const viewMode = settings.viewMode || 'desktop';
   const [activeTab, setActiveTab] = useState('dashboard');
   // --- Synchronisation Firestore pour les sociétés ---
@@ -421,6 +446,8 @@ const AdminDashboard = () => {
     setShowChangePassword(true);
   };
 
+  const { badgeClass, badgeStyle } = useTableZoom();
+
   const getRoleBadge = (role: string) => {
     const roleColors = {
       admin: 'bg-red-100 text-red-800',
@@ -430,20 +457,19 @@ const AdminDashboard = () => {
       chauffeur: 'bg-gray-100 text-gray-800',
     };
     const roleLabels = {
-      admin: 'Administrateur',
-      planificateur: 'Planificateur',
-      financier: 'Financier',
-      financier_unite: 'Financier Unité',
-      chauffeur: 'Chauffeur',
+      admin: t('roles.admin') || 'Administrateur',
+      planificateur: t('roles.planificateur') || 'Planificateur',
+      financier: t('roles.financier') || 'Financier',
+      financier_unite: t('roles.financier_unite') || 'Financier Unité',
+      chauffeur: t('roles.chauffeur') || 'Chauffeur',
     };
+    const label = t(`roles.${role}`) || roleLabels[role as keyof typeof roleLabels] || role;
     return (
       <Badge
-        className={
-          `${roleColors[role as keyof typeof roleColors]} text-xs px-2 py-1 rounded-full font-semibold border border-transparent`
-        }
-        style={{ minWidth: 90, textAlign: 'center', letterSpacing: 0.2 }}
+        className={`${badgeClass} ${roleColors[role as keyof typeof roleColors]} text-xs rounded-full font-semibold border border-transparent`}
+        style={{ minWidth: 90, textAlign: 'center', letterSpacing: 0.2, ...(badgeStyle || {}) }}
       >
-        {roleLabels[role as keyof typeof roleLabels] || role}
+        {label}
       </Badge>
     );
   };
@@ -486,100 +512,47 @@ const AdminDashboard = () => {
   }
 
   return (
-    <div className={viewMode === 'mobile' ? 'max-w-[430px] mx-auto bg-background min-h-screen flex flex-col' : ''}>
-      <style>{viewMode === 'mobile' ? `
-        html, body, .max-w-[430px] {
-          font-size: 15px !important;
-        }
-        .card, .rounded-lg, .p-6, .px-6, .py-1 {
-          padding: 8px !important;
-        }
-        .text-3xl, .text-2xl, .text-lg {
-          font-size: 1.2rem !important;
-        }
-      ` : ''}</style>
-      <Header onProfileClick={handleProfileClick} />
-      {viewMode === 'mobile' ? (
-        <>
-          <div className="flex px-2 pt-3 mb-2">
-            <span
-              className="flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700 shadow"
-              title={isOnline ? 'Connecté au cloud' : 'Hors ligne'}
-            >
-              <span className="inline-block w-2 h-2 rounded-full bg-green-500"></span>
-              En ligne
-            </span>
-          </div>
-          <nav className="flex flex-row justify-center items-center gap-8 py-3 px-4 bg-white dark:bg-gray-900 rounded-full shadow-lg w-full border-2 border-blue-400 dark:border-blue-600 overflow-x-auto mb-2">
-            <button
-              aria-label="Tableau de bord"
-              onClick={() => setActiveTab('dashboard')}
-              className={`rounded-full p-2 transition-all ${activeTab === 'dashboard' ? 'bg-blue-600 text-white shadow-lg scale-110' : 'bg-gray-100 text-gray-600'} flex items-center justify-center h-10 w-10`}
-            >
-              <ClipboardList className="h-[22px] w-[22px]" />
-            </button>
-            <button
-              aria-label="Utilisateurs"
-              onClick={() => setActiveTab('users')}
-              className={`rounded-full p-2 transition-all ${activeTab === 'users' ? 'bg-blue-600 text-white shadow-lg scale-110' : 'bg-gray-100 text-gray-600'} flex items-center justify-center h-10 w-10`}
-            >
-              <Users className="h-[22px] w-[22px]" />
-            </button>
-            <button
-              aria-label="Configuration"
-              onClick={() => setActiveTab('configuration')}
-              className={`rounded-full p-2 transition-all ${activeTab === 'configuration' ? 'bg-blue-600 text-white shadow-lg scale-110' : 'bg-gray-100 text-gray-600'} flex items-center justify-center h-10 w-10`}
-            >
-              <Settings className="h-[22px] w-[22px]" />
-            </button>
-          </nav>
-        </>
-      ) : (
-        <div className="flex justify-end items-center px-6 pt-2">
-          <span
-            className={`flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium ${isOnline ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}
-            title={isOnline ? 'Connecté au cloud' : 'Hors ligne'}
-          >
-            <span className={`inline-block w-2 h-2 rounded-full ${isOnline ? 'bg-green-500' : 'bg-red-500'}`}></span>
-            {isOnline ? 'En ligne' : 'Hors ligne'}
-          </span>
-        </div>
-      )}
-      <div className="flex h-[calc(100vh-4rem)]">
+  <div className={viewMode === 'mobile' ? 'max-w-[430px] mx-auto bg-background min-h-screen flex flex-col' : 'min-h-screen bg-background w-full overflow-x-hidden'}>
+    <style>{viewMode === 'mobile' ? `
+      html, body, .max-w-[430px] {
+        font-size: 15px !important;
+      }
+      .card, .rounded-lg, .p-6, .px-6, .py-1 {
+        padding: 8px !important;
+      }
+      .text-3xl, .text-2xl, .text-lg {
+        font-size: 1.2rem !important;
+      }
+    ` : ''}</style>
+    <Header onProfileClick={handleProfileClick} />
+    {viewMode === 'mobile' && (
+      <div className="flex px-2 pt-3 mb-2">
+        <span
+          className={`${badgeClass} items-center gap-2 rounded-full text-xs font-semibold bg-green-100 text-green-700 shadow`}
+          title={isOnline ? t('dashboard.online') : t('dashboard.offline')}
+        >
+          <span className="inline-block w-2 h-2 rounded-full bg-green-500"></span>
+          {isOnline ? t('dashboard.online') : t('dashboard.offline')}
+        </span>
+      </div>
+    )}
+    <div className="flex h-[calc(100vh-4rem)]">
         {viewMode !== 'mobile' && (
-          <div className="w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 p-4">
-            <nav className="space-y-2">
-              <Button
-                variant={activeTab === 'dashboard' ? 'default' : 'ghost'}
-                className="w-full justify-start"
-                onClick={() => setActiveTab('dashboard')}
-              >
-                <ClipboardList className="mr-2 h-4 w-4" />
-                Tableau de bord
-              </Button>
-              <Button
-                variant={activeTab === 'users' ? 'default' : 'ghost'}
-                className="w-full justify-start"
-                onClick={() => setActiveTab('users')}
-              >
-                <Users className="mr-2 h-4 w-4" />
-                Utilisateurs
-              </Button>
-              <Button
-                variant={activeTab === 'configuration' ? 'default' : 'ghost'}
-                className="w-full justify-start"
-                onClick={() => setActiveTab('configuration')}
-              >
-                <Settings className="mr-2 h-4 w-4" />
-                Configuration
-              </Button>
-            </nav>
-          </div>
+          <AdminSidebar activeTab={activeTab} onTabChange={setActiveTab} viewMode="desktop" />
         )}
-        <div className={viewMode === 'mobile' ? 'flex-1 p-2 w-full' : 'flex-1 p-6 overflow-auto'}>
+  <div className={viewMode === 'mobile' ? 'flex-1 p-2 w-full' : 'flex-1 p-6 pt-16 overflow-auto relative'}>
+          {/* Badge En ligne desktop : dans le bloc de contenu principal, en absolute top-0 right-0, comme les autres dashboards */}
+          {viewMode !== 'mobile' && (
+            <div className={`absolute top-0 ${settings.language === 'ar' ? 'left-0' : 'right-0'} m-2 z-10`}>
+              <Badge size="md" style={{...badgeStyle}} className={`${badgeClass} items-center gap-2 text-xs font-semibold bg-green-100 text-green-700 shadow`} title={isOnline ? t('dashboard.online') : t('dashboard.offline')}>
+                <span className="inline-block w-2 h-2 rounded-full bg-green-500"></span>
+                {isOnline ? t('dashboard.online') : t('dashboard.offline')}
+              </Badge>
+            </div>
+          )}
           {activeTab === 'dashboard' && (
             <div className="space-y-6">
-              <h1 className="text-3xl font-bold">Tableau de bord - Administrateur</h1>
+              <h1 className="text-2xl font-bold text-foreground mb-6">Tableau de bord - Administrateur</h1>
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <Card>
@@ -682,11 +655,11 @@ const AdminDashboard = () => {
                             <SelectValue placeholder="Sélectionner un rôle" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="chauffeur">Chauffeur</SelectItem>
-                            <SelectItem value="planificateur">Planificateur</SelectItem>
-                            <SelectItem value="financier">Financier</SelectItem>
-                            <SelectItem value="financier_unite">Financier Unité</SelectItem>
-                            <SelectItem value="admin">Administrateur</SelectItem>
+                            <SelectItem value="chauffeur">{t('roles.chauffeur') || 'Chauffeur'}</SelectItem>
+                            <SelectItem value="planificateur">{t('roles.planificateur') || 'Planificateur'}</SelectItem>
+                            <SelectItem value="financier">{t('roles.financier') || 'Financier'}</SelectItem>
+                            <SelectItem value="financier_unite">{t('roles.financier_unite') || 'Financier Unité'}</SelectItem>
+                            <SelectItem value="admin">{t('roles.admin') || 'Administrateur'}</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -785,76 +758,57 @@ const AdminDashboard = () => {
                   <div className="w-full overflow-x-auto">
                     <Table>
                       <TableHeader>
-                        <TableRow style={{ fontSize: `${Math.round(14 * (zoomLevels[userTableFontSize] || 1))}px` }}>
-                          <TableHead style={{ fontSize: `${Math.round(14 * (zoomLevels[userTableFontSize] || 1))}px` }}>Nom complet</TableHead>
-                          <TableHead style={{ fontSize: `${Math.round(14 * (zoomLevels[userTableFontSize] || 1))}px` }}>Nom d'utilisateur</TableHead>
-                          <TableHead style={{ fontSize: `${Math.round(14 * (zoomLevels[userTableFontSize] || 1))}px` }}>Rôle</TableHead>
-                          <TableHead
-  style={{
-    fontSize: `${Math.round(14 * (zoomLevels[userTableFontSize] || 1))}px`,
-    textAlign: 'center',
-    paddingLeft: 0,
-    paddingRight: 0,
-    whiteSpace: 'nowrap',
-  }}
->
-  Connexion
-</TableHead>
-                          <TableHead style={{ fontSize: `${Math.round(14 * (zoomLevels[userTableFontSize] || 1))}px` }}>Téléphone</TableHead>
-                          <TableHead style={{ fontSize: `${Math.round(14 * (zoomLevels[userTableFontSize] || 1))}px` }}>Mot de passe</TableHead>
-                          <TableHead style={{ fontSize: `${Math.round(14 * (zoomLevels[userTableFontSize] || 1))}px` }}>Actions</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {users.map((user) => (
-                          <TableRow key={user.id} style={{ fontSize: `${Math.round(14 * (zoomLevels[userTableFontSize] || 1))}px` }}>
-                            <TableCell className="font-medium" style={{ fontSize: `${Math.round(14 * (zoomLevels[userTableFontSize] || 1))}px` }}>{user.fullName}</TableCell>
-                            <TableCell style={{ fontSize: `${Math.round(14 * (zoomLevels[userTableFontSize] || 1))}px` }}>{user.username}</TableCell>
-                            <TableCell style={{ fontSize: `${Math.round(14 * (zoomLevels[userTableFontSize] || 1))}px` }}>
-                              {/* Badge rôle harmonisé (identique header) */}
-                              <Badge className={`border ${getRoleBadgeColor(user.role)}`}>
-                                {user.role}
-                              </Badge>
-                            </TableCell>
-                            {/* Connexion column */}
-                            <TableCell
-  style={{
-    fontSize: `${Math.round(14 * (zoomLevels[userTableFontSize] || 1))}px`,
-    textAlign: 'center',
-    paddingLeft: 0,
-    paddingRight: 0,
-  }}
->
-  {/* Statut connexion : point vert (en ligne) ou rouge (hors ligne) avec glow/ombre */}
-  <span
-    title={user.isOnline ? 'En ligne' : 'Hors ligne'}
-    style={{
-      display: 'inline-block',
-      width: 14,
-      height: 14,
-      borderRadius: '50%',
-      background: user.isOnline ? '#22c55e' : '#ef4444',
-      boxShadow: user.isOnline
-        ? '0 0 8px 2px #22c55e, 0 2px 6px rgba(34,197,94,0.3)'
-        : '0 0 6px 1px #ef4444, 0 2px 6px rgba(239,68,68,0.3)',
-      margin: '0 auto',
-    }}
-  />
-</TableCell>
-                            <TableCell style={{ fontSize: `${Math.round(14 * (zoomLevels[userTableFontSize] || 1))}px` }}>
-                              {user.phone && user.phone.length > 0 ? (
-                                <div className="space-y-1">
-                                  {user.phone.map((phone, index) => (
-                                    <div key={index} className="text-sm" style={{ fontSize: `${Math.round(14 * (zoomLevels[userTableFontSize] || 1))}px` }}>{phone}</div>
-                                  ))}
-                                </div>
-                              ) : '-'}
-                            </TableCell>
-                            <TableCell style={{ fontSize: `${Math.round(14 * (zoomLevels[userTableFontSize] || 1))}px` }}>
-                              {/* Affiche toujours 8 points pour le mot de passe */}
-                              <span style={{ letterSpacing: 2 }}>{'•'.repeat(8)}</span>
-                            </TableCell>
-                            <TableCell style={{ fontSize: `${Math.round(14 * (zoomLevels[userTableFontSize] || 1))}px` }}>
+                          <TableRow className={userRowHeight}>
+                            <TableHead style={userFontSizeStyle}>{t('admin.fullName') || 'Nom complet'}</TableHead>
+                            <TableHead style={userFontSizeStyle}>{t('admin.username') || "Nom d'utilisateur"}</TableHead>
+                            <TableHead style={userFontSizeStyle}>{t('admin.role') || 'Rôle'}</TableHead>
+                            <TableHead style={{...userFontSizeStyle, textAlign: 'center', paddingLeft: 0, paddingRight: 0}}>{t('admin.lastLogin') || 'Connexion'}</TableHead>
+                            <TableHead style={userFontSizeStyle}>{t('admin.phone') || 'Téléphone'}</TableHead>
+                            <TableHead style={userFontSizeStyle}>{t('admin.password') || 'Mot de passe'}</TableHead>
+                            <TableHead style={userFontSizeStyle}>{t('admin.actions') || 'Actions'}</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {users.map((user) => (
+                            <TableRow key={user.id} className={userRowHeight}>
+                              <TableCell className="font-medium" style={userFontSizeStyle}>{user.fullName}</TableCell>
+                              <TableCell style={userFontSizeStyle}>{user.username}</TableCell>
+                              <TableCell style={userFontSizeStyle}>
+                                {/* Badge rôle harmonisé (identique header) - use getRoleBadge for translation & consistent style */}
+                                {getRoleBadge(user.role)}
+                              </TableCell>
+                              {/* Connexion column */}
+                              <TableCell style={{textAlign: 'center', paddingLeft: 0, paddingRight: 0}}>
+    {/* Statut connexion : point vert (en ligne) ou rouge (hors ligne) avec glow/ombre */}
+    <span
+      title={user.isOnline ? 'En ligne' : 'Hors ligne'}
+      style={{
+        display: 'inline-block',
+        width: 14,
+        height: 14,
+        borderRadius: '50%',
+        background: user.isOnline ? '#22c55e' : '#ef4444',
+        boxShadow: user.isOnline
+          ? '0 0 8px 2px #22c55e, 0 2px 6px rgba(34,197,94,0.3)'
+          : '0 0 6px 1px #ef4444, 0 2px 6px rgba(239,68,68,0.3)',
+        margin: '0 auto',
+      }}
+    />
+  </TableCell>
+                              <TableCell style={userFontSizeStyle}>
+                                {user.phone && user.phone.length > 0 ? (
+                                  <div className="space-y-1">
+                                    {user.phone.map((phone, index) => (
+                                      <div key={index} className="text-sm" style={userFontSizeStyle}>{phone}</div>
+                                    ))}
+                                  </div>
+                                ) : '-'}
+                              </TableCell>
+                              <TableCell style={userFontSizeStyle}>
+                                {/* Affiche toujours 8 points pour le mot de passe */}
+                                <span style={{ letterSpacing: 2 }}>{'•'.repeat(8)}</span>
+                              </TableCell>
+                              <TableCell style={userFontSizeStyle}>
                               <div className="flex gap-2">
                                 <Button 
                                   size="sm" 
@@ -1093,46 +1047,46 @@ const AdminDashboard = () => {
                   <div className="w-full overflow-x-auto">
                     <Table>
                       <TableHeader>
-                        <TableRow style={{ fontSize: `${Math.round(14 * (zoomLevels[companyTableFontSize] || 1))}px` }}>
-                          <TableHead style={{ fontSize: `${Math.round(14 * (zoomLevels[companyTableFontSize] || 1))}px` }}>Nom</TableHead>
-                          <TableHead style={{ fontSize: `${Math.round(14 * (zoomLevels[companyTableFontSize] || 1))}px` }}>Adresse</TableHead>
-                          <TableHead style={{ fontSize: `${Math.round(14 * (zoomLevels[companyTableFontSize] || 1))}px` }}>Téléphone</TableHead>
-                          <TableHead style={{ fontSize: `${Math.round(14 * (zoomLevels[companyTableFontSize] || 1))}px` }}>Email</TableHead>
-                          <TableHead style={{ fontSize: `${Math.round(14 * (zoomLevels[companyTableFontSize] || 1))}px` }}>Actions</TableHead>
+                        <TableRow className={userRowHeight}>
+                          <TableHead style={userFontSizeStyle}>{t('companies.name')}</TableHead>
+                          <TableHead style={userFontSizeStyle}>{t('companies.address')}</TableHead>
+                          <TableHead style={userFontSizeStyle}>{t('companies.phone')}</TableHead>
+                          <TableHead style={userFontSizeStyle}>{t('companies.email')}</TableHead>
+                          <TableHead style={userFontSizeStyle}>{t('companies.actions')}</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {companies.map((company) => (
-                          <TableRow key={company.id} style={{ fontSize: `${Math.round(14 * (zoomLevels[companyTableFontSize] || 1))}px` }}>
-                            <TableCell className="font-medium" style={{ fontSize: `${Math.round(14 * (zoomLevels[companyTableFontSize] || 1))}px` }}>{company.name}</TableCell>
-                            <TableCell style={{ fontSize: `${Math.round(14 * (zoomLevels[companyTableFontSize] || 1))}px` }}>{company.address || '-'}</TableCell>
-                            <TableCell style={{ fontSize: `${Math.round(14 * (zoomLevels[companyTableFontSize] || 1))}px` }}>
+                          <TableRow key={company.id} className={userRowHeight}>
+                            <TableCell className="font-medium" style={userFontSizeStyle}>{company.name}</TableCell>
+                            <TableCell style={userFontSizeStyle}>{company.address || '-'}</TableCell>
+                            <TableCell style={userFontSizeStyle}>
                               {company.phone && company.phone.length > 0 ? (
                                 <div className="space-y-1">
                                   {company.phone.map((phone, index) => (
-                                    <div key={index} className="text-sm" style={{ fontSize: `${Math.round(14 * (zoomLevels[companyTableFontSize] || 1))}px` }}>{phone}</div>
+                                    <div key={index} className="text-sm" style={userFontSizeStyle}>{phone}</div>
                                   ))}
                                 </div>
                               ) : '-'}
                             </TableCell>
-                            <TableCell style={{ fontSize: `${Math.round(14 * (zoomLevels[companyTableFontSize] || 1))}px` }}>{company.email || '-'}</TableCell>
-                            <TableCell style={{ fontSize: `${Math.round(14 * (zoomLevels[companyTableFontSize] || 1))}px` }}>
+                            <TableCell style={userFontSizeStyle}>{company.email || '-'}</TableCell>
+                            <TableCell style={userFontSizeStyle}>
                               <div className="flex gap-2">
                                 <Button 
                                   size="sm" 
                                   variant="outline"
-                                  style={{ fontSize: `${Math.round(14 * (zoomLevels[companyTableFontSize] || 1))}px` }}
+                                  style={userFontSizeStyle}
                                   onClick={() => handleEditCompany(company)}
                                 >
-                                  <Edit className="h-4 w-4" style={{ width: `${Math.round(16 * (zoomLevels[companyTableFontSize] || 1))}px`, height: `${Math.round(16 * (zoomLevels[companyTableFontSize] || 1))}px` }} />
+                                  <Edit className="h-4 w-4" style={{ width: `16px`, height: `16px` }} />
                                 </Button>
                                 <Button 
                                   size="sm" 
                                   variant="outline"
-                                  style={{ fontSize: `${Math.round(14 * (zoomLevels[companyTableFontSize] || 1))}px` }}
+                                  style={userFontSizeStyle}
                                   onClick={() => handleDeleteCompany(company.id)}
                                 >
-                                  <Trash2 className="h-4 w-4" style={{ width: `${Math.round(16 * (zoomLevels[companyTableFontSize] || 1))}px`, height: `${Math.round(16 * (zoomLevels[companyTableFontSize] || 1))}px` }} />
+                                  <Trash2 className="h-4 w-4" style={{ width: `16px`, height: `16px` }} />
                                 </Button>
                               </div>
                             </TableCell>
@@ -1225,34 +1179,36 @@ const AdminDashboard = () => {
                   <div className="w-full overflow-x-auto">
                     <Table>
                       <TableHeader>
-                        <TableRow style={{ fontSize: `${Math.round(14 * (zoomLevels[vehicleTypeTableFontSize] || 1))}px` }}>
-                          <TableHead style={{ fontSize: `${Math.round(14 * (zoomLevels[vehicleTypeTableFontSize] || 1))}px` }}>Nom</TableHead>
-                          <TableHead style={{ fontSize: `${Math.round(14 * (zoomLevels[vehicleTypeTableFontSize] || 1))}px` }}>Prime kilométrique</TableHead>
-                          <TableHead style={{ fontSize: `${Math.round(14 * (zoomLevels[vehicleTypeTableFontSize] || 1))}px` }}>Actions</TableHead>
+                        <TableRow className={vehicleTypeRowHeight} style={vehicleTypeFontSizeStyle}>
+                          <TableHead>{t('vehicleTypes.name')}</TableHead>
+                          <TableHead>{t('vehicleTypes.primeKilometrique')}</TableHead>
+                          <TableHead>{t('vehicleTypes.actions')}</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {vehicleTypes.map((vehicleType) => (
-                          <TableRow key={vehicleType.id} style={{ fontSize: `${Math.round(14 * (zoomLevels[vehicleTypeTableFontSize] || 1))}px` }}>
-                            <TableCell className="font-medium" style={{ fontSize: `${Math.round(14 * (zoomLevels[vehicleTypeTableFontSize] || 1))}px` }}>{vehicleType.name}</TableCell>
-                            <TableCell style={{ fontSize: `${Math.round(14 * (zoomLevels[vehicleTypeTableFontSize] || 1))}px` }}>{vehicleType.primeKilometrique != null ? vehicleType.primeKilometrique.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'}</TableCell>
-                            <TableCell style={{ fontSize: `${Math.round(14 * (zoomLevels[vehicleTypeTableFontSize] || 1))}px` }}>
+                          <TableRow key={vehicleType.id} className={vehicleTypeRowHeight} style={vehicleTypeFontSizeStyle}>
+                            <TableCell className="font-medium">{vehicleType.name}</TableCell>
+                            <TableCell>{vehicleType.primeKilometrique != null ? vehicleType.primeKilometrique.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'}</TableCell>
+                            <TableCell>
                               <div className="flex gap-2">
                                 <Button 
                                   size="sm" 
                                   variant="outline"
-                                  style={{ fontSize: `${Math.round(14 * (zoomLevels[vehicleTypeTableFontSize] || 1))}px` }}
+                                  style={vehicleTypeFontSizeStyle}
                                   onClick={() => handleEditVehicleType(vehicleType)}
+                                  className="p-0"
                                 >
-                                  <Edit className="h-4 w-4" style={{ width: `${Math.round(16 * (zoomLevels[vehicleTypeTableFontSize] || 1))}px`, height: `${Math.round(16 * (zoomLevels[vehicleTypeTableFontSize] || 1))}px` }} />
+                                  <Edit className={`${vehicleTypeIconSize} min-w-0`} />
                                 </Button>
                                 <Button 
                                   size="sm" 
                                   variant="outline"
-                                  style={{ fontSize: `${Math.round(14 * (zoomLevels[vehicleTypeTableFontSize] || 1))}px` }}
+                                  style={vehicleTypeFontSizeStyle}
                                   onClick={() => handleDeleteVehicleType(vehicleType.id)}
+                                  className="p-0"
                                 >
-                                  <Trash2 className="h-4 w-4" style={{ width: `${Math.round(16 * (zoomLevels[vehicleTypeTableFontSize] || 1))}px`, height: `${Math.round(16 * (zoomLevels[vehicleTypeTableFontSize] || 1))}px` }} />
+                                  <Trash2 className={`${vehicleTypeIconSize} min-w-0`} />
                                 </Button>
                               </div>
                             </TableCell>

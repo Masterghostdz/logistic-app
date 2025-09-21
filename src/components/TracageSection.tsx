@@ -25,6 +25,7 @@ import { Warehouse, Chauffeur, Declaration } from '../types';
 import { useSharedData } from '../contexts/SharedDataContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useIsMobile } from '../hooks/use-mobile';
+import useTableZoom from '../hooks/useTableZoom';
 
 import PhoneNumbersField from './PhoneNumbersField';
 
@@ -82,6 +83,7 @@ const TracageSection = ({ gpsActive, setGpsActive, userPosition, setUserPosition
     setPrevTab(activeTab);
   }, [activeTab]);
   const { t, settings } = useTranslation();
+  const { badgeClass, badgeStyle } = useTableZoom();
   // Clients Firestore
   const [clients, setClients] = useState<Client[]>([]);
   // Mes clients filter state
@@ -631,9 +633,9 @@ const TracageSection = ({ gpsActive, setGpsActive, userPosition, setUserPosition
                           <div className="flex items-center justify-between whitespace-nowrap">
                             <span className="text-xs md:text-sm font-extrabold bg-blue-100 text-blue-500 rounded px-2 py-0.5 border border-blue-200 shadow-sm leading-tight">{wh.name}</span>
                             {wh.isActive ? (
-                              <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold bg-green-100 text-green-700 border border-green-300 shadow">Actif</span>
+                              <Badge size="md" style={{...badgeStyle}} className={`${badgeClass} font-semibold bg-green-100 text-green-700 border border-green-300 shadow`}>{t('warehouses.active') || t('chauffeurs.active') || 'Actif'}</Badge>
                             ) : (
-                              <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold bg-red-100 text-red-700 border border-red-300 shadow">Inactif</span>
+                              <Badge size="md" style={{...badgeStyle}} className={`${badgeClass} font-semibold bg-red-100 text-red-700 border border-red-300 shadow`}>{t('warehouses.inactive') || t('chauffeurs.inactive') || 'Inactif'}</Badge>
                             )}
                           </div>
                           <div className="flex gap-2 text-xs items-center mt-1">
@@ -863,17 +865,17 @@ const TracageSection = ({ gpsActive, setGpsActive, userPosition, setUserPosition
                             {(() => {
                               switch (decl.status) {
                                 case 'en_route':
-                                  return <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 border border-blue-200 shadow" style={{ minWidth: 80, textAlign: 'center' }}>En route</span>;
+                                  return <Badge size="md" style={{ ...badgeStyle, textAlign: 'center' }} className={`${badgeClass} bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200`}>En route</Badge>;
                                 case 'en_panne':
-                                  return <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200 border border-orange-200 shadow" style={{ minWidth: 80, textAlign: 'center' }}>En panne</span>;
+                                  return <Badge size="md" style={{ ...badgeStyle, textAlign: 'center' }} className={`${badgeClass} bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200`}>{t('declarations.breakdown') || t('chauffeurs.enPanne') || 'En panne'}</Badge>;
                                 case 'en_cours':
-                                  return <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 border border-yellow-200 shadow" style={{ minWidth: 80, textAlign: 'center' }}>En cours</span>;
+                                  return <Badge size="md" style={{ ...badgeStyle, textAlign: 'center' }} className={`${badgeClass} bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200`}>En cours</Badge>;
                                 case 'valide':
-                                  return <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 border border-green-200 shadow" style={{ minWidth: 80, textAlign: 'center' }}>Validé</span>;
+                                  return <Badge size="md" style={{ ...badgeStyle, textAlign: 'center' }} className={`${badgeClass} bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200`}>Validé</Badge>;
                                 case 'refuse':
-                                  return <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 border border-red-200 shadow" style={{ minWidth: 80, textAlign: 'center' }}>Refusé</span>;
+                                  return <Badge size="md" style={{ ...badgeStyle, textAlign: 'center' }} className={`${badgeClass} bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200`}>Refusé</Badge>;
                                 default:
-                                  return <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold border shadow" style={{ minWidth: 80, textAlign: 'center' }}>{decl.status}</span>;
+                                  return <Badge size="md" style={{ ...badgeStyle, textAlign: 'center' }} className={`${badgeClass}`}>{decl.status}</Badge>;
                               }
                             })()}
                           </div>

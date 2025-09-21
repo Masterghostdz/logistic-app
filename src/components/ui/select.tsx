@@ -23,9 +23,12 @@ const SelectTrigger = React.forwardRef<
     {...props}
   >
     {children}
-    <SelectPrimitive.Icon asChild>
-      <ChevronDown className="h-4 w-4 opacity-50" />
-    </SelectPrimitive.Icon>
+    {/* If consumer sets data-hide-icon on the trigger, skip the built-in icon so they can render a custom one */}
+    {!(props as any)?.['data-hide-icon'] && (
+      <SelectPrimitive.Icon asChild>
+        <ChevronDown className="h-4 w-4 opacity-50" />
+      </SelectPrimitive.Icon>
+    )}
   </SelectPrimitive.Trigger>
 ))
 SelectTrigger.displayName = SelectPrimitive.Trigger.displayName

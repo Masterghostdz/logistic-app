@@ -138,11 +138,11 @@ const LoginForm = () => {
               Comptes de démonstration :
             </h4>
             <div className="space-y-1 text-xs text-gray-600 dark:text-gray-400">
-              <div><strong>chauffeur</strong> - Mot de passe: demo123</div>
-              <div><strong>planificateur</strong> - Mot de passe: demo123</div>
-              <div><strong>financier</strong> - Mot de passe: demo123</div>
-              <div><strong>financier_unite</strong> - Mot de passe: demo123</div>
-              <div><strong>admin</strong> - Mot de passe: admin123</div>
+              <div><strong>{t('roles.chauffeur') || 'chauffeur'}</strong> - Mot de passe: demo123</div>
+              <div><strong>{t('roles.planificateur') || 'planificateur'}</strong> - Mot de passe: demo123</div>
+              <div><strong>{t('roles.financier') || 'financier'}</strong> - Mot de passe: demo123</div>
+              <div><strong>{t('roles.financier_unite') || 'financier_unite'}</strong> - Mot de passe: demo123</div>
+              <div><strong>{t('roles.admin') || 'admin'}</strong> - Mot de passe: admin123</div>
             </div>
             <div className="mt-2 text-xs text-gray-500 italic">
               Note: Ces mots de passe sont sécurisés et hachés côté serveur

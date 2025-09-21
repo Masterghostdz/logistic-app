@@ -10,6 +10,7 @@ import { Declaration, User } from '../types';
 import { getAllRefusalReasons } from '../services/refusalReasonService';
 import SimpleDeclarationNumberForm from './SimpleDeclarationNumberForm';
 import { Badge } from './ui/badge';
+import useTableZoom from '../hooks/useTableZoom';
 
 interface EditDeclarationDialogProps {
   declaration: Declaration | null;
@@ -119,21 +120,23 @@ const EditDeclarationDialog: React.FC<EditDeclarationDialogProps> = ({
     }));
   };
 
+  const { badgeClass, badgeStyle } = useTableZoom();
+
   // Copie de la logique getStatusBadge pour cohérence avec le tableau
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'en_route':
-        return <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">{t('dashboard.onRoad')}</Badge>;
+  return <Badge size="md" style={{ ...badgeStyle }} className={`${badgeClass} bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200`}>{t('dashboard.onRoad')}</Badge>;
       case 'en_panne':
-        return <Badge className="bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200">{t('declarations.breakdown')}</Badge>;
+  return <Badge size="md" style={{ ...badgeStyle }} className={`${badgeClass} bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200`}>{t('declarations.breakdown')}</Badge>;
       case 'en_cours':
-        return <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">{t('dashboard.pending')}</Badge>;
+  return <Badge size="md" style={{ ...badgeStyle }} className={`${badgeClass} bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200`}>{t('dashboard.pending')}</Badge>;
       case 'valide':
-        return <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">{t('dashboard.validated')}</Badge>;
+  return <Badge size="md" style={{ ...badgeStyle }} className={`${badgeClass} bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200`}>{t('dashboard.validated')}</Badge>;
       case 'refuse':
-        return <Badge className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">{t('dashboard.refused')}</Badge>;
+  return <Badge size="md" style={{ ...badgeStyle }} className={`${badgeClass} bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200`}>{t('dashboard.refused')}</Badge>;
       default:
-        return <Badge variant="outline">{status}</Badge>;
+  return <Badge size="md" variant="outline" style={{ ...badgeStyle }} className={badgeClass}>{status}</Badge>;
     }
   };
 

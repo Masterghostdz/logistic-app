@@ -2,11 +2,13 @@ import { useIsMobile } from '../hooks/use-mobile';
 import { useSettings } from '../contexts/SettingsContext';
 
 import React, { useState } from 'react';
+import { useTranslation } from '../hooks/useTranslation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Badge } from './ui/badge';
+import useTableZoom from '../hooks/useTableZoom';
 import { useAuth } from '../contexts/AuthContext';
 import { ArrowLeft, User, Phone, Car, Shield } from 'lucide-react';
 import { toast } from 'sonner';
@@ -31,10 +33,12 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
 
   // Déstructuration avant tout return
   const { user, changePassword } = auth || {};
+  const { badgeClass, badgeStyle } = useTableZoom();
+  const { t } = useTranslation();
 
   // Gestion absence de contexte ou d'utilisateur
   if (!auth || !user) {
-    return <div>Utilisateur non trouvé</div>;
+  return <div>{t('profile.userNotFound') || 'Utilisateur non trouvé'}</div>;
   }
 
   const handlePasswordChange = async (e: React.FormEvent) => {
@@ -68,7 +72,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
         <Button variant="ghost" size="icon" className="rounded-full" onClick={onBack}>
           <ArrowLeft className="h-6 w-6" />
         </Button>
-        <h1 className="text-xl font-bold flex-1 text-center">Mon Profil</h1>
+        <h1 className="text-xl font-bold flex-1 text-center">{t('profile.title') || 'Mon Profil'}</h1>
       </div>
 
 
@@ -79,11 +83,11 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
         </CardHeader>
         <CardContent className="space-y-3 px-4 pb-4">
           <div>
-            <Label className="text-xs font-medium text-gray-500">Prénom</Label>
+            <Label className="text-xs font-medium text-gray-500">{t('forms.firstName') || 'Prénom'}</Label>
             <p className="text-base">{user.firstName}</p>
           </div>
           <div>
-            <Label className="text-xs font-medium text-gray-500">Nom</Label>
+            <Label className="text-xs font-medium text-gray-500">{t('forms.name') || 'Nom'}</Label>
             <p className="text-base">{user.lastName}</p>
           </div>
           <div>
@@ -92,16 +96,13 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
           </div>
           <div>
             <Label className="text-xs font-medium text-gray-500">Rôle</Label>
-            <Badge variant="outline" className="ml-2">
-              {user.role === 'chauffeur' ? 'Chauffeur' : 
-               user.role === 'planificateur' ? 'Planificateur' :
-               user.role === 'financier' ? 'Financier' : 
-               user.role === 'financier_unite' ? 'Financier Unité' : 'Administrateur'}
+            <Badge size="md" variant="outline" style={{ ...badgeStyle }} className={`${badgeClass} ml-2`}>
+              {t(`roles.${user.role}`) || user.role}
             </Badge>
           </div>
           <div>
-            <Label className="text-xs font-medium text-gray-500">Téléphone</Label>
-            <p className="text-base">{user.phone || <span className="text-gray-400">Non renseigné</span>}</p>
+            <Label className="text-xs font-medium text-gray-500">{t('forms.mobile') || 'Téléphone'}</Label>
+            <p className="text-base">{user.phone || <span className="text-gray-400">{t('profile.notProvided') || 'Non renseigné'}</span>}</p>
           </div>
           <div>
             <Label className="text-xs font-medium text-gray-500">Email</Label>
@@ -119,8 +120,8 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
           {user.role !== 'planificateur' && (
             <div>
               <Label className="text-xs font-medium text-gray-500">Type d'employé</Label>
-              <Badge variant={user.employeeType === 'interne' ? 'default' : 'secondary'} className="ml-2">
-                {user.employeeType === 'interne' ? 'Interne' : user.employeeType === 'externe' ? 'Externe' : 'Non renseigné'}
+                <Badge size="md" variant={user.employeeType === 'interne' ? 'default' : 'secondary'} style={{ ...badgeStyle }} className={`${badgeClass} ml-2`}>
+                {user.employeeType === 'interne' ? t('chauffeurs.employeeTypeShort.interne') : user.employeeType === 'externe' ? t('chauffeurs.employeeTypeShort.externe') : 'Non renseigné'}
               </Badge>
             </div>
           )}
@@ -209,18 +210,18 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
         {/* Informations personnelles */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2">
               <User className="h-5 w-5" />
-              Informations personnelles
+              {t('profile.personalInfo') || 'Informations personnelles'}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <Label className="text-sm font-medium text-gray-500">Prénom</Label>
+              <Label className="text-sm font-medium text-gray-500">{t('forms.firstName') || 'Prénom'}</Label>
               <p className="text-lg">{user.firstName}</p>
             </div>
             <div>
-              <Label className="text-sm font-medium text-gray-500">Nom</Label>
+              <Label className="text-sm font-medium text-gray-500">{t('forms.name') || 'Nom'}</Label>
               <p className="text-lg">{user.lastName}</p>
             </div>
             <div>
@@ -229,11 +230,8 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
             </div>
             <div>
               <Label className="text-sm font-medium text-gray-500">Rôle</Label>
-              <Badge variant="outline" className="mt-1">
-                {user.role === 'chauffeur' ? 'Chauffeur' : 
-                 user.role === 'planificateur' ? 'Planificateur' :
-                 user.role === 'financier' ? 'Financier' : 
-                 user.role === 'financier_unite' ? 'Financier Unité' : 'Administrateur'}
+              <Badge size="md" variant="outline" style={{ ...badgeStyle }} className={`${badgeClass} mt-1`}>
+                {t(`roles.${user.role}`) || user.role}
               </Badge>
             </div>
           </CardContent>
@@ -242,15 +240,15 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
         {/* Informations de contact et véhicule */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2">
               <Phone className="h-5 w-5" />
-              Contact & Véhicule
+              {t('profile.contactAndVehicle') || 'Contact & Véhicule'}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             {user.phone && (
               <div>
-                <Label className="text-sm font-medium text-gray-500">Téléphone</Label>
+                <Label className="text-sm font-medium text-gray-500">{t('forms.mobile') || 'Téléphone'}</Label>
                 <p className="text-lg">{user.phone}</p>
               </div>
             )}
@@ -272,8 +270,8 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
             {user.role !== 'planificateur' && user.employeeType && (
               <div>
                 <Label className="text-sm font-medium text-gray-500">Type d'employé</Label>
-                <Badge variant={user.employeeType === 'interne' ? 'default' : 'secondary'}>
-                  {user.employeeType === 'interne' ? 'Interne' : 'Externe'}
+                <Badge size="md" variant={user.employeeType === 'interne' ? 'default' : 'secondary'} style={{ ...badgeStyle }} className={badgeClass}>
+                  {user.employeeType === 'interne' ? t('chauffeurs.employeeTypeShort.interne') : t('chauffeurs.employeeTypeShort.externe')}
                 </Badge>
               </div>
             )}
