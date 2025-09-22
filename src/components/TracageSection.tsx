@@ -490,26 +490,28 @@ const TracageSection = ({ gpsActive, setGpsActive, userPosition, setUserPosition
                 </Button>
               </div>
             </div>
-            {/* Bouton calques à l'intérieur de la map, fixé en bas droite */}
-            <div className="pointer-events-none absolute z-30 bottom-6 right-6 w-auto h-auto">
-              <div className="relative flex flex-col items-end">
-                <div className="pointer-events-auto">
-                  <Button size="icon" variant="ghost" className="bg-white/90 dark:bg-muted/90 text-dark dark:text-white rounded-full shadow-lg border border-gray-300" title="Changer le fond de carte" onClick={() => setShowLayerMenu(v => !v)}>
-                    <Layers className="w-6 h-6" />
-                  </Button>
-                </div>
-                {showLayerMenu && (
-                  <div className="pointer-events-auto mb-2 bg-white dark:bg-muted rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-2 flex flex-col gap-1 animate-fade-in z-40" style={{position:'absolute', bottom:'100%', right:0}}>
-                    <button className={`px-3 py-1 rounded text-left text-xs ${layerType==='osm' ? 'bg-primary/10 font-bold' : ''}`} onClick={() => { setLayerType('osm'); setShowLayerMenu(false); }}>OpenStreetMap</button>
-                    <button className={`px-3 py-1 rounded text-left text-xs ${layerType==='google' ? 'bg-primary/10 font-bold' : ''}`} onClick={() => { setLayerType('google'); setShowLayerMenu(false); }}>Google Maps</button>
-                    <button className={`px-3 py-1 rounded text-left text-xs ${layerType==='satellite' ? 'bg-primary/10 font-bold' : ''}`} onClick={() => { setLayerType('satellite'); setShowLayerMenu(false); }}>Satellite</button>
-                    <button className={`px-3 py-1 rounded text-left text-xs ${layerType==='hybrid' ? 'bg-primary/10 font-bold' : ''}`} onClick={() => { setLayerType('hybrid'); setShowLayerMenu(false); }}>Hybride</button>
-                    <button className={`px-3 py-1 rounded text-left text-xs ${layerType==='terrain' ? 'bg-primary/10 font-bold' : ''}`} onClick={() => { setLayerType('terrain'); setShowLayerMenu(false); }}>Terrain</button>
-                    <button className={`px-3 py-1 rounded text-left text-xs ${layerType==='traffic' ? 'bg-primary/10 font-bold' : ''}`} onClick={() => { setLayerType('traffic'); setShowLayerMenu(false); }}>Traffic</button>
+            {/* Bouton calques à l'intérieur de la map, fixé en bas droite - hidden on mobile to avoid overlay issues */}
+            {!isMobile && (
+              <div className="pointer-events-none absolute z-30 bottom-6 right-6 w-auto h-auto">
+                <div className="relative flex flex-col items-end">
+                  <div className="pointer-events-auto">
+                    <Button size="icon" variant="ghost" className="bg-white/90 dark:bg-muted/90 text-dark dark:text-white rounded-full shadow-lg border border-gray-300" title="Changer le fond de carte" onClick={() => setShowLayerMenu(v => !v)}>
+                      <Layers className="w-6 h-6" />
+                    </Button>
                   </div>
-                )}
+                  {showLayerMenu && (
+                    <div className="pointer-events-auto mb-2 bg-white dark:bg-muted rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-2 flex flex-col gap-1 animate-fade-in z-40" style={{position:'absolute', bottom:'100%', right:0}}>
+                      <button className={`px-3 py-1 rounded text-left text-xs ${layerType==='osm' ? 'bg-primary/10 font-bold' : ''}`} onClick={() => { setLayerType('osm'); setShowLayerMenu(false); }}>OpenStreetMap</button>
+                      <button className={`px-3 py-1 rounded text-left text-xs ${layerType==='google' ? 'bg-primary/10 font-bold' : ''}`} onClick={() => { setLayerType('google'); setShowLayerMenu(false); }}>Google Maps</button>
+                      <button className={`px-3 py-1 rounded text-left text-xs ${layerType==='satellite' ? 'bg-primary/10 font-bold' : ''}`} onClick={() => { setLayerType('satellite'); setShowLayerMenu(false); }}>Satellite</button>
+                      <button className={`px-3 py-1 rounded text-left text-xs ${layerType==='hybrid' ? 'bg-primary/10 font-bold' : ''}`} onClick={() => { setLayerType('hybrid'); setShowLayerMenu(false); }}>Hybride</button>
+                      <button className={`px-3 py-1 rounded text-left text-xs ${layerType==='terrain' ? 'bg-primary/10 font-bold' : ''}`} onClick={() => { setLayerType('terrain'); setShowLayerMenu(false); }}>Terrain</button>
+                      <button className={`px-3 py-1 rounded text-left text-xs ${layerType==='traffic' ? 'bg-primary/10 font-bold' : ''}`} onClick={() => { setLayerType('traffic'); setShowLayerMenu(false); }}>Traffic</button>
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
             <div className="absolute z-20 top-4 right-4 flex flex-col gap-2">
               <Button size="icon" variant="ghost" className="bg-white/80 dark:bg-muted/80 text-dark dark:text-white rounded-lg shadow" title="Paramètres" onClick={() => setShowSettings(true)}>
                 <span className="material-icons">settings</span>
@@ -533,7 +535,7 @@ const TracageSection = ({ gpsActive, setGpsActive, userPosition, setUserPosition
             <div
               ref={mapRef}
               className="vue2leaflet-map leaflet-container leaflet-touch leaflet-fade-anim leaflet-grab leaflet-touch-drag leaflet-touch-zoom w-full h-full rounded-xl overflow-hidden"
-              style={{ height: '100%', width: '100%', minHeight: 700, position: 'relative', zIndex: 10, background: 'transparent', padding: 0, margin: 0 }}
+              style={{ height: '100%', width: '100%', minHeight: mapHeight, position: 'relative', zIndex: 10, background: 'transparent', padding: 0, margin: 0 }}
             >
               {/* Carte */}
               {isMobile ? (
@@ -567,49 +569,31 @@ const TracageSection = ({ gpsActive, setGpsActive, userPosition, setUserPosition
                   declarations={activeTab === 'chauffeurs' ? enRouteDeclarations : []}
                 />
               )}
-              {/* Bouton calques à l'intérieur de la carte, fixé en bas droite */}
-              <div className="pointer-events-none absolute z-30 bottom-6 right-6 w-auto h-auto">
-                <div className="relative flex flex-col items-end">
-                  <div className="pointer-events-auto">
-                    <Button size="icon" variant="ghost" className="bg-white/90 dark:bg-muted/90 text-dark dark:text-white rounded-full shadow-lg border border-gray-300" title="Changer le fond de carte" onClick={() => setShowLayerMenu(v => !v)}>
-                      <Layers className="w-6 h-6" />
-                    </Button>
-                  </div>
-                  {showLayerMenu && (
-                    <div className="pointer-events-auto mb-2 bg-white dark:bg-muted rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-2 flex flex-col gap-1 animate-fade-in z-40" style={{position:'absolute', bottom:'100%', right:0}}>
-                      <button className={`px-3 py-1 rounded text-left text-xs ${layerType==='osm' ? 'bg-primary/10 font-bold' : ''}`} onClick={() => { setLayerType('osm'); setShowLayerMenu(false); }}>OpenStreetMap</button>
-                      <button className={`px-3 py-1 rounded text-left text-xs ${layerType==='google' ? 'bg-primary/10 font-bold' : ''}`} onClick={() => { setLayerType('google'); setShowLayerMenu(false); }}>Google Maps</button>
-                      <button className={`px-3 py-1 rounded text-left text-xs ${layerType==='satellite' ? 'bg-primary/10 font-bold' : ''}`} onClick={() => { setLayerType('satellite'); setShowLayerMenu(false); }}>Satellite</button>
-                      <button className={`px-3 py-1 rounded text-left text-xs ${layerType==='hybrid' ? 'bg-primary/10 font-bold' : ''}`} onClick={() => { setLayerType('hybrid'); setShowLayerMenu(false); }}>Hybride</button>
-                      <button className={`px-3 py-1 rounded text-left text-xs ${layerType==='terrain' ? 'bg-primary/10 font-bold' : ''}`} onClick={() => { setLayerType('terrain'); setShowLayerMenu(false); }}>Terrain</button>
-                      <button className={`px-3 py-1 rounded text-left text-xs ${layerType==='traffic' ? 'bg-primary/10 font-bold' : ''}`} onClick={() => { setLayerType('traffic'); setShowLayerMenu(false); }}>Traffic</button>
+              {/* Bouton calques à l'intérieur de la carte, fixé en bas droite - hidden on mobile to avoid overlay issues */}
+              {!isMobile && (
+                <div className="pointer-events-none absolute z-30 bottom-6 right-6 w-auto h-auto">
+                  <div className="relative flex flex-col items-end">
+                    <div className="pointer-events-auto">
+                      <Button size="icon" variant="ghost" className="bg-white/90 dark:bg-muted/90 text-dark dark:text-white rounded-full shadow-lg border border-gray-300" title="Changer le fond de carte" onClick={() => setShowLayerMenu(v => !v)}>
+                        <Layers className="w-6 h-6" />
+                      </Button>
                     </div>
-                  )}
+                    {showLayerMenu && (
+                      <div className="pointer-events-auto mb-2 bg-white dark:bg-muted rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-2 flex flex-col gap-1 animate-fade-in z-40" style={{position:'absolute', bottom:'100%', right:0}}>
+                        <button className={`px-3 py-1 rounded text-left text-xs ${layerType==='osm' ? 'bg-primary/10 font-bold' : ''}`} onClick={() => { setLayerType('osm'); setShowLayerMenu(false); }}>OpenStreetMap</button>
+                        <button className={`px-3 py-1 rounded text-left text-xs ${layerType==='google' ? 'bg-primary/10 font-bold' : ''}`} onClick={() => { setLayerType('google'); setShowLayerMenu(false); }}>Google Maps</button>
+                        <button className={`px-3 py-1 rounded text-left text-xs ${layerType==='satellite' ? 'bg-primary/10 font-bold' : ''}`} onClick={() => { setLayerType('satellite'); setShowLayerMenu(false); }}>Satellite</button>
+                        <button className={`px-3 py-1 rounded text-left text-xs ${layerType==='hybrid' ? 'bg-primary/10 font-bold' : ''}`} onClick={() => { setLayerType('hybrid'); setShowLayerMenu(false); }}>Hybride</button>
+                        <button className={`px-3 py-1 rounded text-left text-xs ${layerType==='terrain' ? 'bg-primary/10 font-bold' : ''}`} onClick={() => { setLayerType('terrain'); setShowLayerMenu(false); }}>Terrain</button>
+                        <button className={`px-3 py-1 rounded text-left text-xs ${layerType==='traffic' ? 'bg-primary/10 font-bold' : ''}`} onClick={() => { setLayerType('traffic'); setShowLayerMenu(false); }}>Traffic</button>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
-          {/* Bouton accès liste entrepôts en mobile, superposé en bas-centre de la map */}
-          {isMobile && (
-            <div className="absolute left-1/2 bottom-4 -translate-x-1/2 z-30 flex justify-center w-full pointer-events-none">
-              <div className="w-11/12 md:w-1/2 pointer-events-auto flex justify-center">
-                <Button
-                  variant="default"
-                  size="lg"
-                  className="w-full rounded-full shadow-lg text-base font-semibold"
-                  onClick={() => {
-                    const listSection = document.getElementById('entrepot-list-section');
-                    if (listSection) {
-                      listSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    }
-                  }}
-                >
-                  <span className="material-icons align-middle mr-2">list_alt</span>
-                  Voir la liste des entrepôts
-                </Button>
-              </div>
-            </div>
-          )}
+          {/* Mobile floating 'Voir la liste des entrepôts' removed to avoid overlay issues on small screens */}
         </div>
 
         {/* Liste des entrepôts ou clients selon l'onglet actif */}
@@ -624,11 +608,12 @@ const TracageSection = ({ gpsActive, setGpsActive, userPosition, setUserPosition
                   const isSelected = focusedWarehouseId === wh.id;
                   return (
                     <div key={wh.id} className="my-2 mx-1">
-                      <Card
-                        className={`p-2 cursor-pointer transition-all ${isSelected ? 'ring-2 ring-primary' : ''}`}
-                        onClick={() => setFocusedWarehouseId(isSelected ? null : wh.id)}
-                        title={isSelected ? "Désélectionner" : "Afficher sur la carte"}
-                      >
+                        <Card
+                          className={`p-2 cursor-pointer transition-all ${isSelected ? 'ring-2 ring-primary' : ''}`}
+                          onClick={() => setFocusedWarehouseId(isSelected ? null : wh.id)}
+                          title={isSelected ? "Désélectionner" : "Afficher sur la carte"}
+                          style={{ touchAction: 'manipulation', pointerEvents: 'auto', zIndex: 20 }}
+                        >
                         <div className="flex flex-col gap-1">
                           <div className="flex items-center justify-between whitespace-nowrap">
                             <span className="text-xs md:text-sm font-extrabold bg-blue-100 text-blue-500 rounded px-2 py-0.5 border border-blue-200 shadow-sm leading-tight">{wh.name}</span>
@@ -725,17 +710,20 @@ const TracageSection = ({ gpsActive, setGpsActive, userPosition, setUserPosition
                 }}
                 className="w-full max-w-md"
                 autoComplete="off"
+                style={{ touchAction: 'manipulation' }}
               />
               {showAutocomplete && clientSearch && filteredClients.length > 0 && (
                 <div
-                  className="absolute bg-white dark:bg-muted border border-gray-200 dark:border-gray-700 rounded shadow-lg mt-1 w-full max-w-md z-40"
+                  className="absolute pointer-events-auto bg-white dark:bg-muted border border-gray-200 dark:border-gray-700 rounded shadow-lg mt-1 w-full max-w-md z-50"
                   style={{
                     maxHeight: 'calc(5 * 44px + 1px + 8px)', // 5 items * 44px + border + margin
                     overflowY: 'auto',
+                    WebkitOverflowScrolling: 'touch',
                     minHeight: '44px',
                     top: '100%',
                     left: 0,
-                    right: 0
+                    right: 0,
+                    touchAction: 'pan-y'
                   }}
                 >
                   {filteredClients.slice(0, 5).map(client => (
@@ -793,6 +781,7 @@ const TracageSection = ({ gpsActive, setGpsActive, userPosition, setUserPosition
             {selectedClient && (
               <Card
                 className="p-4 mb-6 flex flex-col md:flex-row gap-6 items-center md:items-center w-full max-w-full relative z-0"
+                style={{ pointerEvents: 'auto', zIndex: 20 }}
               >
                 <div className="flex-shrink-0">
                   {selectedClient.photoUrl ? (

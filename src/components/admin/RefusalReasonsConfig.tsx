@@ -8,7 +8,6 @@ import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '.
 import { Plus, Edit, Trash2 } from 'lucide-react';
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '../ui/select';
 import { useTranslation } from '../../hooks/useTranslation';
-import useTableZoom from '../../hooks/useTableZoom';
 
 // Remplacer par une vraie API de traduction si besoin
 async function fakeTranslate(text: string, lang: 'en' | 'ar'): Promise<string> {
@@ -82,7 +81,6 @@ export default function RefusalReasonsConfig({ showAddButton, hideHeader, onlyBu
   };
 
   const { t } = useTranslation();
-  const { localFontSize, setLocalFontSize, fontSizeStyle, rowHeight } = useTableZoom(zoom as any);
 
   if (onlyButton) {
     return (
@@ -143,8 +141,8 @@ export default function RefusalReasonsConfig({ showAddButton, hideHeader, onlyBu
       <div className="flex items-center justify-end mb-2">
         <label className="mr-2 text-xs text-muted-foreground">Zoom :</label>
         <select
-          value={localFontSize}
-          onChange={e => { handleZoomChange(e.target.value); setLocalFontSize(e.target.value as any); }}
+          value={zoom}
+          onChange={e => handleZoomChange(e.target.value)}
           className="border rounded px-2 py-1 text-xs bg-background"
           title="Zoom sur la taille d'écriture du tableau"
         >
@@ -159,31 +157,31 @@ export default function RefusalReasonsConfig({ showAddButton, hideHeader, onlyBu
       </div>
       <Table>
         <TableHeader>
-          <TableRow className={rowHeight}>
-            <TableHead style={fontSizeStyle}>FR</TableHead>
-            <TableHead style={fontSizeStyle}>EN</TableHead>
-            <TableHead style={fontSizeStyle}>AR</TableHead>
-            <TableHead style={fontSizeStyle}>{t('forms.actions') || 'Actions'}</TableHead>
+          <TableRow style={{ fontSize: `${Math.round(14 * (zoomLevels[zoom] || 1))}px` }}>
+            <TableHead style={{ fontSize: `${Math.round(14 * (zoomLevels[zoom] || 1))}px` }}>FR</TableHead>
+            <TableHead style={{ fontSize: `${Math.round(14 * (zoomLevels[zoom] || 1))}px` }}>EN</TableHead>
+            <TableHead style={{ fontSize: `${Math.round(14 * (zoomLevels[zoom] || 1))}px` }}>AR</TableHead>
+            <TableHead style={{ fontSize: `${Math.round(14 * (zoomLevels[zoom] || 1))}px` }}>{t('forms.actions') || 'Actions'}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {reasons.map(r => (
-            <TableRow key={r.id} className={rowHeight}>
-              <TableCell onClick={() => { setEditingReason(r); setInputLang('fr'); setNewFr(r.fr); setShowAdd(true); }} style={{ cursor: 'pointer', ...fontSizeStyle }}>{r.fr}</TableCell>
-              <TableCell onClick={() => { setEditingReason(r); setInputLang('en'); setNewFr(r.en); setShowAdd(true); }} style={{ cursor: 'pointer', ...fontSizeStyle }}>{r.en}</TableCell>
-              <TableCell onClick={() => { setEditingReason(r); setInputLang('ar'); setNewFr(r.ar); setShowAdd(true); }} style={{ cursor: 'pointer', ...fontSizeStyle }}>{r.ar}</TableCell>
-              <TableCell style={fontSizeStyle}>
+            <TableRow key={r.id} style={{ fontSize: `${Math.round(14 * (zoomLevels[zoom] || 1))}px` }}>
+              <TableCell onClick={() => { setEditingReason(r); setInputLang('fr'); setNewFr(r.fr); setShowAdd(true); }} style={{ cursor: 'pointer', fontSize: `${Math.round(14 * (zoomLevels[zoom] || 1))}px` }}>{r.fr}</TableCell>
+              <TableCell onClick={() => { setEditingReason(r); setInputLang('en'); setNewFr(r.en); setShowAdd(true); }} style={{ cursor: 'pointer', fontSize: `${Math.round(14 * (zoomLevels[zoom] || 1))}px` }}>{r.en}</TableCell>
+              <TableCell onClick={() => { setEditingReason(r); setInputLang('ar'); setNewFr(r.ar); setShowAdd(true); }} style={{ cursor: 'pointer', fontSize: `${Math.round(14 * (zoomLevels[zoom] || 1))}px` }}>{r.ar}</TableCell>
+              <TableCell style={{ fontSize: `${Math.round(14 * (zoomLevels[zoom] || 1))}px` }}>
                 <div className="flex gap-2">
-                  <Button size="sm" variant="outline" style={fontSizeStyle} onClick={() => {
+                  <Button size="sm" variant="outline" style={{ fontSize: `${Math.round(14 * (zoomLevels[zoom] || 1))}px` }} onClick={() => {
                     setEditingReason(r);
                     setInputLang('fr');
                     setNewFr(r.fr);
                     setShowAdd(true);
                   }}>
-                    <Edit className="h-4 w-4" style={{ width: `${Math.round(16 * (Number(localFontSize) ? (Number(localFontSize) / 100) : 1) )}px`, height: `${Math.round(16 * (Number(localFontSize) ? (Number(localFontSize) / 100) : 1) )}px` }} />
+                    <Edit className="h-4 w-4" style={{ width: `${Math.round(16 * (zoomLevels[zoom] || 1))}px`, height: `${Math.round(16 * (zoomLevels[zoom] || 1))}px` }} />
                   </Button>
-                  <Button size="sm" variant="destructive" style={fontSizeStyle} onClick={() => handleDelete(r.id)} disabled={loading}>
-                    <Trash2 className="h-4 w-4" style={{ width: `${Math.round(16 * (Number(localFontSize) ? (Number(localFontSize) / 100) : 1) )}px`, height: `${Math.round(16 * (Number(localFontSize) ? (Number(localFontSize) / 100) : 1) )}px` }} />
+                  <Button size="sm" variant="destructive" style={{ fontSize: `${Math.round(14 * (zoomLevels[zoom] || 1))}px` }} onClick={() => handleDelete(r.id)} disabled={loading}>
+                    <Trash2 className="h-4 w-4" style={{ width: `${Math.round(16 * (zoomLevels[zoom] || 1))}px`, height: `${Math.round(16 * (zoomLevels[zoom] || 1))}px` }} />
                   </Button>
                 </div>
               </TableCell>

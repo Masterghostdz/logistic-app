@@ -36,19 +36,20 @@ export const createMarkers = ({
   console.log('createMarkers chauffeurs:', chauffeurs);
   const markers: L.Marker[] = [];
   const currentMarkerIds = new Set<string>();
-
-  // Choose appropriate icons based on mobile/desktop
   const warehouseIconToUse = isMobile ? warehouseIcon : desktopWarehouseIcon;
   const chauffeurIconToUse = isMobile ? chauffeurIcon : desktopChauffeurIcon;
 
-  // Popup styling based on mobile/desktop
-  const popupPadding = isMobile ? '12px' : '12px';
-  const popupMinWidth = isMobile ? '280px' : '200px';
-  const popupMaxWidth = isMobile ? '320px' : '250px';
-  const popupFontSize = isMobile ? '14px' : '14px';
-  const popupTitleSize = isMobile ? '16px' : '16px';
-  const popupMargin = isMobile ? '8px' : '8px';
-  const popupLineMargin = isMobile ? '6px' : '4px';
+  // Popup styling based on mobile/desktop (more compact on mobile)
+  // Make mobile popups extremely compact
+  // Slightly increased spacing and sizes for mobile popups to improve readability
+  const popupPadding = isMobile ? '6px' : '12px';
+  const popupMinWidth = isMobile ? '160px' : '250px';
+  const popupMaxWidth = isMobile ? '210px' : '320px';
+  const popupFontSize = isMobile ? '13px' : '14px';
+  const popupTitleSize = isMobile ? '15px' : '16px';
+  const popupMargin = isMobile ? '6px' : '8px';
+  const popupLineMargin = isMobile ? '3px' : '4px';
+  const popupLineHeight = isMobile ? '1.25' : '1.25';
 
   // Add warehouse markers
   warehouses.forEach(warehouse => {
@@ -118,12 +119,12 @@ export const createMarkers = ({
 
       // Create popup content with Google Maps link
       const popupContent = `
-        <div style="padding: ${popupPadding}; min-width: ${popupMinWidth}; max-width: ${popupMaxWidth}; background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); overflow: hidden;">
-          <h3 style="font-weight: 600; font-size: ${popupTitleSize}; margin-bottom: ${popupMargin}; color: #1f2937; word-wrap: break-word;">${warehouse.name}</h3>
-          <p style="font-size: ${popupFontSize}; color: #6b7280; margin-bottom: ${popupLineMargin}; word-wrap: break-word;"><strong>${t('warehouses.company')}:</strong> ${warehouse.companyName}</p>
-          <p style="font-size: ${popupFontSize}; color: #6b7280; margin-bottom: ${popupLineMargin}; word-wrap: break-word;"><strong>${t('warehouses.address')}:</strong> ${warehouse.address}</p>
-          <p style="font-size: ${popupFontSize}; color: #6b7280; margin-bottom: ${popupMargin}; word-wrap: break-word;"><strong>${t('warehouses.phone')}:</strong> ${warehouse.phone.join(', ')}</p>
-          <a href="${googleMapsUrl}" target="_blank" style="display: inline-block; background: #4285f4; color: white; padding: 8px 12px; text-decoration: none; border-radius: 4px; font-size: ${popupFontSize}; font-weight: 500; margin-top: 4px;">📍 Ouvrir dans Google Maps</a>
+        <div style="padding: ${popupPadding}; min-width: ${popupMinWidth}; max-width: ${popupMaxWidth}; background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); overflow: hidden; font-size: ${popupFontSize}; line-height: ${popupLineHeight};">
+          <h3 style="font-weight: 600; font-size: ${popupTitleSize}; margin: 0 0 ${popupMargin} 0; color: #1f2937; word-wrap: break-word;">${warehouse.name}</h3>
+          <p style="margin: 0 0 ${popupLineMargin} 0; font-size: ${popupFontSize}; color: #6b7280; word-wrap: break-word;"><strong>${t('warehouses.company')}:</strong> ${warehouse.companyName}</p>
+          <p style="margin: 0 0 ${popupLineMargin} 0; font-size: ${popupFontSize}; color: #6b7280; word-wrap: break-word;"><strong>${t('warehouses.address')}:</strong> ${warehouse.address}</p>
+          <p style="margin: 0 0 ${popupMargin} 0; font-size: ${popupFontSize}; color: #6b7280; word-wrap: break-word;"><strong>${t('warehouses.phone')}:</strong> ${warehouse.phone.join(', ')}</p>
+          <a href="${googleMapsUrl}" target="_blank" style="display: inline-block; background: #4285f4; color: white; padding: 4px 8px; text-decoration: none; border-radius: 4px; font-size: ${popupFontSize}; font-weight: 500; margin-top: ${popupMargin};">📍 Ouvrir dans Google Maps</a>
         </div>
       `;
 
@@ -186,12 +187,12 @@ export const createMarkers = ({
         }
 
         const popupContent = `
-          <div style="padding: ${popupPadding}; min-width: ${popupMinWidth}; max-width: ${popupMaxWidth}; background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); overflow: hidden; font-family: 'Segoe UI', 'Arial', sans-serif; font-size: 13px; line-height: 1.1;">
-            <h3 style="font-family: 'Segoe UI', 'Arial', sans-serif; font-weight: 900; font-size: 16px; margin-bottom: 10px; color: #2563eb; word-wrap: break-word;">${displayName}</h3>
-            <div style="font-size: 15px; color: #111; margin-bottom: 2px; word-wrap: break-word; font-weight: bold;"><strong>Programme:</strong> <strong>${programRef || '<span style=\'color:#b91c1c\'>Aucune référence</span>'}</strong></div>
-            <p style="font-size: 13px; color: #111; margin-bottom: 2px; word-wrap: break-word;"><strong>${t('chauffeurs.employeeType')}:</strong> ${chauffeur.employeeType}</p>
-            <p style="font-size: 13px; color: #111; margin-bottom: 2px; word-wrap: break-word;"><strong>${t('chauffeurs.vehicleType')}:</strong> ${chauffeur.vehicleType}</p>
-            <p style="font-size: 13px; color: #111; word-wrap: break-word;"><strong>${t('chauffeurs.phone')}:</strong> ${chauffeur.phone.join(', ')}</p>
+          <div style="padding: ${popupPadding}; min-width: ${popupMinWidth}; max-width: ${popupMaxWidth}; background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); overflow: hidden; font-family: 'Segoe UI', 'Arial', sans-serif; font-size: ${popupFontSize}; line-height: ${popupLineHeight};">
+            <h3 style="font-family: 'Segoe UI', 'Arial', sans-serif; font-weight: 900; font-size: ${popupTitleSize}; margin: 0 0 ${popupMargin} 0; color: #2563eb; word-wrap: break-word;">${displayName}</h3>
+            <div style="margin: 0 0 ${popupLineMargin} 0; font-size: ${popupFontSize}; color: #111; word-wrap: break-word; font-weight: bold;"><strong>Programme:</strong> <strong>${programRef ? `<span dir=\"ltr\">${programRef}</span>` : '<span style=\'color:#b91c1c\'>Aucune référence</span>'}</strong></div>
+            <p style="margin: 0 0 ${popupLineMargin} 0; font-size: ${popupFontSize}; color: #111; word-wrap: break-word;"><strong>${t('chauffeurs.employeeType')}:</strong> ${chauffeur.employeeType}</p>
+            <p style="margin: 0 0 ${popupLineMargin} 0; font-size: ${popupFontSize}; color: #111; word-wrap: break-word;"><strong>${t('chauffeurs.vehicleType')}:</strong> ${chauffeur.vehicleType}</p>
+            <p style="margin: 0; font-size: ${popupFontSize}; color: #111; word-wrap: break-word;"><strong>${t('chauffeurs.phone')}:</strong> ${chauffeur.phone.join(', ')}</p>
           </div>
         `;
 

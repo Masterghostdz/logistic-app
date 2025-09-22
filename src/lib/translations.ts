@@ -134,6 +134,8 @@ export const translations = {
       confirmDeleteDescription: "Êtes-vous sûr de vouloir supprimer cette déclaration ? Cette action est irréversible.",
       paymentReceipts: "Reçus de paiement (photos)",
       noPaymentReceipts: "Aucun reçu de paiement",
+  noReceiptsAdded: "Aucun reçu ajouté",
+    programNumber: "Numéro de programme",
       // Table headers & labels
       number: "Numéro",
       chauffeur: "Chauffeur",
@@ -143,7 +145,7 @@ export const translations = {
       validated: "Validé",
       distance: "Distance (km)",
       deliveryFees: "Frais de livraison (DZD)",
-      primeDeRoute: "Prime de route",
+  primeDeRoute: "Prime de route (DZD)",
       notes: "Notes",
       photos: "Photos justificatives",
       status: "Statut",
@@ -205,7 +207,8 @@ export const translations = {
   confirmDeleteDescription: "هل أنت متأكد أنك تريد حذف هذا التصريح؟ هذا الإجراء لا يمكن التراجع عنه.",
   paymentReceipts: "إيصالات الدفع (صور)",
   noPaymentReceipts: "لا يوجد إيصال دفع",
-      primeDeRoute: "منحة الطريق",
+      noReceiptsAdded: "لم يتم إضافة إيصال",
+  primeDeRoute: "منحة الطريق (دج)",
       // ...existing keys...
     },
         // tabs property moved to root of language object
@@ -514,7 +517,11 @@ export const translations = {
       number: "Number",
       date: "Date",
       distance: "Distance (km)",
-      deliveryFees: "Delivery Fees (DZD)",
+  deliveryFees: "Delivery Fees (DZD)",
+  primeDeRoute: "Route Allowance (DZD)",
+      paymentReceipts: "Payment receipts (photos)",
+      noReceiptsAdded: "No receipts added",
+      programNumber: "Program Number",
       notes: "Notes",
       photos: "Supporting Photos",
       status: "Status",
@@ -839,6 +846,7 @@ export const translations = {
       date: "التاريخ",
       distance: "المسافة (كم)",
       deliveryFees: "رسوم التسليم (دج)",
+      primeDeRoute: "منحة الطريق (دج)",
       notes: "ملاحظات",
       photos: "الصور المبررة",
       status: "الحالة",
@@ -847,6 +855,9 @@ export const translations = {
       delete: "حذف",
       validate: "تأكيد",
       refuse: "رفض",
+  paymentReceipts: "إيصالات الدفع (صور)",
+  noReceiptsAdded: "لم يتم إضافة إيصال",
+  programNumber: "رقم البرنامج",
     declare: "تصريح",
   pending: "معلق",
   validated: "مؤكد",
@@ -1038,10 +1049,12 @@ export const translations = {
   }
 };
 
-export const getTranslation = (key: string, language: 'fr' | 'en' | 'ar') => {
+export const getTranslation = (key: string, language: string) => {
+  // Accept language codes like 'ar-DZ' or 'en-US' and normalize to base code
   const originalLanguage = language;
+  const baseLang = (language || 'fr').split('-')[0] as 'fr' | 'en' | 'ar';
   const keys = key.split('.');
-  let translation: any = translations[language];
+  let translation: any = translations[baseLang];
 
   for (const k of keys) {
     if (translation && typeof translation === 'object' && k in translation) {
@@ -1051,14 +1064,23 @@ export const getTranslation = (key: string, language: 'fr' | 'en' | 'ar') => {
       break;
     }
   }
-  console.log('[getTranslation]', { key, language: originalLanguage, value: translation });
+  // Debugging: only log in development to avoid flooding production logs (mobile/webview)
+  try {
+    if (typeof process !== 'undefined' && process.env && process.env.NODE_ENV !== 'production') {
+      console.log('[getTranslation]', { key, language: originalLanguage, baseLang, value: translation });
+    }
+  } catch (e) {
+    // ignore if process is not available (e.g., some WebView envs)
+  }
 
-  // Fallback mechanism: FR → EN → AR, with recursion protection
-  const tried = new Set<string>();
-  function fallback(lang: 'fr' | 'en' | 'ar') {
-    if (tried.has(lang)) return key;
-    tried.add(lang);
-    const keys = key.split('.');
+  // Fallback mechanism: try baseLang, then fr -> en -> ar
+  const order: Array<'fr' | 'en' | 'ar'> = ['fr', 'en', 'ar'];
+
+  if (translation) return translation;
+
+  for (const lang of order) {
+    // If baseLang is equal to this lang, we already tried it
+    if (lang === baseLang) continue;
     let t: any = translations[lang];
     for (const k of keys) {
       if (t && typeof t === 'object' && k in t) {
@@ -1069,24 +1091,7 @@ export const getTranslation = (key: string, language: 'fr' | 'en' | 'ar') => {
       }
     }
     if (t) return t;
-    // Try other languages
-    if (lang !== 'fr') {
-      const fr = fallback('fr');
-      if (fr !== key) return fr;
-    }
-    if (lang !== 'en') {
-      const en = fallback('en');
-      if (en !== key) return en;
-    }
-    if (lang !== 'ar') {
-      const ar = fallback('ar');
-      if (ar !== key) return ar;
-    }
-    return key;
   }
 
-  if (!translation) {
-    return fallback(language);
-  }
-  return translation || key;
+  return key;
 };

@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { useSettings } from '../../contexts/SettingsContext';
+import { useTranslation } from '../../hooks/useTranslation';
 import { Button } from '../ui/button';
 import { ClipboardList, MapPin } from 'lucide-react';
 
@@ -12,6 +13,7 @@ interface ChauffeurSidebarProps {
 const ChauffeurSidebar = ({ activeTab, onTabChange }: ChauffeurSidebarProps) => {
   const { settings } = useSettings();
   const viewMode = settings.viewMode || 'desktop';
+  const { t } = useTranslation();
   if (viewMode === 'mobile') {
     return (
       <nav className="flex flex-row justify-center items-center gap-8 py-3 px-4 bg-white dark:bg-gray-900 rounded-full shadow-lg w-full border-2 border-blue-400 dark:border-blue-600 overflow-x-auto">
@@ -42,7 +44,7 @@ const ChauffeurSidebar = ({ activeTab, onTabChange }: ChauffeurSidebarProps) => 
           onClick={() => onTabChange('dashboard')}
         >
           <ClipboardList className="mr-2 h-4 w-4" />
-          Tableau de bord
+          {t('tabs.dashboard')}
         </Button>
         <Button
           variant={activeTab === 'tracage' ? 'default' : 'ghost'}
@@ -50,7 +52,7 @@ const ChauffeurSidebar = ({ activeTab, onTabChange }: ChauffeurSidebarProps) => 
           onClick={() => onTabChange('tracage')}
         >
           <MapPin className="mr-2 h-4 w-4" />
-          Traçage
+          {t('tabs.tracage')}
         </Button>
       </nav>
     </div>

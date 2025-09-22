@@ -119,7 +119,7 @@ const DeclarationsTable = ({
                 {/* Affiche Frais uniquement pour chauffeur externe */}
                 <TableHead data-rtl={settings.language === 'ar'} className={`${getMinWidthForChars(12)} whitespace-nowrap ${cellPaddingClass}`} style={fontSizeStyle}>{t('declarations.deliveryFees')}</TableHead>
                 {/* Affiche Prime de route pour interne et planificateur */}
-                <TableHead data-rtl={settings.language === 'ar'} className={`${colWidth} whitespace-nowrap ${cellPaddingClass}`} style={fontSizeStyle}>{t('declarations.primeDeRoute') === 'declarations.primeDeRoute' ? 'Prime de route' : t('declarations.primeDeRoute')}</TableHead>
+                <TableHead data-rtl={settings.language === 'ar'} className={`${colWidth} whitespace-nowrap ${cellPaddingClass}`} style={fontSizeStyle}>{t('declarations.primeDeRoute') === 'declarations.primeDeRoute' ? 'Prime de route (DZD)' : t('declarations.primeDeRoute')}</TableHead>
                 <TableHead data-rtl={settings.language === 'ar'} className={`${getMinWidthForChars(12)} whitespace-nowrap ${cellPaddingClass}`} style={fontSizeStyle}>{t('declarations.createdDate')}</TableHead>
                 <TableHead data-rtl={settings.language === 'ar'} className={`${getMinWidthForChars(12)} whitespace-nowrap ${cellPaddingClass}`} style={fontSizeStyle}>{t('declarations.validated') || t('declarations.validated') /* fallback handled by translations */}</TableHead>
                 <TableHead data-rtl={settings.language === 'ar'} className={`${colWidthEtat} whitespace-nowrap ${cellPaddingClass}`} style={fontSizeStyle}>{t('declarations.status')}</TableHead>
@@ -163,7 +163,7 @@ const DeclarationsTable = ({
                   <TableCell data-rtl={settings.language === 'ar'} className={`text-right whitespace-nowrap ${cellPaddingClass}`} style={fontSizeStyle}>
                     {chauffeurTypes && chauffeurTypes[declaration.chauffeurId] === 'externe' && declaration.deliveryFees ? (
                       <div className={`flex items-center gap-1 whitespace-nowrap`} style={fontSizeStyle}>
-                        <span className={`whitespace-nowrap`} style={fontSizeStyle}>{declaration.deliveryFees.toFixed(2)} DZD</span>
+                        <span className={`whitespace-nowrap`} style={fontSizeStyle}>{declaration.deliveryFees.toFixed(2)}</span>
                         <CopyButton value={Math.floor(declaration.deliveryFees).toString()} />
                       </div>
                     ) : '-'}
@@ -171,7 +171,7 @@ const DeclarationsTable = ({
                   {/* Prime de route : afficher pour interne et planificateur */}
                   <TableCell data-rtl={settings.language === 'ar'} className={`text-center whitespace-nowrap ${cellPaddingClass}`} style={fontSizeStyle}>
                     {(chauffeurTypes && chauffeurTypes[declaration.chauffeurId] === 'interne' && declaration.primeDeRoute) || (!chauffeurTypes && declaration.primeDeRoute) ? (
-                      <span className={`${getMinWidthForChars(6)} inline-block`} style={fontSizeStyle}>{declaration.primeDeRoute.toFixed(2)} DZD</span>
+                      <span className={`${getMinWidthForChars(6)} inline-block`} style={fontSizeStyle}>{declaration.primeDeRoute.toFixed(2)}</span>
                     ) : '-' }
                   </TableCell>
                   <TableCell data-rtl={settings.language === 'ar'} className={`whitespace-nowrap ${cellPaddingClass}`} style={fontSizeStyle}>

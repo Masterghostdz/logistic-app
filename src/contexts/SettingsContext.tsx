@@ -25,13 +25,13 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
   // Détection automatique du mode d'affichage
   // userAgent déjà déclaré en haut du fichier
   function detectViewMode() {
-    // Si Windows, Mac, Linux, toujours Desktop
-    if (/Windows|Macintosh|Linux/i.test(userAgent)) {
-      return 'desktop';
-    }
-    // Si Android, iPhone, iPad, etc. → Mobile
+    // Check mobile platforms first (Android WebView can contain 'Linux' and be mis-detected)
     if (/Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent)) {
       return 'mobile';
+    }
+    // If Windows, Mac, Linux, consider desktop
+    if (/Windows|Macintosh|Linux/i.test(userAgent)) {
+      return 'desktop';
     }
     // Sinon, utilise la taille d'écran
     if (typeof window !== 'undefined' && window.innerWidth < 800) {
@@ -40,7 +40,8 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
     return 'desktop';
   }
 
-  const [settings, setSettings] = useState<Settings>({
+  // Read saved settings synchronously so we can apply theme/dir immediately on app entry
+  let initialSettings: Settings = {
     language: 'fr',
     theme: 'light',
     viewMode: detectViewMode(),
@@ -55,7 +56,40 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
     heartbeatPositionEnabled: true,
     heartbeatPositionImmediate: true,
     gpsActivationRequestEnabled: true
-  });
+  };
+
+  try {
+    const saved = localStorage.getItem('logigrine_settings');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      initialSettings = {
+        ...initialSettings,
+        language: parsed.language || initialSettings.language,
+        theme: parsed.theme || initialSettings.theme,
+        viewMode: detectViewMode() === 'mobile' ? 'mobile' : (parsed.viewMode || initialSettings.viewMode),
+        tableFontSize: parsed.tableFontSize || initialSettings.tableFontSize,
+        heartbeatOnlineInterval: parsed.heartbeatOnlineInterval || initialSettings.heartbeatOnlineInterval,
+        heartbeatGpsInterval: parsed.heartbeatGpsInterval || initialSettings.heartbeatGpsInterval,
+        heartbeatPositionInterval: parsed.heartbeatPositionInterval || initialSettings.heartbeatPositionInterval
+      } as Settings;
+    }
+  } catch (err) {
+    console.warn('Failed to read saved settings synchronously:', err);
+  }
+
+  // Apply theme and direction immediately
+  if (initialSettings.theme === 'dark') {
+    document.documentElement.classList.add('dark');
+  } else {
+    document.documentElement.classList.remove('dark');
+  }
+  if (initialSettings.language === 'ar') {
+    document.documentElement.dir = 'rtl';
+  } else {
+    document.documentElement.dir = 'ltr';
+  }
+
+  const [settings, setSettings] = useState<Settings>(initialSettings);
 
   // Met à jour le mode d'affichage à chaque entrée ou changement de taille d'écran
   useEffect(() => {
@@ -92,7 +126,15 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
         const ref = doc(db, 'admin_settings', 'heartbeat');
         const snap = await getDoc(ref);
         if (snap.exists()) {
-          setSettings((prev) => ({ ...prev, ...snap.data() }));
+          // Merge firestore settings but prefer device-detected mobile view when appropriate
+          setSettings((prev) => {
+            const merged = { ...prev, ...snap.data() } as any;
+            // If device is mobile, ensure viewMode is mobile by default
+            if (detectViewMode() === 'mobile') {
+              merged.viewMode = 'mobile';
+            }
+            return merged;
+          });
         }
       } catch (err) {
         console.error('Erreur Firestore settings:', err);
@@ -102,11 +144,13 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
       if (savedSettings) {
         try {
           const parsedSettings = JSON.parse(savedSettings);
+          // Prefer device-detected mobile view when on mobile devices
+          const finalViewMode = detectViewMode() === 'mobile' ? 'mobile' : (parsedSettings.viewMode || detectViewMode());
           setSettings((prev) => ({
             ...prev,
             language: parsedSettings.language || 'fr',
             theme: parsedSettings.theme || 'light',
-            viewMode: parsedSettings.viewMode || detectViewMode(),
+            viewMode: finalViewMode,
             tableFontSize: parsedSettings.tableFontSize || '80',
             heartbeatOnlineInterval: parsedSettings.heartbeatOnlineInterval || 60,
             heartbeatGpsInterval: parsedSettings.heartbeatGpsInterval || 60,
@@ -184,7 +228,41 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
 export const useSettings = () => {
   const context = useContext(SettingsContext);
   if (context === undefined) {
-    throw new Error('useSettings must be used within a SettingsProvider');
+    // Instead of throwing (which leads to a hard React error), provide a safe fallback
+    // and surface a console warning so we can trace which component uses the hook
+    // before the provider is mounted.
+    console.warn('useSettings used outside SettingsProvider — returning fallback defaults.');
+    const fallback: SettingsContextType = {
+      settings: {
+        language: 'fr',
+        theme: 'light',
+        viewMode: 'desktop',
+        tableFontSize: '80',
+        heartbeatOnlineInterval: 60,
+        heartbeatGpsInterval: 60,
+        heartbeatPositionInterval: 60,
+        heartbeatOnlineEnabled: true,
+        heartbeatOnlineImmediate: true,
+        heartbeatGpsEnabled: true,
+        heartbeatGpsImmediate: true,
+        heartbeatPositionEnabled: true,
+        heartbeatPositionImmediate: true,
+        gpsActivationRequestEnabled: true
+      },
+      userAgent,
+      updateSettings: () => {},
+      setHeartbeatOnlineInterval: () => {},
+      setHeartbeatGpsInterval: () => {},
+      setHeartbeatPositionInterval: () => {},
+      setHeartbeatOnlineEnabled: () => {},
+      setHeartbeatOnlineImmediate: () => {},
+      setHeartbeatGpsEnabled: () => {},
+      setHeartbeatGpsImmediate: () => {},
+      setHeartbeatPositionEnabled: () => {},
+      setHeartbeatPositionImmediate: () => {},
+      setGpsActivationRequestEnabled: () => {}
+    };
+    return fallback;
   }
   return context;
 };

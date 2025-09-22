@@ -170,7 +170,7 @@ const EditDeclarationDialog: React.FC<EditDeclarationDialogProps> = ({
             readOnly={readOnly}
           />
           <div>
-            <Label htmlFor="distance">Distance (km)</Label>
+            <Label htmlFor="distance">{t('declarations.distance') === 'declarations.distance' ? 'Distance (km)' : t('declarations.distance')}</Label>
             <Input
               id="distance"
               type="number"
@@ -182,7 +182,7 @@ const EditDeclarationDialog: React.FC<EditDeclarationDialogProps> = ({
           {/* Frais de livraison pour chauffeur externe uniquement */}
           {chauffeurType === 'externe' && (
             <div>
-              <Label htmlFor="deliveryFees">Frais de livraison (DZD)</Label>
+              <Label htmlFor="deliveryFees">{t('declarations.deliveryFees') === 'declarations.deliveryFees' ? 'Frais de livraison (DZD)' : t('declarations.deliveryFees')}</Label>
               <Input
                 id="deliveryFees"
                 type="number"
@@ -195,7 +195,7 @@ const EditDeclarationDialog: React.FC<EditDeclarationDialogProps> = ({
           {/* Prime de route pour chauffeur interne uniquement */}
           {chauffeurType === 'interne' && (
             <div>
-              <Label htmlFor="primeDeRoute">Prime de route (DZD)</Label>
+              <Label htmlFor="primeDeRoute">{t('declarations.primeDeRoute') === 'declarations.primeDeRoute' ? 'Prime de route (DZD)' : t('declarations.primeDeRoute')}</Label>
               <Input
                 id="primeDeRoute"
                 type="number"

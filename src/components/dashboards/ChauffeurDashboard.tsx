@@ -29,7 +29,7 @@ import {
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
-import { Badge } from '../ui/badge';
+import { Badge, onlineBadgeClass, onlineBadgeInline } from '../ui/badge';
 import { Separator } from '../ui/separator';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { MapPin, Plus, Clock, Search, Edit, Trash2 } from 'lucide-react';
@@ -528,7 +528,8 @@ const ChauffeurDashboard = () => {
               justifyContent: settings.language === 'ar' ? 'flex-start' : undefined
             }}
           >
-            <Badge style={{...badgeStyle, padding: '0.00em 0.6em', minWidth: '44px', fontSize: badgeStyle.fontSize}} className={`${badgeClass} items-center gap-2 bg-green-100 text-green-700`} title={isOnline ? t('dashboard.online') : t('dashboard.offline')}>
+            {/* standardized compact online badge */}
+            <Badge style={{ ...badgeStyle, ...onlineBadgeInline }} className={`${badgeClass} items-center gap-2 ${onlineBadgeClass}`} title={isOnline ? t('dashboard.online') : t('dashboard.offline')}>
               <span className="inline-block w-2 h-2 rounded-full bg-green-500"></span>
               {isOnline ? t('dashboard.online') : t('dashboard.offline')}
             </Badge>
@@ -693,7 +694,14 @@ const ChauffeurDashboard = () => {
                                     const notificationData = {
                                       chauffeurId: enRouteDeclaration.chauffeurId,
                                       declarationId: enRouteDeclaration.id,
-                                      message: `Chauffeur '${enRouteDeclaration.chauffeurName}' a tombé en panne dans le programme '${enRouteDeclaration.programNumber || enRouteDeclaration.number || ''}/${enRouteDeclaration.month}/${enRouteDeclaration.year}'`,
+                                      // Store program parts separately so renderers can force LTR
+                                      programParts: {
+                                        prefix: 'DCP',
+                                        year: enRouteDeclaration.year,
+                                        month: enRouteDeclaration.month,
+                                        number: enRouteDeclaration.programNumber || enRouteDeclaration.number || ''
+                                      },
+                                      message: `Chauffeur '${enRouteDeclaration.chauffeurName}' a tombé en panne dans le programme'`,
                                       createdAt: new Date().toISOString(),
                                       read: false
                                     };
@@ -768,7 +776,7 @@ const ChauffeurDashboard = () => {
                         {/* Gestion structurée des reçus de paiement */}
                         {isCreating && (
                           <div className="flex flex-col gap-2 mb-2">
-                            <label className="text-foreground text-sm font-medium mb-1">Reçus de paiement</label>
+                            <label className="text-foreground text-sm font-medium mb-1">{t('declarations.paymentReceipts') || 'Reçus de paiement'}</label>
                             <div className={isMobile ? "flex flex-col gap-2" : "flex flex-col gap-3 w-full"}>
                               {/* Ligne de boutons d'importation en haut */}
                               <div className={isMobile ? "flex gap-2" : "flex gap-2 mb-4"}>
@@ -834,7 +842,7 @@ const ChauffeurDashboard = () => {
                               </div>
                               {/* Message aucun reçu ajouté sous les boutons */}
                               {paymentReceipts.length === 0 && (
-                                <div className="text-muted-foreground text-xs italic px-2 py-1 mt-2">Aucun reçu ajouté</div>
+                                <div className="text-muted-foreground text-xs italic px-2 py-1 mt-2">{t('declarations.noReceiptsAdded') || 'Aucun reçu ajouté'}</div>
                               )}
                               {/* Liste des reçus en rectangles horizontaux (desktop) */}
                               <div className="flex flex-col gap-3 w-full mt-2">
@@ -1115,7 +1123,7 @@ const ChauffeurDashboard = () => {
                                     )}
                                     {/* Affiche Prime de route uniquement si chauffeur interne */}
                                     {auth?.user?.employeeType === 'interne' && (
-                                      <TableHead className="text-foreground text-xs sm:text-sm whitespace-nowrap">{t('declarations.primeDeRoute') === 'declarations.primeDeRoute' ? 'Prime de route' : t('declarations.primeDeRoute')}</TableHead>
+                                      <TableHead className="text-foreground text-xs sm:text-sm whitespace-nowrap">{t('declarations.primeDeRoute') === 'declarations.primeDeRoute' ? 'Prime de route (DZD)' : t('declarations.primeDeRoute')}</TableHead>
                                     )}
                                     <TableHead className="text-foreground text-xs sm:text-sm whitespace-nowrap">{t('declarations.status')}</TableHead>
                                     <TableHead className="text-foreground text-xs sm:text-sm whitespace-nowrap">{t('declarations.createdDate')}</TableHead>
@@ -1129,12 +1137,12 @@ const ChauffeurDashboard = () => {
                                         {declaration.number}
                                       </TableCell>
                                       <TableCell className="text-foreground text-xs sm:text-sm whitespace-nowrap">
-                                        {declaration.distance ? `${declaration.distance} km` : '-'}
+                                        {declaration.distance ? declaration.distance : '-'}
                                       </TableCell>
                                       {/* Frais de Livraison uniquement pour externe */}
                                       {auth?.user?.employeeType === 'externe' && (
                                         <TableCell className="text-foreground text-xs sm:text-sm whitespace-nowrap">
-                                          {declaration.deliveryFees ? `${declaration.deliveryFees} DZD` : '-'}
+                                          {declaration.deliveryFees ? declaration.deliveryFees : '-'}
                                         </TableCell>
                                       )}
                                       {/* Prime de route uniquement pour interne */}
@@ -1142,7 +1150,7 @@ const ChauffeurDashboard = () => {
                                         <TableCell className="text-xs sm:text-sm whitespace-nowrap">
                                           {declaration.primeDeRoute ? (
                                             <span style={{ color: '#FFD700', fontWeight: 'bold' }}>
-                                              {declaration.primeDeRoute.toFixed(2)} DZD
+                                              {declaration.primeDeRoute.toFixed(2)}
                                             </span>
                                           ) : '-'}
                                         </TableCell>
@@ -1234,7 +1242,8 @@ const ChauffeurDashboard = () => {
           {/* Badge En ligne en haut à droite, absolute, hors sidebar */}
           {!isMobile && (
   <div className={`absolute top-0 ${settings.language === 'ar' ? 'left-0' : 'right-0'} m-2 z-10 flex items-center gap-2`}>
-  <Badge size="sm" style={{...badgeStyle, fontSize: 12, padding: '0.08rem 0.4rem'}} className={`${badgeClass} items-center gap-1 bg-green-100 text-green-700`} title={isOnline ? t('dashboard.online') : t('dashboard.offline')}>
+          {/* standardized compact online badge */}
+          <Badge style={{ ...badgeStyle, ...onlineBadgeInline }} className={`${badgeClass} items-center gap-1 ${onlineBadgeClass}`} title={isOnline ? t('dashboard.online') : t('dashboard.offline')}>
       <span className="inline-block w-1.5 h-1.5 rounded-full bg-green-500"></span>
       {isOnline ? t('dashboard.online') : t('dashboard.offline')}
     </Badge>
@@ -1337,7 +1346,13 @@ const ChauffeurDashboard = () => {
                                       const notificationData = {
                                         chauffeurId: enRouteDeclaration.chauffeurId,
                                         declarationId: enRouteDeclaration.id,
-                                        message: `Chauffeur '${enRouteDeclaration.chauffeurName}' a tombé en panne dans le programme '${enRouteDeclaration.programNumber || enRouteDeclaration.number || ''}/${enRouteDeclaration.month}/${enRouteDeclaration.year}'`,
+                                        programParts: {
+                                          prefix: 'DCP',
+                                          year: enRouteDeclaration.year,
+                                          month: enRouteDeclaration.month,
+                                          number: enRouteDeclaration.programNumber || enRouteDeclaration.number || ''
+                                        },
+                                        message: `Chauffeur '${enRouteDeclaration.chauffeurName}' a tombé en panne dans le programme'`,
                                         createdAt: new Date().toISOString(),
                                         read: false
                                       };
@@ -1609,12 +1624,12 @@ const ChauffeurDashboard = () => {
                                         {declaration.number}
                                       </TableCell>
                                       <TableCell className="text-foreground text-xs sm:text-sm whitespace-nowrap">
-                                        {declaration.distance ? `${declaration.distance} km` : '-'}
+                                        {declaration.distance ? declaration.distance : '-'}
                                       </TableCell>
                                       {/* Frais de Livraison uniquement pour externe */}
                                       {auth?.user?.employeeType === 'externe' && (
                                         <TableCell className="text-foreground text-xs sm:text-sm whitespace-nowrap">
-                                          {declaration.deliveryFees ? `${declaration.deliveryFees} DZD` : '-'}
+                                          {declaration.deliveryFees ? declaration.deliveryFees : '-'}
                                         </TableCell>
                                       )}
                                       {/* Prime de route uniquement pour interne */}
@@ -1622,7 +1637,7 @@ const ChauffeurDashboard = () => {
                                         <TableCell className="text-xs sm:text-sm whitespace-nowrap">
                                           {declaration.primeDeRoute ? (
                                             <span style={{ color: '#FFD700', fontWeight: 'bold' }}>
-                                              {declaration.primeDeRoute.toFixed(2)} DZD
+                                              {declaration.primeDeRoute.toFixed(2)}
                                             </span>
                                           ) : '-'}
                                         </TableCell>

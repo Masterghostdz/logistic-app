@@ -6,7 +6,7 @@ import AdminSidebar from './AdminSidebar';
 import { useSettings } from '../../contexts/SettingsContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
-import { Badge } from '../ui/badge';
+import { Badge, onlineBadgeClass, onlineBadgeInline } from '../ui/badge';
 import useTableZoom from '../../hooks/useTableZoom';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
@@ -527,13 +527,10 @@ const AdminDashboard = () => {
     <Header onProfileClick={handleProfileClick} />
     {viewMode === 'mobile' && (
       <div className="flex px-2 pt-3 mb-2">
-        <span
-          className={`${badgeClass} items-center gap-2 rounded-full text-xs font-semibold bg-green-100 text-green-700 shadow`}
-          title={isOnline ? t('dashboard.online') : t('dashboard.offline')}
-        >
+        <Badge style={{ ...badgeStyle, ...onlineBadgeInline }} className={`${badgeClass} items-center gap-2 ${onlineBadgeClass} shadow`} title={isOnline ? t('dashboard.online') : t('dashboard.offline')}>
           <span className="inline-block w-2 h-2 rounded-full bg-green-500"></span>
           {isOnline ? t('dashboard.online') : t('dashboard.offline')}
-        </span>
+        </Badge>
       </div>
     )}
     <div className="flex h-[calc(100vh-4rem)]">
@@ -544,7 +541,7 @@ const AdminDashboard = () => {
           {/* Badge En ligne desktop : dans le bloc de contenu principal, en absolute top-0 right-0, comme les autres dashboards */}
           {viewMode !== 'mobile' && (
             <div className={`absolute top-0 ${settings.language === 'ar' ? 'left-0' : 'right-0'} m-2 z-10`}>
-              <Badge size="md" style={{...badgeStyle}} className={`${badgeClass} items-center gap-2 text-xs font-semibold bg-green-100 text-green-700 shadow`} title={isOnline ? t('dashboard.online') : t('dashboard.offline')}>
+              <Badge style={{ ...badgeStyle, ...onlineBadgeInline }} className={`${badgeClass} items-center gap-2 font-semibold ${onlineBadgeClass} shadow`} title={isOnline ? t('dashboard.online') : t('dashboard.offline')}>
                 <span className="inline-block w-2 h-2 rounded-full bg-green-500"></span>
                 {isOnline ? t('dashboard.online') : t('dashboard.offline')}
               </Badge>

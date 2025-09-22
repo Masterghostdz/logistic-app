@@ -7,6 +7,7 @@ import { Button } from './ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu';
 import { Badge } from './ui/badge';
+import TextWithProgramRef from './TextWithProgramRef';
 import useTableZoom from '../hooks/useTableZoom';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from '../hooks/useTranslation';
@@ -80,7 +81,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle, showMenuButton = false, o
   // Header mobile natif pour le profil
   if (variant === 'profile' && settings.viewMode === 'mobile') {
     return (
-      <header className="border-b border-border bg-card shadow-sm">
+      <header dir="ltr" className="border-b border-border bg-card shadow-sm">
         <div className="flex items-center h-12 px-2">
           <Button variant="ghost" size="icon" className="rounded-full" onClick={onBack}>
             <ArrowLeft className="h-6 w-6" />
@@ -124,14 +125,28 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle, showMenuButton = false, o
   }
 
   const { badgeClass, badgeStyle } = useTableZoom();
+  // Compute avatar size (px) to keep glow and avatar consistent between mobile/desktop
+  const avatarPx = settings.viewMode === 'mobile' ? 28 : 32;
+  // Role badge needs a compact override because badgeStyle contains dynamic inline
+  // values (fontSize, padding, minWidth) used across the app. We deliberately
+  // override those here so the role badge appears visually smaller.
+  const roleBadgeStyle: React.CSSProperties = {
+    ...(badgeStyle || {}),
+    fontSize: '11.5px',
+    padding: '3px 8px',
+    minWidth: '0',
+    lineHeight: '14px',
+    // Use a very large radius to preserve the original pill shape
+    borderRadius: '9999px',
+  };
   // Compute a safe, translated role label to avoid rendering 'undefined'
   const roleKey = user?.role || '';
   const roleLabel = roleKey ? (t(`roles.${roleKey}`) || roleKey) : '';
 
   return (
     <>
-      <header className="border-b border-border bg-card shadow-sm">
-  <div className="flex h-16 items-center justify-between pl-1 pr-4 lg:pl-3 lg:pr-6">
+    <header dir="ltr" className="border-b border-border bg-card shadow-sm">
+  <div className={`flex ${settings.viewMode === 'mobile' ? 'h-12' : 'h-16'} items-center justify-between pl-1 pr-4 lg:pl-3 lg:pr-6`}>
           {/* Logo à gauche */}
           <div className={`flex items-center gap-2 flex-1 ${settings.viewMode === 'mobile' ? 'pr-12' : 'pr-6 lg:pr-10'} min-w-0`}>
             {showMenuButton && (
@@ -154,9 +169,9 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle, showMenuButton = false, o
 
           {/* Rôle et photo de profil à droite */}
           <div className={`flex items-center ml-auto ${settings.viewMode === 'mobile' ? 'gap-2' : 'gap-4'}`}>
-              <Badge size="md" className={`${badgeClass} border ${getRoleBadgeColor(roleKey)}`} style={{ ...(badgeStyle || {}), ...(settings.viewMode === 'mobile' ? { fontSize: '12px', padding: '0.12rem 0.45rem' } : {}) }}>
-                {roleLabel}
-              </Badge>
+              <Badge size="sm" className={`${badgeClass} border ${getRoleBadgeColor(roleKey)} leading-none`} style={roleBadgeStyle}>
+                    {roleLabel}
+                  </Badge>
             {/* Notification Circle Button & Dropdown for Chauffeur & Planificateur */}
             {(user?.role === 'chauffeur' || user?.role === 'planificateur') && (
               <DropdownMenu open={openMenu === 'notifications'} onOpenChange={open => setOpenMenu(open ? 'notifications' : 'none')}>
@@ -181,12 +196,14 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle, showMenuButton = false, o
                       let message = notif.message;
                       if (user?.role === 'planificateur' && notif.declarationId) {
                         declaration = declarations.find((d: any) => d.id === notif.declarationId);
-                        if (declaration && declaration.status === 'en_panne') {
+                          if (declaration && declaration.status === 'en_panne') {
                           const chauffeurName = declaration.chauffeurName || 'Inconnu';
                           const refProgramme = declaration.programNumber && declaration.year && declaration.month
                             ? `DCP/${declaration.year}/${declaration.month}/${declaration.programNumber}`
                             : '';
+                          // Force LTR for the program reference so Arabic UI doesn't reverse numeric/latin segments
                           message = `Chauffeur "${chauffeurName}" a tombé en panne dans le programme "${refProgramme}"`;
+                          // Note: when rendering, ensure the refProgramme is wrapped with dir="ltr" — done where displayed
                         } else {
                           // Ne pas afficher si la déclaration n'est pas en panne
                           return null;
@@ -209,7 +226,14 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle, showMenuButton = false, o
                             if (declaration) setConsultDeclaration(declaration);
                           }}
                         >
-                          <span className={notif.read ? 'text-xs text-muted-foreground' : 'text-xs font-semibold text-popover-foreground'}>{message}</span>
+                          {/* If message contains a program ref like DCP/YY/MM/NNNN, render the ref with LTR */}
+                          {typeof message === 'string' ? (
+                            <span className={notif.read ? 'text-xs text-muted-foreground' : 'text-xs font-semibold text-popover-foreground'}>
+                              <TextWithProgramRef text={message} />
+                            </span>
+                          ) : (
+                            <span className={notif.read ? 'text-xs text-muted-foreground' : 'text-xs font-semibold text-popover-foreground'}>{message}</span>
+                          )}
                           {!notif.read && (
                             <span className="absolute top-1 right-2 h-2 w-2 rounded-full bg-orange-500 animate-pulse" />
                           )}
@@ -242,16 +266,24 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle, showMenuButton = false, o
                   }}
                 >
                   {user?.role === 'chauffeur' && user?.employeeType === 'interne' && (
+                    // Centered circular glow sized to the avatar to match shape on mobile
                     <span
-                      className="absolute inset-0 rounded-full pointer-events-none animate-glow-flicker"
+                      className="absolute pointer-events-none"
                       style={{
-                        boxShadow: '0 0 0 2px #FFD700, 0 0 12px 6px #FFD700cc',
+                        width: `${avatarPx}px`,
+                        height: `${avatarPx}px`,
+                        top: '50%',
+                        left: '50%',
+                        transform: 'translate(-50%, -50%)',
+                        borderRadius: '9999px',
+                        boxShadow: '0 0 0 2px rgba(255,215,0,0.95), 0 0 10px 6px rgba(255,215,0,0.35)',
                         zIndex: 20,
-                        transition: 'box-shadow 0.3s',
+                        transition: 'box-shadow 0.3s, transform 0.15s',
+                        display: 'block'
                       }}
                     />
                   )}
-                  <Avatar className="h-8 w-8 relative z-30">
+                  <Avatar className={`${settings.viewMode === 'mobile' ? 'h-7 w-7' : 'h-8 w-8'} relative z-30`}>
                     <AvatarImage src={user?.avatar} alt={user?.firstName} />
                     <AvatarFallback className="bg-muted text-muted-foreground">
                       {getInitials(user?.firstName || '', user?.lastName || '')}

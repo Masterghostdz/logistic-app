@@ -20,7 +20,7 @@ import { db as firestore } from '../../services/firebaseClient';
 import { useSharedData } from '../../contexts/SharedDataContext';
 import SearchAndFilter from '../SearchAndFilter';
 import ProfilePage from '../ProfilePage';
-import { Badge } from '../ui/badge';
+import { Badge, onlineBadgeClass, onlineBadgeInline } from '../ui/badge';
 import TracageSection from '../TracageSection';
 import WarehouseTable from './WarehouseTable';
 import Header from '../Header';
@@ -113,11 +113,11 @@ const PlanificateurDashboard = () => {
       // Add notification for chauffeur
       const { addNotification } = await import('../../services/notificationService');
       await addNotification({
-  chauffeurId: declaration.chauffeurId,
-  declarationId: declaration.id,
-  message: `Votre déclaration a été refusée. Motif: ${reason.label || reason.id}`,
-  createdAt: new Date().toISOString(),
-  read: false
+        chauffeurId: declaration.chauffeurId,
+        declarationId: declaration.id,
+        message: `Votre déclaration a été refusée. Motif: ${reason.label || reason.id}`,
+        createdAt: new Date().toISOString(),
+        read: false
       });
       toast.success('Déclaration refusée');
     }
@@ -629,7 +629,7 @@ const PlanificateurDashboard = () => {
               className={`absolute top-0 ${settings.language === 'ar' ? 'left-0' : 'right-0'} m-2 z-10`}
               title={isOnline ? t('dashboard.online') : t('dashboard.offline')}
             >
-              <Badge size="md" style={{...badgeStyle}} className={`${badgeClass} items-center gap-2 bg-green-100 text-green-700`}> 
+              <Badge size="md" style={{ ...badgeStyle, ...onlineBadgeInline }} className={`${badgeClass} items-center gap-2 ${onlineBadgeClass}`}> 
                 <span className="inline-block w-2 h-2 rounded-full bg-green-500"></span>
                 {isOnline ? t('dashboard.online') : t('dashboard.offline')}
               </Badge>
@@ -653,7 +653,7 @@ const PlanificateurDashboard = () => {
           <Header onProfileClick={handleProfileClick} />
           {/* Badge en ligne mobile : juste sous le header */}
           <div className="flex px-2 pt-3 mb-2">
-            <Badge size="md" style={{...badgeStyle}} className={`${badgeClass} items-center gap-2 bg-green-100 text-green-700`} title={isOnline ? t('dashboard.online') : t('dashboard.offline')}>
+            <Badge size="md" style={{ ...badgeStyle, ...onlineBadgeInline }} className={`${badgeClass} items-center gap-2 ${onlineBadgeClass}`} title={isOnline ? t('dashboard.online') : t('dashboard.offline')}>
               <span className="inline-block w-2 h-2 rounded-full bg-green-500"></span>
               {isOnline ? t('dashboard.online') : t('dashboard.offline')}
             </Badge>
@@ -725,7 +725,7 @@ const PlanificateurDashboard = () => {
       {/* Badge en ligne : mobile sous le header, desktop à droite de la sidebar, sous le header */}
       {viewMode === 'mobile' ? (
         <div className="flex px-2 pt-3 mb-2">
-          <Badge size="sm" style={{...badgeStyle, fontSize: 12, padding: '0.08rem 0.4rem'}} className={`${badgeClass} items-center gap-1 bg-green-100 text-green-700`} title={isOnline ? t('dashboard.online') : t('dashboard.offline')}>
+            <Badge style={{...badgeStyle}} className={`${badgeClass} items-center gap-1 bg-green-100 text-green-700`} title={isOnline ? t('dashboard.online') : t('dashboard.offline')}>
             <span className="inline-block w-1.5 h-1.5 rounded-full bg-green-500"></span>
             {isOnline ? t('dashboard.online') : t('dashboard.offline')}
           </Badge>
@@ -737,15 +737,15 @@ const PlanificateurDashboard = () => {
           {/* Badge En ligne en haut à droite du bloc content, sous le header, à l'intérieur mais hors de la sidebar (desktop uniquement) */}
           {viewMode !== 'mobile' && (
             <div className={`absolute top-0 ${settings.language === 'ar' ? 'left-0' : 'right-0'} m-2 z-10`}>
-              <Badge size="md" style={{...badgeStyle}} className={`${badgeClass} items-center gap-2 bg-green-100 text-green-700`} title={isOnline ? t('dashboard.online') : t('dashboard.offline')}>
-                <span className="inline-block w-2 h-2 rounded-full bg-green-500"></span>
-                {isOnline ? t('dashboard.online') : t('dashboard.offline')}
-              </Badge>
+              <Badge size="md" style={{ ...badgeStyle, ...onlineBadgeInline }} className={`${badgeClass} items-center gap-2 ${onlineBadgeClass}`} title={isOnline ? t('dashboard.online') : t('dashboard.offline')}>
+                    <span className="inline-block w-2 h-2 rounded-full bg-green-500"></span>
+                    {isOnline ? t('dashboard.online') : t('dashboard.offline')}
+                  </Badge>
             </div>
           )}
           {activeTab === 'tracage' && viewMode === 'desktop' && (
   <div className={`absolute top-0 ${settings.language === 'ar' ? 'left-0' : 'right-0'} m-2 z-10`}>
-  <Badge size="md" style={{...badgeStyle}} className={`${badgeClass} items-center gap-2 bg-green-100 text-green-700`} title={isOnline ? t('dashboard.online') : t('dashboard.offline')}>
+    <Badge size="md" style={{...badgeStyle, fontSize: '12px', padding: '4px 8px', minWidth: '0', lineHeight: '14px', borderRadius: '9999px'}} className={`${badgeClass} items-center gap-2 bg-green-100 text-green-700`} title={isOnline ? t('dashboard.online') : t('dashboard.offline')}>
       <span className="inline-block w-2 h-2 rounded-full bg-green-500"></span>
       {isOnline ? t('dashboard.online') : t('dashboard.offline')}
     </Badge>

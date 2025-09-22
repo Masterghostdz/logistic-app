@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Label } from './ui/label';
 import { Input } from './ui/input';
+import { useTranslation } from '../hooks/useTranslation';
 
 interface SimpleDeclarationNumberFormProps {
   onNumberChange: (number: string) => void;
@@ -76,11 +77,13 @@ const SimpleDeclarationNumberForm = ({
     }
   };
 
+  const { t } = useTranslation();
+
   return (
     <div className="space-y-4">
-      <Label>Programme de Livraison</Label>
-      <div className="flex items-center gap-1 p-3 bg-gray-50 rounded-md border">
-        <span className="text-gray-500 font-mono text-sm">DCP/</span>
+      <Label>{t('declarations.programNumber') || 'Programme de Livraison'}</Label>
+  <div className="flex items-center gap-1 p-3 bg-gray-50 rounded-md border" dir="ltr">
+        <span dir="ltr" className="text-gray-500 font-mono text-sm">DCP/</span>
         <Select value={year} onValueChange={setYear} disabled={readOnly}>
           <SelectTrigger className="w-16 h-8 px-2 py-1 text-sm" disabled={readOnly}>
             <SelectValue placeholder="YY" />
@@ -91,7 +94,7 @@ const SimpleDeclarationNumberForm = ({
             ))}
           </SelectContent>
         </Select>
-        <span className="text-gray-500 font-mono text-sm">/</span>
+  <span dir="ltr" className="text-gray-500 font-mono text-sm">/</span>
         <Select value={month} onValueChange={setMonth} disabled={readOnly}>
           <SelectTrigger className="w-16 h-8 px-2 py-1 text-sm" disabled={readOnly}>
             <SelectValue placeholder="MM" />
@@ -102,12 +105,12 @@ const SimpleDeclarationNumberForm = ({
             ))}
           </SelectContent>
         </Select>
-        <span className="text-gray-500 font-mono text-sm">/</span>
+  <span dir="ltr" className="text-gray-500 font-mono text-sm">/</span>
         <Input
           type="text"
           value={programNumber}
           onChange={(e) => handleProgramNumberChange(e.target.value)}
-          placeholder="XXXX"
+          placeholder={t('declarations.programNumber') ? 'XXXX' : 'XXXX'}
           className="w-16 h-8 px-2 py-1 text-center text-sm"
           maxLength={4}
           disabled={readOnly}

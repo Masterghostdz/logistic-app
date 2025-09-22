@@ -4,6 +4,7 @@ import 'leaflet/dist/leaflet.css';
 import { Warehouse, Chauffeur } from '../types';
 import { Client } from '../types/client';
 import { useTranslation } from '../hooks/useTranslation';
+import { useAuth } from '../contexts/AuthContext';
 import { initializeLeafletIcons } from './map/MapIcons';
 import { createSimpleMap } from './map/MapUtils';
 import { createMarkers, fitMapToMarkers } from './map/MapMarkers';
@@ -24,6 +25,7 @@ interface OpenStreetMapProps {
   layerType?: string;
   userPosition?: { lat: number; lng: number } | null;
   highlightedChauffeurId?: string | null;
+  isMobile?: boolean; // allow parent to request mobile-style popups
 }
 
 const OpenStreetMap: React.FC<OpenStreetMapProps> = ({ 
@@ -42,7 +44,9 @@ const OpenStreetMap: React.FC<OpenStreetMapProps> = ({
   highlightedChauffeurId,
   highlightedItineraireId,
   declarations = []
+  , isMobile = false
 }) => {
+  const auth = useAuth();
   // Marqueur animé pour la position utilisateur
   const userMarkerRef = useRef<L.Marker | null>(null);
   // Marqueurs d'itinéraire isolés
@@ -298,17 +302,19 @@ const OpenStreetMap: React.FC<OpenStreetMapProps> = ({
     if (!map.current || !isInitialized.current) return;
 
     // Create new markers using utility function - no need to clear existing ones
-    markersRef.current = createMarkers({
-      warehouses,
-      chauffeurs,
-      map: map.current,
-      t,
-      onWarehouseClick,
-      onChauffeurClick,
-      isMobile: false, // Desktop version
-      highlightedWarehouseId,
-      highlightedChauffeurId
-    });
+      // Treat as mobile-styled when explicitly requested or when user role is 'chauffeur'
+      const useMobileStyle = (!!isMobile) || (!!auth?.user && auth.user.role === 'chauffeur');
+      markersRef.current = createMarkers({
+        warehouses,
+        chauffeurs,
+        map: map.current,
+        t,
+        onWarehouseClick,
+        onChauffeurClick,
+        isMobile: useMobileStyle,
+        highlightedWarehouseId,
+        highlightedChauffeurId
+      });
 
     // Fit map to show all markers only on first load or when markers change significantly
     if (markersRef.current.length > 0) {

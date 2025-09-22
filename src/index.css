@@ -53,6 +53,8 @@ All colors MUST be HSL.
     --sidebar-border: 220 13% 91%;
 
     --sidebar-ring: 217.2 91.2% 59.8%;
+    /* default native top offset (used together with env(safe-area-inset-top)) */
+    --native-top-offset: 10px;
   }
 
   .dark {
@@ -101,5 +103,26 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
+  }
+
+  /* Respect safe-area insets on mobile devices (notch/status bar).
+     Use a CSS variable so web, native and Android can adjust the additional offset.
+     --native-top-offset is set to a sensible default and overridden for native builds. */
+  #root, .app-root {
+    padding-top: calc(env(safe-area-inset-top, 0px) + var(--native-top-offset));
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* Native builds get a slightly larger default offset. main.tsx will add the `native-app` class. */
+  :root.native-app {
+    --native-top-offset: 16px;
+  }
+
+  /* Some Android WebViews still need more breathing room; mobileService will add `android-native` and
+     set a larger value if detected. */
+  :root.android-native {
+    --native-top-offset: 22px;
   }
 }

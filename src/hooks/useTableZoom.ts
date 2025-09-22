@@ -49,7 +49,8 @@ export default function useTableZoom(initial: FontSizeKey = '100') {
   // Slightly increase horizontal padding baseline so badges are roomier
   // Reduce baseline padding so badges remain compact and scale with text size
   // Reduce horizontal padding baseline so badges can be narrower when needed
-  const badgePadXPx = Math.max(4, Math.round(10 * zoomGlobal));
+  // Make badges slightly roomier by default so they look consistent across desktop and mobile
+  const badgePadXPx = Math.max(6, Math.round(12 * zoomGlobal));
   // Reduce vertical padding to make badges height match text more closely
 
   // Convert padding to em relative to the computed font size so padding scales with text
@@ -60,7 +61,7 @@ export default function useTableZoom(initial: FontSizeKey = '100') {
   // Add a very small vertical padding so the badge isn't flush against the text
   // Increase just a little (+~1px) so status badges feel slightly taller across the app
   // Keep it tiny so the height still closely matches the text height
-  const badgePadYPx = Math.max(2, Math.round(3 * zoomGlobal));
+  const badgePadYPx = Math.max(3, Math.round(4 * zoomGlobal));
 
   // Slightly raise the minimum em-based vertical padding so the visual bump is subtle but consistent
   const badgePadYEm = Math.max(0.08, +(badgePadYPx / Math.max(8, computedFontPx)).toFixed(2));
@@ -69,7 +70,7 @@ export default function useTableZoom(initial: FontSizeKey = '100') {
   // Slightly larger minimum width to prevent very short labels looking too tight
   // Reduce minimum width so badges don't occupy an entire cell/row; keep a sensible floor
   // Allow smaller min width floor so short labels occupy minimal space
-  const minBadgeWidth = Math.max(16, Math.round((computedFontPx * 1.2) + Math.round(badgePadXPx * 0.8)));
+  const minBadgeWidth = Math.max(20, Math.round((computedFontPx * 1.3) + Math.round(badgePadXPx * 0.9)));
 
   // Badge class uses em-based padding so it will grow/shrink with the text size, with a pixel min-width fallback
   const badgeClass = `inline-flex items-center justify-center whitespace-nowrap rounded-full px-[${badgePadXEm}em] py-[${badgePadYEm}em] min-w-[${minBadgeWidth}px] text-[${computedFontPx}px] gap-[6px] leading-[${computedFontPx}px]`;

@@ -30,8 +30,29 @@ class MobileService {
       
       // Configure status bar
       if (this.deviceInfo.isAndroid || this.deviceInfo.isIOS) {
+        try {
+          // Ensure the status bar does not overlay the WebView content
+          // so the app UI is positioned below the OS status bar (avatar will be tappable).
+          await StatusBar.setOverlaysWebView({ overlay: false });
+        } catch (e) {
+          console.warn('StatusBar.setOverlaysWebView not supported on this platform', e);
+        }
         await StatusBar.setStyle({ style: Style.Default });
         await StatusBar.setBackgroundColor({ color: '#ffffff' });
+      }
+
+      // Add classes to the document root so CSS can apply native-specific layout adjustments
+      try {
+        if (typeof document !== 'undefined' && document.documentElement) {
+          document.documentElement.classList.add('native-app');
+          if (this.deviceInfo.isAndroid) {
+            document.documentElement.classList.add('android-native');
+            // also set a CSS variable for a larger offset on Android devices
+            document.documentElement.style.setProperty('--native-top-offset', '22px');
+          }
+        }
+      } catch (e) {
+        // ignore if running in non-DOM environment
       }
 
       // Hide splash screen after app is ready
@@ -68,6 +89,24 @@ class MobileService {
     try {
       // Sur le web, il faut toujours tenter getCurrentPosition pour déclencher le prompt navigateur
       let position;
+      // On native platforms, ensure runtime permissions are granted first
+      if (Capacitor.isNativePlatform()) {
+        try {
+          const perm = await Geolocation.checkPermissions();
+          if (perm.location !== 'granted') {
+            const req = await Geolocation.requestPermissions();
+            if (req.location !== 'granted') {
+              console.error('Location permission not granted:', req);
+              // Let caller decide how to handle (UI toast/alert). Return null to indicate no location.
+              return null;
+            }
+          }
+        } catch (pErr) {
+          console.error('Error checking/requesting location permissions:', pErr);
+          // Fall back to attempting getCurrentPosition which may trigger a prompt on web
+        }
+      }
+
       try {
         position = await Geolocation.getCurrentPosition({
           enableHighAccuracy: true,

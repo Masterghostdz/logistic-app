@@ -49,15 +49,13 @@ const MobileOpenStreetMap: React.FC<MobileOpenStreetMapProps> = ({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const isInitialized = useRef(false);
   const hasUserInteracted = useRef(false);
-  // Affiche le marker GPS animé si userPosition est défini
-  useEffect(() => {
-  // Affichage des points d'itinéraire si demandé
+  // Affichage des points d'itinéraire si demandé (séparé pour respecter les Rules of Hooks)
   useEffect(() => {
     if (!map.current || !highlightedItineraireId || !declarations) return;
     // Supprime les anciens markers d'itinéraire
     if (markersRef.current && markersRef.current.length > 0) {
       markersRef.current.forEach(m => {
-        if (m.options && m.options.icon && m.options.icon.options.className === 'itineraire-marker') {
+        if (m.options && m.options.icon && (m.options.icon as any).options?.className === 'itineraire-marker') {
           map.current?.removeLayer(m);
         }
       });
@@ -74,11 +72,14 @@ const MobileOpenStreetMap: React.FC<MobileOpenStreetMapProps> = ({
           }),
           zIndexOffset: 500 + idx
         });
-        marker.addTo(map.current);
+        marker.addTo(map.current as L.Map);
         markersRef.current.push(marker);
       });
     }
   }, [highlightedItineraireId, declarations]);
+
+  // Affiche le marker GPS animé si userPosition est défini
+  useEffect(() => {
     if (!map.current) return;
     // Toujours retirer l'ancien marker
     if (userMarkerRef.current) {
@@ -152,11 +153,11 @@ const MobileOpenStreetMap: React.FC<MobileOpenStreetMapProps> = ({
           const wilaya = address.state || address.county || address.region || 'Inconnue';
           const commune = address.city || address.town || address.village || address.municipality || address.suburb || 'Inconnue';
           marker.setPopupContent(`
-            <div style=\"padding: 12px; min-width: 200px; max-width: 320px; background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); overflow: hidden;\">
-              <h3 style=\"font-weight: 600; font-size: 16px; margin-bottom: 8px; color: #1f2937; word-wrap: break-word;\">Position actuelle</h3>
-              <p style=\"font-size: 14px; color: #6b7280; margin-bottom: 6px; word-wrap: break-word;\"><strong>Pays :</strong> ${pays}</p>
-              <p style=\"font-size: 14px; color: #6b7280; margin-bottom: 6px; word-wrap: break-word;\"><strong>Wilaya :</strong> ${wilaya}</p>
-              <p style=\"font-size: 14px; color: #6b7280; margin-bottom: 8px; word-wrap: break-word;\"><strong>Commune :</strong> ${commune}</p>
+            <div style="padding: 12px; min-width: 200px; max-width: 320px; background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); overflow: hidden;">
+              <h3 style="font-weight: 600; font-size: 16px; margin-bottom: 8px; color: #1f2937; word-wrap: break-word;">Position actuelle</h3>
+              <p style="font-size: 14px; color: #6b7280; margin-bottom: 6px; word-wrap: break-word;"><strong>Pays :</strong> ${pays}</p>
+              <p style="font-size: 14px; color: #6b7280; margin-bottom: 6px; word-wrap: break-word;"><strong>Wilaya :</strong> ${wilaya}</p>
+              <p style="font-size: 14px; color: #6b7280; margin-bottom: 8px; word-wrap: break-word;"><strong>Commune :</strong> ${commune}</p>
             </div>
           `);
           marker.openPopup();
