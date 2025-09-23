@@ -1,5 +1,10 @@
 export const translations = {
   fr: {
+    camera: {
+      error: {
+        save: "Impossible d'importer la photo. Vérifiez votre connexion."
+      }
+    },
     planificateur: {
       clientsTitle: "Gestion des Clients",
       dashboardTitle: "Tableau de bord - Planificateur",
@@ -404,6 +409,11 @@ export const translations = {
     }
   },
   en: {
+    camera: {
+      error: {
+        save: "Unable to import photo. Please check your connection."
+      }
+    },
     roles: {
       admin: "Administrator",
       planificateur: "Planner",
@@ -727,6 +737,11 @@ export const translations = {
     }
   },
   ar: {
+    camera: {
+      error: {
+        save: "تعذر حفظ الصورة. يرجى التحقق من الاتصال."
+      }
+    },
     roles: {
       admin: "مسؤول",
       planificateur: "مخطط",

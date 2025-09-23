@@ -20,5 +20,14 @@ public class MainActivity extends BridgeActivity {
 			// ignore if not available
 			e.printStackTrace();
 		}
+
+		// Register our native plugin so web layer can request the native camera
+		try {
+			if (getBridge() != null) {
+				getBridge().registerPlugin(com.logigrine.espace.NativeCameraPlugin.class);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 }

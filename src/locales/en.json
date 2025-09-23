@@ -5,4 +5,6 @@
   "notification.noPaymentReceipts": "No payment receipt",
   "notification.none": "No notification",
   "chauffeurs.add": "Add"
+  ,
+  "camera.error.save": "The photo could not be saved or uploaded due to a connection problem. Please try again."
 }
