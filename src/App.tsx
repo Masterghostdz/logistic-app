@@ -9,7 +9,7 @@ import LoginForm from './components/LoginForm';
 import Header from './components/Header';
 import ChauffeurDashboard from './components/dashboards/ChauffeurDashboard';
 import PlanificateurDashboard from './components/dashboards/PlanificateurDashboard';
-import FinancierDashboard from './components/dashboards/FinancierDashboard';
+import CaissierDashboard from './components/dashboards/CaissierDashboard';
 import AdminDashboard from './components/dashboards/AdminDashboard';
 import { mobileService } from './services/mobileService';
 
@@ -31,8 +31,8 @@ const AppContent = () => {
         return <ChauffeurDashboard />;
       case 'planificateur':
         return <PlanificateurDashboard />;
-      case 'financier':
-        return <FinancierDashboard />;
+      case 'caissier':
+        return <CaissierDashboard />;
       case 'admin':
         return <AdminDashboard />;
       default:

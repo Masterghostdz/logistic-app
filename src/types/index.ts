@@ -2,7 +2,7 @@ export interface User {
   id: string;
   username: string;
   password: string;
-  role: 'chauffeur' | 'planificateur' | 'financier' | 'financier_unite' | 'admin';
+  role: 'chauffeur' | 'planificateur' | 'caissier' | 'admin';
   firstName: string;
   lastName: string;
   fullName: string;
@@ -118,6 +118,21 @@ export interface VehicleType {
 }
 
 export interface FinancialRecord {
+  id: string;
+  number: string;
+  type: 'remboursement' | 'reglement';
+  programNumber: string;
+  destinationUnit: 'cph_nord' | 'cph_sud' | 'cph_est' | 'cph_ouest' | 'cph_centre';
+  amount: number;
+  description?: string;
+  photos?: string[];
+  status: 'en_attente' | 'traite';
+  createdAt: string;
+  processedAt?: string;
+  processedBy?: string;
+}
+
+export interface CashierRecord {
   id: string;
   number: string;
   type: 'remboursement' | 'reglement';

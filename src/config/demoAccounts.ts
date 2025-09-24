@@ -1,4 +1,3 @@
-
 // Demo account configurations (passwords are hashed)
 // Password "demo123" with salt "logigrine2025" = 583ef6136b8e990013e35202d9e7e9577b0cb637bed69f7723e009cde0b774ca
 // Password "admin123" with salt "logigrine2025" = 52a51b5cfd788a6d81c881ab9002deece4e1c114f514a2079d86a3c19b7ecdca
@@ -8,7 +7,7 @@ export interface DemoAccount {
   username: string;
   passwordHash: string;
   salt: string;
-  role: 'chauffeur' | 'planificateur' | 'financier' | 'financier_unite' | 'admin';
+  role: 'chauffeur' | 'planificateur' | 'caissier' | 'admin';
   fullName: string;
   firstName: string;
   lastName: string;
@@ -49,10 +48,10 @@ export const demoAccountsConfig: DemoAccount[] = [
   },
   {
     id: '3',
-    username: 'financier',
+    username: 'caissier',
     passwordHash: '583ef6136b8e990013e35202d9e7e9577b0cb637bed69f7723e009cde0b774ca',
     salt: 'logigrine2025',
-    role: 'financier' as const,
+    role: 'caissier' as const,
     fullName: 'Pierre Moreau',
     firstName: 'Pierre',
     lastName: 'Moreau',
@@ -63,20 +62,6 @@ export const demoAccountsConfig: DemoAccount[] = [
   },
   {
     id: '4',
-    username: 'financier_unite',
-    passwordHash: '583ef6136b8e990013e35202d9e7e9577b0cb637bed69f7723e009cde0b774ca',
-    salt: 'logigrine2025',
-    role: 'financier_unite' as const,
-    fullName: 'Sophie Bernard',
-    firstName: 'Sophie',
-    lastName: 'Bernard',
-    email: 'sophie.bernard@logigrine.com',
-    phone: ['+33 6 45 67 89 01'],
-    createdAt: new Date().toISOString(),
-    isActive: true
-  },
-  {
-    id: '5',
     username: 'admin',
     // Hash of 'admin123' with salt 'logigrine2025'
     passwordHash: '52a51b5cfd788a6d81c881ab9002deece4e1c114f514a2079d86a3c19b7ecdca',

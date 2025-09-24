@@ -449,24 +449,23 @@ const AdminDashboard = () => {
   const { badgeClass, badgeStyle } = useTableZoom();
 
   const getRoleBadge = (role: string) => {
+    // Harmonisation avec Header : couleurs et border identiques
     const roleColors = {
-      admin: 'bg-red-100 text-red-800',
-      planificateur: 'bg-blue-100 text-blue-800',
-      financier: 'bg-green-100 text-green-800',
-      financier_unite: 'bg-purple-100 text-purple-800',
-      chauffeur: 'bg-gray-100 text-gray-800',
+      admin: 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-300 border-red-200 dark:border-red-800',
+      planificateur: 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300 border-blue-200 dark:border-blue-800',
+      caissier: 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300 border-green-200 dark:border-green-800',
+      chauffeur: 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-300 border-purple-200 dark:border-purple-800',
     };
     const roleLabels = {
       admin: t('roles.admin') || 'Administrateur',
       planificateur: t('roles.planificateur') || 'Planificateur',
-      financier: t('roles.financier') || 'Financier',
-      financier_unite: t('roles.financier_unite') || 'Financier Unité',
+      caissier: t('roles.caissier') || 'Caissier',
       chauffeur: t('roles.chauffeur') || 'Chauffeur',
     };
     const label = t(`roles.${role}`) || roleLabels[role as keyof typeof roleLabels] || role;
     return (
       <Badge
-        className={`${badgeClass} ${roleColors[role as keyof typeof roleColors]} text-xs rounded-full font-semibold border border-transparent`}
+        className={`${badgeClass} text-xs rounded-full font-semibold border ${roleColors[role as keyof typeof roleColors] || 'bg-muted text-muted-foreground border-border'}`}
         style={{ minWidth: 90, textAlign: 'center', letterSpacing: 0.2, ...(badgeStyle || {}) }}
       >
         {label}
@@ -481,7 +480,7 @@ const AdminDashboard = () => {
         return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-300 border-red-200 dark:border-red-800';
       case 'planificateur':
         return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300 border-blue-200 dark:border-blue-800';
-      case 'financier':
+      case 'caissier':
         return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300 border-green-200 dark:border-green-800';
       case 'chauffeur':
         return 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-300 border-purple-200 dark:border-purple-800';
@@ -654,8 +653,7 @@ const AdminDashboard = () => {
                           <SelectContent>
                             <SelectItem value="chauffeur">{t('roles.chauffeur') || 'Chauffeur'}</SelectItem>
                             <SelectItem value="planificateur">{t('roles.planificateur') || 'Planificateur'}</SelectItem>
-                            <SelectItem value="financier">{t('roles.financier') || 'Financier'}</SelectItem>
-                            <SelectItem value="financier_unite">{t('roles.financier_unite') || 'Financier Unité'}</SelectItem>
+                            <SelectItem value="caissier">{t('roles.caissier') || 'Caissier'}</SelectItem>
                             <SelectItem value="admin">{t('roles.admin') || 'Administrateur'}</SelectItem>
                           </SelectContent>
                         </Select>

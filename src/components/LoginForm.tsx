@@ -140,7 +140,7 @@ const LoginForm = () => {
             <div className="space-y-1 text-xs text-gray-600 dark:text-gray-400">
               <div><strong>{t('roles.chauffeur') || 'chauffeur'}</strong> - Mot de passe: demo123</div>
               <div><strong>{t('roles.planificateur') || 'planificateur'}</strong> - Mot de passe: demo123</div>
-              <div><strong>{t('roles.financier') || 'financier'}</strong> - Mot de passe: demo123</div>
+              <div><strong>{t('roles.caissier') || 'caissier'}</strong> - Mot de passe: demo123</div>
               <div><strong>{t('roles.financier_unite') || 'financier_unite'}</strong> - Mot de passe: demo123</div>
               <div><strong>{t('roles.admin') || 'admin'}</strong> - Mot de passe: admin123</div>
             </div>

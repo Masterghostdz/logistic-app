@@ -1,11 +1,10 @@
-
 import React from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { SharedDataProvider } from '../contexts/SharedDataContext';
 import LoginForm from '../components/LoginForm';
 import ChauffeurDashboard from '../components/dashboards/ChauffeurDashboard';
 import PlanificateurDashboard from '../components/dashboards/PlanificateurDashboard';
-import FinancierDashboard from '../components/dashboards/FinancierDashboard';
+import CaissierDashboard from '../components/dashboards/CaissierDashboard';
 import AdminDashboard from '../components/dashboards/AdminDashboard';
 
 const Index = () => {
@@ -21,8 +20,8 @@ const Index = () => {
         return <ChauffeurDashboard />;
       case 'planificateur':
         return <PlanificateurDashboard />;
-      case 'financier':
-        return <FinancierDashboard />;
+      case 'caissier':
+        return <CaissierDashboard />;
       case 'admin':
         return <AdminDashboard />;
       default:

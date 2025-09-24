@@ -28,8 +28,7 @@ export const translations = {
       planificateur: "Planificateur",
       chauffeur: "Chauffeur",
       client: "Client",
-      financier: "Financier",
-      financier_unite: "Financier Unité"
+      caissier: "Caissier"
     },
     buttons: {
       myClients: "Mes clients",
@@ -71,11 +70,14 @@ export const translations = {
     },
     tabs: {
       dashboard: "Tableau de bord",
+      recouvrement: "Recouvrement",
       declarations: "Déclarations",
       tracage: "Traçage",
       warehouses: "Entrepôts",
       clients: "Clients",
-      chauffeurs: "Chauffeurs"
+      chauffeurs: "Chauffeurs",
+      payment: "Paiement",
+      profile: "Profil"
     },
     header: {
       title: "Logigrine",
@@ -176,8 +178,7 @@ export const translations = {
       admin: "مسؤول",
       planificateur: "مخطط",
       chauffeur: "سائق",
-      financier: "المالي",
-      financier_unite: "مالي الوحدة",
+      caissier: "كاشي",
       client: "عميل"
     },
     common: {
@@ -415,11 +416,10 @@ export const translations = {
       }
     },
     roles: {
-      admin: "Administrator",
+      admin: "Admin",
       planificateur: "Planner",
       chauffeur: "Driver",
-      financier: "Financial",
-      financier_unite: "Unit Financial",
+      caissier: "Cashier",
       client: "Client"
     },
     common: {
@@ -746,8 +746,7 @@ export const translations = {
       admin: "مسؤول",
       planificateur: "مخطط",
       chauffeur: "سائق",
-      financier: "المالي",
-      financier_unite: "مالي الوحدة",
+      caissier: "كاشي",
       client: "عميل"
     },
     tabs: {

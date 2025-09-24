@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from './ui/button';
 import { Sheet, SheetContent } from './ui/sheet';
@@ -45,7 +44,7 @@ const MobileSidebar = ({ isOpen, onClose, activeTab, onTabChange, userRole }: Mo
           ...commonItems,
           { id: 'declarations', label: 'Mes Déclarations', icon: FileText }
         ];
-      case 'financier':
+      case 'caissier':
         return [
           ...commonItems,
           { id: 'declarations', label: 'Déclarations', icon: FileText },
