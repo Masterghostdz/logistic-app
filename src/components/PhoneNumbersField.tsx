@@ -1,9 +1,9 @@
-
 import React from 'react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Plus, X } from 'lucide-react';
+import { useTranslation } from '../hooks/useTranslation';
 
 interface PhoneNumbersFieldProps {
   phones: string[];
@@ -18,6 +18,7 @@ const PhoneNumbersField: React.FC<PhoneNumbersFieldProps> = ({
   label = "Numéros de téléphone",
   required = false
 }) => {
+  const { t } = useTranslation();
   const handlePhoneChange = (index: number, value: string) => {
     const newPhones = [...phones];
     newPhones[index] = value;
@@ -67,7 +68,7 @@ const PhoneNumbersField: React.FC<PhoneNumbersFieldProps> = ({
         className="flex items-center gap-2"
       >
         <Plus className="h-4 w-4" />
-  Ajouter
+        {t('buttons.add') || 'Ajouter'}
       </Button>
     </div>
   );

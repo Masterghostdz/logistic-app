@@ -18,28 +18,28 @@ const CaissierSidebar: React.FC<CaissierSidebarProps> = ({ activeTab, onTabChang
     return (
       <nav className="flex flex-row justify-center items-center gap-8 py-3 px-4 bg-white dark:bg-gray-900 rounded-full shadow-lg w-full border-2 border-blue-400 dark:border-blue-600 overflow-x-auto">
         <button
-          aria-label="Tableau de bord"
+          aria-label={t('tabs.dashboard') || 'Tableau de bord'}
           onClick={() => onTabChange('dashboard')}
           className={`rounded-full p-2 transition-all ${activeTab === 'dashboard' ? 'bg-blue-600 text-white shadow-lg scale-110' : 'bg-gray-100 text-gray-600'} flex items-center justify-center h-10 w-10`}
         >
           <ClipboardList className="h-[22px] w-[22px]" />
         </button>
         <button
-          aria-label="Recouvrement"
+          aria-label={t('tabs.recouvrement') || 'Recouvrement'}
           onClick={() => onTabChange('recouvrement')}
           className={`rounded-full p-2 transition-all ${activeTab === 'recouvrement' ? 'bg-blue-600 text-white shadow-lg scale-110' : 'bg-gray-100 text-gray-600'} flex items-center justify-center h-10 w-10`}
         >
           <Banknote className="h-[22px] w-[22px]" />
         </button>
         <button
-          aria-label="Paiement"
+          aria-label={t('tabs.payment') || 'Paiement'}
           onClick={() => onTabChange('paiement')}
           className={`rounded-full p-2 transition-all ${activeTab === 'paiement' ? 'bg-blue-600 text-white shadow-lg scale-110' : 'bg-gray-100 text-gray-600'} flex items-center justify-center h-10 w-10`}
         >
           <CreditCard className="h-[22px] w-[22px]" />
         </button>
         <button
-          aria-label="Traçage"
+          aria-label={t('tabs.tracage') || 'Traçage'}
           onClick={() => onTabChange('tracage')}
           className={`rounded-full p-2 transition-all ${activeTab === 'tracage' ? 'bg-blue-600 text-white shadow-lg scale-110' : 'bg-gray-100 text-gray-600'} flex items-center justify-center h-10 w-10`}
         >

@@ -1023,7 +1023,7 @@ const PlanificateurDashboard = () => {
                     onClick={() => setShowCreateChauffeur(true)}
                   >
                     <Plus className="h-4 w-4" />
-                    {t('chauffeurs.add')}
+                    {t('buttons.add') || 'Ajouter'}
                   </Button>
                 </div>
                 {/* Barre de recherche/filtre pour chauffeurs */}
@@ -1080,7 +1080,7 @@ const PlanificateurDashboard = () => {
                     onClick={() => { setEditingClient(null); setShowEditClient(true); }}
                   >
                     <Plus className="h-4 w-4" />
-                    Ajouter
+                    {t('buttons.add') || 'Ajouter'}
                   </Button>
                 </div>
                 {/* Barre de recherche/filtre pour clients */}

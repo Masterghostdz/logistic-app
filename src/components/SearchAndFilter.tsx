@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Input } from './ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
@@ -34,8 +33,8 @@ const SearchAndFilter = ({
   const finalSearchPlaceholder = searchPlaceholder || t('common.searchPlaceholder') || t('searchPlaceholder') || 'Rechercher...';
   const finalFilterPlaceholder = filterPlaceholder || t('common.filterPlaceholder') || t('filterPlaceholder') || 'Filtrer...';
   return (
-    <div className="flex gap-4 mb-4">
-      <div className="relative w-2/3 flex items-center">
+    <div className="flex gap-4 mb-4 items-center">
+      <div className="relative flex-1 flex items-center">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
         <Input
           placeholder={finalSearchPlaceholder}
@@ -45,7 +44,7 @@ const SearchAndFilter = ({
         />
         <Select value={searchColumn} onValueChange={onSearchColumnChange}>
           {/* Hide the built-in icon and render a centered slightly larger chevron for better alignment */}
-          <SelectTrigger data-hide-icon className="absolute right-2 top-1/2 transform -translate-y-1/2 w-8 h-8 p-0 border-none bg-transparent flex items-center justify-center">
+          <SelectTrigger data-hide-icon className="absolute right-2 top-1/2 transform -translate-y-1/2 flex-none w-8 h-8 p-0 border-none bg-transparent flex items-center justify-center">
             <ChevronDown className="h-5 w-5 text-gray-400" />
           </SelectTrigger>
           <SelectContent>
@@ -58,7 +57,7 @@ const SearchAndFilter = ({
         </Select>
       </div>
       <Select value={filterValue} onValueChange={onFilterChange}>
-        <SelectTrigger className="w-1/3 min-w-[80px] md:w-48">
+        <SelectTrigger className="flex-none min-w-[80px] md:w-48">
           <Filter className="h-4 w-4 mr-2" />
           <SelectValue placeholder={finalFilterPlaceholder} />
         </SelectTrigger>

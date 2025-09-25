@@ -58,6 +58,8 @@ export const translations = {
     },
     companies: {
       name: "Nom",
+      company: "Société",
+      select: "Sélectionner une société",
       address: "Adresse",
       phone: "Téléphone",
       email: "Email",
@@ -77,7 +79,22 @@ export const translations = {
       clients: "Clients",
       chauffeurs: "Chauffeurs",
       payment: "Paiement",
-      profile: "Profil"
+      profile: "Profil",
+      reports: "Rapports"
+    },
+    // Traductions spécifiques pour la section Caissier
+    caissier: {
+      paymentsTitle: "Paiements",
+      createPaymentTitle: "Ajouter un reçu de paiement",
+      createPaymentDesc: "Remplissez le formulaire pour ajouter un reçu de paiement."
+    },
+    payment: {
+      errors: {
+        noPhoto: "Photo du reçu requise",
+        programRequired: "Référence programme requise",
+        programNotFound: "Aucune déclaration trouvée pour ce numéro de programme",
+        saveFailed: "Erreur lors de l'enregistrement"
+      }
     },
     header: {
       title: "Logigrine",
@@ -181,6 +198,12 @@ export const translations = {
       caissier: "كاشي",
       client: "عميل"
     },
+    // Traductions spécifiques pour la section Caissier en arabe
+    caissier: {
+      paymentsTitle: "المدفوعات",
+      createPaymentTitle: "إضافة إيصال دفع",
+      createPaymentDesc: "املأ النموذج لإضافة إيصال الدفع."
+    },
     common: {
       searchPlaceholder: "ابحث...",
       filterPlaceholder: "تصفية..."
@@ -204,7 +227,10 @@ export const translations = {
       tracage: "التتبع",
       warehouses: "المستودعات",
       clients: "العملاء",
-      chauffeurs: "السائقين"
+      chauffeurs: "السائقين",
+      recouvrement: "التحصيل",
+      payment: "المدفوعات",
+      reports: "تقارير"
     },
   declarations: {
       confirmCancelTitle: "تأكيد الإلغاء",
@@ -329,6 +355,8 @@ export const translations = {
       save: "Enregistrer",
       cancel: "Annuler",
       edit: "Modifier",
+      addClient: "Ajouter un client",
+      editClient: "Modifier le client",
       delete: "Supprimer",
       confirm: "Confirmer",
       yes: "Oui",
@@ -477,6 +505,8 @@ export const translations = {
     },
     companies: {
       name: "Name",
+      company: "Company",
+      select: "Select a company",
       address: "Address",
       phone: "Phone",
       email: "Email",
@@ -641,8 +671,10 @@ export const translations = {
     },
     // Forms
     forms: {
-      myClients: "My Clients",
+      myClients: "My clients",
       add: "Add",
+      addClient: "Add a client",
+      editClient: "Edit client",
       save: "Save",
       cancel: "Cancel",
       edit: "Edit",
@@ -697,11 +729,15 @@ export const translations = {
     },
     tabs: {
       dashboard: "Dashboard",
+      recouvrement: "Recovery",
       declarations: "Declarations",
-      tracage: "Traceability",
+      tracage: "Tracking",
       warehouses: "Warehouses",
       clients: "Clients",
-      chauffeurs: "Drivers"
+      chauffeurs: "Drivers",
+      payment: "Payment",
+      profile: "Profile",
+      reports: "Reports"
     },
     // Vehicle types
     vehicles: {
@@ -749,13 +785,22 @@ export const translations = {
       caissier: "كاشي",
       client: "عميل"
     },
+    // Traductions spécifiques pour la section Caissier en arabe
+    caissier: {
+      paymentsTitle: "المدفوعات",
+      createPaymentTitle: "إضافة إيصال دفع",
+      createPaymentDesc: "املأ النموذج لإضافة إيصال الدفع."
+    },
     tabs: {
       dashboard: "لوحة القيادة",
       declarations: "التصريحات",
       tracage: "التتبع",
       warehouses: "المستودعات",
       clients: "العملاء",
-      chauffeurs: "السائقين"
+      chauffeurs: "السائقين",
+      recouvrement: "التحصيل",
+      payment: "المدفوعات",
+      reports: "تقارير"
     },
     // Planificateur translations (moved/merged here so final `ar` block contains them)
     planificateur: {
@@ -809,6 +854,8 @@ export const translations = {
     },
       companies: {
         name: "الاسم",
+        company: "الشركة",
+        select: "اختر شركة",
         address: "العنوان",
         phone: "الهاتف",
         email: "البريد الإلكتروني",
@@ -975,6 +1022,8 @@ export const translations = {
     forms: {
       myClients: "عملائي",
       add: "إضافة",
+      addClient: "إضافة عميل",
+      editClient: "تعديل العميل",
       save: "حفظ",
       cancel: "إلغاء",
       edit: "تعديل",

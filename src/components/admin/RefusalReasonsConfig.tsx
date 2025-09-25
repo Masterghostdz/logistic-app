@@ -89,7 +89,7 @@ export default function RefusalReasonsConfig({ showAddButton, hideHeader, onlyBu
           <DialogTrigger asChild>
             <Button size="sm">
               <Plus className="h-4 w-4 mr-2" />
-              Ajouter
+              {t('buttons.add') || 'Ajouter'}
             </Button>
           </DialogTrigger>
           <DialogContent>
@@ -97,7 +97,7 @@ export default function RefusalReasonsConfig({ showAddButton, hideHeader, onlyBu
               <DialogTitle>
                 {editingReason
                   ? `Modifier le motif (${inputLang.toUpperCase()})`
-                  : 'Ajouter un motif de refus'}
+                  : t('refusalReasons.addReason') || 'Ajouter un motif de refus'}
               </DialogTitle>
             </DialogHeader>
             <form onSubmit={e => { e.preventDefault(); handleAdd(); }} className="space-y-4">
@@ -121,8 +121,8 @@ export default function RefusalReasonsConfig({ showAddButton, hideHeader, onlyBu
                 />
               </div>
               <div className="flex gap-2 pt-2">
-                <Button type="submit" disabled={loading || !newFr.trim()} className="flex-1">{editingReason ? 'Modifier' : 'Valider'}</Button>
-                <Button type="button" variant="outline" onClick={() => { setShowAdd(false); setEditingReason(null); setNewFr(''); }} disabled={loading}>Annuler</Button>
+                <Button type="submit" disabled={loading || !newFr.trim()} className="flex-1">{editingReason ? t('forms.edit') || 'Modifier' : t('forms.confirm') || 'Valider'}</Button>
+                <Button type="button" variant="outline" onClick={() => { setShowAdd(false); setEditingReason(null); setNewFr(''); }} disabled={loading}>{t('forms.cancel') || 'Annuler'}</Button>
               </div>
             </form>
           </DialogContent>

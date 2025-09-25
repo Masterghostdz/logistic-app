@@ -50,8 +50,9 @@ const zoomLevels = {
 };
 
 const AdminDashboard = () => {
-  const { t, settings } = useTranslation();
+  const { t } = useTranslation();
   const {
+    settings,
     updateSettings,
     setHeartbeatOnlineInterval,
     setHeartbeatGpsInterval,
@@ -511,7 +512,7 @@ const AdminDashboard = () => {
   }
 
   return (
-  <div className={viewMode === 'mobile' ? 'max-w-[430px] mx-auto bg-background min-h-screen flex flex-col' : 'min-h-screen bg-background w-full overflow-x-hidden'}>
+    <div className={viewMode === 'mobile' ? 'max-w-[430px] mx-auto bg-background min-h-screen flex flex-col' : 'min-h-screen bg-background w-full overflow-x-hidden'}>
     <style>{viewMode === 'mobile' ? `
       html, body, .max-w-[430px] {
         font-size: 15px !important;
@@ -532,11 +533,9 @@ const AdminDashboard = () => {
         </Badge>
       </div>
     )}
-    <div className="flex h-[calc(100vh-4rem)]">
-        {viewMode !== 'mobile' && (
-          <AdminSidebar activeTab={activeTab} onTabChange={setActiveTab} viewMode="desktop" />
-        )}
-  <div className={viewMode === 'mobile' ? 'flex-1 p-2 w-full' : 'flex-1 p-6 pt-16 overflow-auto relative'}>
+    <div className={viewMode === 'mobile' ? 'flex flex-col flex-1' : 'flex min-h-[calc(100vh-4rem)] relative'}>
+        <AdminSidebar activeTab={activeTab} onTabChange={setActiveTab} viewMode={viewMode === 'mobile' ? 'mobile' : 'desktop'} />
+        <div className={viewMode === 'mobile' ? 'flex-1 p-2 w-full min-h-0' : 'flex-1 p-6 pt-16 overflow-auto relative min-h-0'}>
           {/* Badge En ligne desktop : dans le bloc de contenu principal, en absolute top-0 right-0, comme les autres dashboards */}
           {viewMode !== 'mobile' && (
             <div className={`absolute top-0 ${settings.language === 'ar' ? 'left-0' : 'right-0'} m-2 z-10`}>
@@ -592,7 +591,7 @@ const AdminDashboard = () => {
                   <DialogTrigger asChild>
                     <Button className="flex items-center gap-2">
                       <Plus className="h-4 w-4" />
-                      Ajouter
+                      {t('buttons.add') || 'Ajouter'}
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="max-w-md">
@@ -964,7 +963,7 @@ const AdminDashboard = () => {
                       <DialogTrigger asChild>
                         <Button size="sm">
                           <Plus className="h-4 w-4 mr-2" />
-                          Ajouter
+                          {t('buttons.add') || 'Ajouter'}
                         </Button>
                       </DialogTrigger>
                       <DialogContent>
@@ -1105,7 +1104,7 @@ const AdminDashboard = () => {
                       <DialogTrigger asChild>
                         <Button size="sm">
                           <Plus className="h-4 w-4 mr-2" />
-                          Ajouter
+                          {t('buttons.add') || 'Ajouter'}
                         </Button>
                       </DialogTrigger>
                       <DialogContent>

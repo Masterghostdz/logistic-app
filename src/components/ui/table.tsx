@@ -1,4 +1,3 @@
-
 import * as React from "react"
 
 import { cn } from "@/lib/utils"
@@ -11,7 +10,8 @@ const Table = React.forwardRef<
     <table
       ref={ref}
       // use table-auto so columns grow to fit content (prevents truncation/ellipsis)
-      className={cn("w-full caption-bottom text-sm border-collapse table-auto", className)}
+      // Ensure table always fills container width to avoid right-side empty space
+      className={cn("w-full min-w-full caption-bottom text-sm border-collapse table-auto", className)}
       {...props}
     />
   </div>
