@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useTranslation } from '../../hooks/useTranslation';
 import L from 'leaflet';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Button } from '../ui/button';
@@ -19,6 +20,7 @@ const PositionPickerModal = ({ isOpen, onClose, onConfirm, initialPosition }: Po
   const [showLayerMenu, setShowLayerMenu] = useState(false);
   // Position GPS réelle (pour affichage du marker GPS)
   const [gpsPosition, setGpsPosition] = useState<{ lat: number; lng: number } | null>(null);
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (isOpen && initialPosition) setSelected(initialPosition);
@@ -121,7 +123,7 @@ const PositionPickerModal = ({ isOpen, onClose, onConfirm, initialPosition }: Po
         setSelected({ lat: pos.coords.latitude, lng: pos.coords.longitude });
         if (mapInstance) mapInstance.setView([pos.coords.latitude, pos.coords.longitude], 15, { animate: true });
       },
-      () => alert('Impossible de récupérer la position GPS'),
+      () => alert(t('forms.gpsError') || 'Impossible de récupérer la position GPS'),
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
   };
@@ -130,7 +132,7 @@ const PositionPickerModal = ({ isOpen, onClose, onConfirm, initialPosition }: Po
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent style={{ maxWidth: 700, minWidth: 350 }}>
         <DialogHeader>
-          <DialogTitle>Choisir une position géographique</DialogTitle>
+          <DialogTitle>{t('forms.chooseLocation') || 'Choisir une position géographique'}</DialogTitle>
         </DialogHeader>
         <div className="w-full flex flex-col">
           <div
@@ -139,7 +141,7 @@ const PositionPickerModal = ({ isOpen, onClose, onConfirm, initialPosition }: Po
           >
             {/* Overlay boutons flottants */}
             <div className="absolute z-20 top-4 left-4 flex flex-col gap-2">
-              <Button size="icon" variant="ghost" className="bg-white/80 dark:bg-muted/80 text-dark dark:text-white rounded-lg shadow" title="GPS" onClick={handleGps}>
+              <Button size="icon" variant="ghost" className="bg-white/80 dark:bg-muted/80 text-dark dark:text-white rounded-lg shadow" title={t('buttons.gps') || 'GPS'} onClick={handleGps}>
                 <span className="material-icons">gps_fixed</span>
               </Button>
             </div>
@@ -153,12 +155,12 @@ const PositionPickerModal = ({ isOpen, onClose, onConfirm, initialPosition }: Po
                 </div>
                 {showLayerMenu && (
                   <div className="pointer-events-auto mb-2 bg-white dark:bg-muted rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-2 flex flex-col gap-1 animate-fade-in z-40" style={{position:'absolute', bottom:'100%', right:0}}>
-                    <button className={`px-3 py-1 rounded text-left text-xs ${layerType==='osm' ? 'bg-primary/10 font-bold' : ''}`} onClick={() => { setLayerType('osm'); setShowLayerMenu(false); }}>OpenStreetMap</button>
-                    <button className={`px-3 py-1 rounded text-left text-xs ${layerType==='google' ? 'bg-primary/10 font-bold' : ''}`} onClick={() => { setLayerType('google'); setShowLayerMenu(false); }}>Google Maps</button>
-                    <button className={`px-3 py-1 rounded text-left text-xs ${layerType==='satellite' ? 'bg-primary/10 font-bold' : ''}`} onClick={() => { setLayerType('satellite'); setShowLayerMenu(false); }}>Satellite</button>
-                    <button className={`px-3 py-1 rounded text-left text-xs ${layerType==='hybrid' ? 'bg-primary/10 font-bold' : ''}`} onClick={() => { setLayerType('hybrid'); setShowLayerMenu(false); }}>Hybride</button>
-                    <button className={`px-3 py-1 rounded text-left text-xs ${layerType==='terrain' ? 'bg-primary/10 font-bold' : ''}`} onClick={() => { setLayerType('terrain'); setShowLayerMenu(false); }}>Terrain</button>
-                    <button className={`px-3 py-1 rounded text-left text-xs ${layerType==='traffic' ? 'bg-primary/10 font-bold' : ''}`} onClick={() => { setLayerType('traffic'); setShowLayerMenu(false); }}>Traffic</button>
+                    <button className={`px-3 py-1 rounded text-left text-xs ${layerType==='osm' ? 'bg-primary/10 font-bold' : ''}`} onClick={() => { setLayerType('osm'); setShowLayerMenu(false); }}>{t('maps.osm') || 'OpenStreetMap'}</button>
+                    <button className={`px-3 py-1 rounded text-left text-xs ${layerType==='google' ? 'bg-primary/10 font-bold' : ''}`} onClick={() => { setLayerType('google'); setShowLayerMenu(false); }}>{t('maps.google') || 'Google Maps'}</button>
+                    <button className={`px-3 py-1 rounded text-left text-xs ${layerType==='satellite' ? 'bg-primary/10 font-bold' : ''}`} onClick={() => { setLayerType('satellite'); setShowLayerMenu(false); }}>{t('maps.satellite') || 'Satellite'}</button>
+                    <button className={`px-3 py-1 rounded text-left text-xs ${layerType==='hybrid' ? 'bg-primary/10 font-bold' : ''}`} onClick={() => { setLayerType('hybrid'); setShowLayerMenu(false); }}>{t('maps.hybrid') || 'Hybride'}</button>
+                    <button className={`px-3 py-1 rounded text-left text-xs ${layerType==='terrain' ? 'bg-primary/10 font-bold' : ''}`} onClick={() => { setLayerType('terrain'); setShowLayerMenu(false); }}>{t('maps.terrain') || 'Terrain'}</button>
+                    <button className={`px-3 py-1 rounded text-left text-xs ${layerType==='traffic' ? 'bg-primary/10 font-bold' : ''}`} onClick={() => { setLayerType('traffic'); setShowLayerMenu(false); }}>{t('maps.traffic') || 'Traffic'}</button>
                   </div>
                 )}
               </div>
@@ -178,12 +180,12 @@ const PositionPickerModal = ({ isOpen, onClose, onConfirm, initialPosition }: Po
         </div>
         <div className="flex flex-col gap-2">
           <div className="text-sm text-muted-foreground">
-            {selected ? `Lat: ${selected.lat.toFixed(6)}, Lng: ${selected.lng.toFixed(6)}` : 'Cliquez sur la carte pour marquer une position.'}
+            {selected ? `Lat: ${selected.lat.toFixed(6)}, Lng: ${selected.lng.toFixed(6)}` : (t('forms.clickOnMap') || 'Cliquez sur la carte pour marquer une position.')}
           </div>
           <div className="flex gap-2 justify-end">
-            <Button type="button" variant="outline" onClick={onClose}>Annuler</Button>
+            <Button type="button" variant="outline" onClick={onClose}>{t('forms.cancel') || 'Annuler'}</Button>
             <Button type="button" onClick={() => selected && onConfirm(selected)} disabled={!selected}>
-              Confirmer la position
+              {t('forms.confirm') || 'Confirmer la position'}
             </Button>
           </div>
         </div>

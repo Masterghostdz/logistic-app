@@ -6,11 +6,15 @@ import useTableZoom from '../../hooks/useTableZoom';
 import { useOnlineStatus } from '../../contexts/OnlineStatusContext';
 import { useTranslation } from '../../hooks/useTranslation';
 import PaymentReceiptsTable from './PaymentReceiptsTable';
+import { useAuth } from '../../contexts/AuthContext';
 import { PaymentReceipt } from '../../types';
 import { useSharedData } from '../../contexts/SharedDataContext';
-import CreatePaymentDialog from './CreatePaymentDialog';
-import ConsultPaymentDialog from './ConsultPaymentDialog';
+import CreatePaymentDialog from '../CreatePaymentDialog';
+import EditPaymentDialog from '../EditPaymentDialog';
+// import ChauffeurPaymentDialog from '../ChauffeurPaymentDialog'; // Uncomment if used
+import ValidatePaymentDialog from '../ValidatePaymentDialog';
 import { Button } from '../ui/button';
+import { getTranslation } from '../../lib/translations';
 import { Plus } from 'lucide-react';
 
 const CaissierDashboard = () => {
@@ -20,14 +24,60 @@ const CaissierDashboard = () => {
   const { isOnline } = useOnlineStatus();
   const { t, settings } = useTranslation();
   const isMobile = settings?.viewMode === 'mobile';
+  // Prefer hook t() so current language (including Arabic) is respected
+  const addLabel = t('planificateur.add') || t('buttons.add');
+  if (typeof process !== 'undefined' && process.env && process.env.NODE_ENV !== 'production') {
+    try {
+      console.log('[CaissierDashboard] settings.language=', settings.language, 'addLabel=', addLabel);
+    } catch (e) {
+      // ignore
+    }
+  }
   const tabOrder: Array<'dashboard' | 'paiement' | 'tracage' | 'profile'> = ['dashboard', 'paiement', 'tracage', 'profile'];
 
   // Connexion dynamique Firestore
   const { declarations } = useSharedData();
-  // Extraction de tous les reçus de paiement
-  const receipts = declarations.flatMap(d => d.paymentReceipts || []);
+  // Payments collection listener (use payments as the source of truth)
+  const [payments, setPayments] = React.useState<PaymentReceipt[]>([]);
+  React.useEffect(() => {
+    let unsub: (() => void) | undefined;
+    (async () => {
+      const { listenPayments } = await import('../../services/paymentService');
+      unsub = listenPayments((items: any[]) => {
+        // Ensure items are of PaymentReceipt shape
+        setPayments(items as PaymentReceipt[]);
+      });
+    })();
+    return () => { if (unsub) unsub(); };
+  }, []);
+  // Backwards-compat: declarations may still contain embedded receipts, but the table uses `payments` now
+  const receipts = payments;
   
   const [consultReceipt, setConsultReceipt] = React.useState<PaymentReceipt | null>(null);
+  const [editReceipt, setEditReceipt] = React.useState<PaymentReceipt | null>(null);
+  const [validateReceipt, setValidateReceipt] = React.useState<PaymentReceipt | null>(null);
+  const auth = useAuth();
+
+  const handleDeleteReceipt = async (id: string) => {
+    // find receipt
+    const receipt = payments.find(p => p.id === id);
+    if (!receipt) return;
+    const status = String(receipt.status || '').toLowerCase();
+    if (['validee', 'validated', 'valide', 'valid'].includes(status)) {
+      alert(t('forms.cannotDeleteValidated') || "Impossible de supprimer un reçu validé");
+      return;
+    }
+    if (auth.user?.role === 'planificateur') {
+      alert(t('forms.unauthorized') || 'Non autorisé');
+      return;
+    }
+    try {
+      const { safeDeletePayment } = await import('../../services/paymentService');
+      await safeDeletePayment(id, auth.user);
+    } catch (e) {
+      alert(e.message || t('forms.deleteFailed') || 'Suppression échouée');
+    }
+  };
 
   // Gestion du profil (mobile et desktop)
   if (activeTab === 'profile') {
@@ -36,7 +86,7 @@ const CaissierDashboard = () => {
       return (
         <div className="max-w-[430px] mx-auto bg-background min-h-screen flex flex-col">
           <div className="p-6">
-            <div className="text-center text-muted-foreground">Profil Caissier</div>
+            <div className="text-center text-muted-foreground">{t('caissier.profileTitle')}</div>
           </div>
         </div>
       );
@@ -46,7 +96,7 @@ const CaissierDashboard = () => {
       <div>
         <Header onProfileClick={() => setActiveTab('dashboard')} />
         <div className="p-6">
-          <div className="text-center text-muted-foreground">Profil Caissier</div>
+          <div className="text-center text-muted-foreground">{t('caissier.profileTitle')}</div>
         </div>
       </div>
     );
@@ -88,10 +138,10 @@ const CaissierDashboard = () => {
         <main className="flex-1 min-w-0 p-6 pt-16 overflow-auto">
           {/* Affichage façade selon la tab sélectionnée */}
           {activeTab === 'dashboard' && (
-            <div className="text-muted-foreground">Espace Caissier (façade, aucun contenu)</div>
+            <div className="text-muted-foreground">{t('caissier.emptyDashboard') || 'Espace Caissier (façade, aucun contenu)'}</div>
           )}
           {activeTab === 'recouvrement' && (
-            <div className="text-muted-foreground">Section Recouvrement (façade, aucun contenu)</div>
+            <div className="text-muted-foreground">{t('caissier.recouvrementEmpty') || 'Section Recouvrement (façade, aucun contenu)'}</div>
           )}
           {activeTab === 'paiement' && (
             <div className="space-y-6 w-full">
@@ -99,16 +149,21 @@ const CaissierDashboard = () => {
                 <h2 className="text-2xl font-bold">{t('caissier.paymentsTitle') || 'Paiements'}</h2>
                 {/* placeholder for actions (export, add, etc.) if needed in future */}
                 <div className="flex items-center gap-2">
-                  <Button onClick={() => setShowCreatePayment(true)} className="flex items-center gap-2">
-                    <Plus className="h-4 w-4" />
-                    {t('buttons.add') || 'Ajouter'}
-                  </Button>
+                    <Button onClick={() => setShowCreatePayment(true)} className="flex items-center gap-2">
+                      <Plus className="h-4 w-4" />
+                      {t('planificateur.add')}
+                    </Button>
                 </div>
               </div>
               <div className={(isMobile ? 'overflow-x-auto ' : '') + 'mb-2'}>
-                <PaymentReceiptsTable receipts={receipts} onConsultReceipt={(r) => setConsultReceipt(r)} />
+                <PaymentReceiptsTable receipts={receipts} onConsultReceipt={(r) => setConsultReceipt(r)} onEditReceipt={(r) => setEditReceipt(r)} onDeleteReceipt={handleDeleteReceipt} onValidateReceipt={(r) => setValidateReceipt(r)} />
               </div>
-              <ConsultPaymentDialog isOpen={!!consultReceipt} receipt={consultReceipt} onClose={() => setConsultReceipt(null)} />
+              <EditPaymentDialog receipt={consultReceipt} isOpen={!!consultReceipt} onClose={() => setConsultReceipt(null)} readOnly={true} />
+              <EditPaymentDialog receipt={editReceipt} isOpen={!!editReceipt} onClose={() => setEditReceipt(null)} onSave={(updated) => { /* parent can refresh or handle */ setEditReceipt(null); }} />
+              <ValidatePaymentDialog receipt={validateReceipt} isOpen={!!validateReceipt} onClose={() => setValidateReceipt(null)} onValidated={(updated) => {
+                // parent can refresh or update local state; we rely on the payments listener to update
+                setValidateReceipt(null);
+              }} />
               <CreatePaymentDialog isOpen={showCreatePayment} onClose={() => setShowCreatePayment(false)} />
             </div>
           )}

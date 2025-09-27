@@ -18,10 +18,10 @@ interface ClientsTableProps {
   fontSize?: '40' | '50' | '60' | '70' | '80' | '90' | '100';
 }
 
-const ClientsTable = ({ clients, onEditClient, onConsultClient, onDeleteClient, onZoomClient, onValidateClient, fontSize = '100' }: ClientsTableProps) => {
+const ClientsTable = ({ clients, onEditClient, onConsultClient, onDeleteClient, onZoomClient, onValidateClient, fontSize = '80' }: ClientsTableProps) => {
   const { t } = useTranslation();
   // Use the table zoom hook directly so the selector controls the shared zoom helpers
-  const { localFontSize, setLocalFontSize, fontSizeStyle, rowHeight, iconSize, badgeClass, badgeStyle, cellPaddingClass, getMinWidthForChars } = useTableZoom(fontSize as any);
+  const { localFontSize, setLocalFontSize, fontSizeStyle, rowHeight, iconSize, badgeClass, badgeStyle, cellPaddingClass, getMinWidthForChars, computedRowPx, computedIconPx } = useTableZoom(fontSize as any);
   return (
     <Card>
       <CardContent className="p-0">
@@ -93,42 +93,46 @@ const ClientsTable = ({ clients, onEditClient, onConsultClient, onDeleteClient, 
                 </TableCell>
                 <TableCell className={`${cellPaddingClass}`} style={fontSizeStyle}>
                   <div className="flex gap-1" style={fontSizeStyle}>
-                    <Button 
-                      size="sm" 
+                    <Button
+                      size="sm"
                       variant="outline"
-                      className={`p-0 ${iconSize} min-w-0`}
+                      className={`flex items-center justify-center rounded-md border border-border`}
+                      style={{ width: computedRowPx, height: computedRowPx }}
                       onClick={() => onZoomClient(client)}
                       title={t('clients.viewOnMap')}
                     >
-                      <MapPin className={`${iconSize} min-w-0`} />
+                      <MapPin style={{ width: computedIconPx, height: computedIconPx }} />
                     </Button>
-                      <Button 
-                      size="sm" 
+                    <Button
+                      size="sm"
                       variant="outline"
-                      className={`p-0 ${iconSize} min-w-0`}
+                      className={`flex items-center justify-center rounded-md border border-border`}
+                      style={{ width: computedRowPx, height: computedRowPx }}
                       onClick={() => onEditClient(client)}
                       title={t('forms.edit')}
                     >
-                      <Edit className={`${iconSize} min-w-0`} />
+                      <Edit style={{ width: computedIconPx, height: computedIconPx }} />
                     </Button>
-                    <Button 
-                      size="sm" 
+                    <Button
+                      size="sm"
                       variant="outline"
-                      className={`p-0 ${iconSize} min-w-0 text-red-600 hover:text-red-700`}
+                      className={`flex items-center justify-center rounded-md border border-border text-red-600 hover:text-red-700`}
+                      style={{ width: computedRowPx, height: computedRowPx }}
                       onClick={() => onDeleteClient(client.id)}
                       title={t('forms.delete')}
                     >
-                      <Trash2 className={`${iconSize} min-w-0`} />
+                      <Trash2 style={{ width: computedIconPx, height: computedIconPx }} />
                     </Button>
                     {client.status === 'pending' && onValidateClient && (
-                        <Button
+                      <Button
                         size="sm"
                         variant="outline"
-                        className={`p-0 text-green-600 hover:text-green-700 ${iconSize}`}
+                        className={`flex items-center justify-center rounded-md border border-border text-green-600 hover:text-green-700`}
+                        style={{ width: computedRowPx, height: computedRowPx }}
                         onClick={() => onValidateClient(client)}
                         title={t('clients.validate')}
                       >
-                        <Check className={`${iconSize} min-w-0`} />
+                        <Check style={{ width: computedIconPx, height: computedIconPx }} />
                       </Button>
                     )}
                   </div>

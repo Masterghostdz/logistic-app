@@ -2,18 +2,20 @@ import { useState } from 'react';
 
 type FontSizeKey = '40' | '50' | '60' | '70' | '80' | '90' | '100';
 
-export default function useTableZoom(initial: FontSizeKey = '100') {
+export default function useTableZoom(initial: FontSizeKey = '80') {
+  // Default local font size set to '80' to meet product requirement (80% default zoom)
   const [localFontSize, setLocalFontSize] = useState<FontSizeKey>(initial);
 
-  // Centralized zoom mapping (adjustable)
+  // Centralized zoom mapping (label -> multiplier).
+  // Use straightforward mapping so '80' corresponds ~0.8, '100' -> 1.0, etc.
   const zoomLevels: Record<FontSizeKey, number> = {
-    '40': 0.75,
-    '50': 0.8,
-    '60': 0.85,
-    '70': 0.9,
-    '80': 0.95,
-    '90': 1.0,
-    '100': 1.05,
+    '40': 0.4,
+    '50': 0.5,
+    '60': 0.6,
+    '70': 0.7,
+    '80': 0.8,
+    '90': 0.9,
+    '100': 1.0,
   };
 
   const zoomGlobal = zoomLevels[String(localFontSize) as FontSizeKey] ?? 1.0;

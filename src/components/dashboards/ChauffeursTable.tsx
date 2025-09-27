@@ -28,8 +28,8 @@ interface ChauffeursTableProps {
   showPosition?: boolean;
 }
 
-const ChauffeursTable = ({ chauffeurs, onEditChauffeur, onDeleteChauffeur, fontSize = '100', showPosition = true }: ChauffeursTableProps) => {
-  const { localFontSize, setLocalFontSize, fontSizeStyle, rowHeight, iconSize, cellPaddingClass, badgeClass, badgeStyle, getMinWidthForChars } = useTableZoom(fontSize as any);
+const ChauffeursTable = ({ chauffeurs, onEditChauffeur, onDeleteChauffeur, fontSize = '80', showPosition = true }: ChauffeursTableProps) => {
+  const { localFontSize, setLocalFontSize, fontSizeStyle, rowHeight, iconSize, cellPaddingClass, badgeClass, badgeStyle, getMinWidthForChars, computedRowPx, computedIconPx } = useTableZoom(fontSize as any);
   const { vehicleTypes } = useSharedData();
   const { t, settings } = useTranslation();
   return (
@@ -181,23 +181,25 @@ const ChauffeursTable = ({ chauffeurs, onEditChauffeur, onDeleteChauffeur, fontS
                   </TableCell>
                   <TableCell data-rtl={settings.language === 'ar'} className={`min-w-[90px] ${cellPaddingClass}`} style={fontSizeStyle}>
                     <div className="flex gap-1" style={fontSizeStyle}>
-                        <Button 
-                        size="sm" 
+                      <Button
+                        size="sm"
                         variant="outline"
-                        className={`p-0 ${iconSize} min-w-0`}
+                        className={`flex items-center justify-center rounded-md border border-border`}
+                        style={{ width: computedRowPx, height: computedRowPx }}
                         onClick={() => onEditChauffeur(chauffeur)}
                         title={t('forms.edit')}
                       >
-                        <Edit className={`${iconSize} min-w-0`} />
+                        <Edit style={{ width: computedIconPx, height: computedIconPx }} />
                       </Button>
-                      <Button 
-                        size="sm" 
+                      <Button
+                        size="sm"
                         variant="outline"
-                        className={`p-0 ${iconSize} min-w-0 text-red-600 hover:text-red-700`}
+                        className={`flex items-center justify-center rounded-md border border-border text-red-600 hover:text-red-700`}
+                        style={{ width: computedRowPx, height: computedRowPx }}
                         onClick={() => onDeleteChauffeur(chauffeur.id)}
                         title={t('forms.delete')}
                       >
-                        <Trash2 className={`${iconSize} min-w-0`} />
+                        <Trash2 style={{ width: computedIconPx, height: computedIconPx }} />
                       </Button>
                     </div>
                   </TableCell>

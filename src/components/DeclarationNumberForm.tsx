@@ -101,8 +101,8 @@ const DeclarationNumberForm: React.FC<DeclarationNumberFormProps> = ({
           <Label htmlFor="year">Année</Label>
           <Select value={year} onValueChange={setYear}>
             <SelectTrigger>
-              <SelectValue placeholder="Sélectionner" />
-            </SelectTrigger>
+                <SelectValue placeholder={t('forms.selectPlaceholder') || 'Sélectionner'} />
+              </SelectTrigger>
             <SelectContent>
               {years.map((yr) => (
                 <SelectItem key={yr} value={yr}>20{yr}</SelectItem>
@@ -115,7 +115,7 @@ const DeclarationNumberForm: React.FC<DeclarationNumberFormProps> = ({
           <Label htmlFor="month">Mois</Label>
           <Select value={month} onValueChange={setMonth}>
             <SelectTrigger>
-              <SelectValue placeholder="Sélectionner" />
+              <SelectValue placeholder={t('forms.selectPlaceholder') || 'Sélectionner'} />
             </SelectTrigger>
             <SelectContent>
               {months.map((m) => (

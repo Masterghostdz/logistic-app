@@ -32,7 +32,7 @@ const DeclarationsTable = ({
   selectedDeclarationIds = [],
   setSelectedDeclarationIds,
   mobile = false,
-  fontSize = '100',
+  fontSize = '80',
   onConsultDeclaration,
   chauffeurTypes
 }: DeclarationsTableProps) => {
@@ -44,26 +44,28 @@ const DeclarationsTable = ({
     iconSize,
     cellPaddingClass,
     badgeClass,
-    badgeStyle,
     getMinWidthForChars,
-    zoomGlobal
+    zoomGlobal,
+    computedRowPx,
+    computedIconPx
   } = useTableZoom(fontSize as any);
 
   const { t, settings } = useTranslation();
   const getStatusBadge = (status: string) => {
+    const pad = 'px-[10px]';
     switch (status) {
       case 'en_route':
-  return <Badge size="md" style={{ ...badgeStyle }} className={`bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 ${badgeClass}`}>{t('dashboard.onRoad')}</Badge>;
-    case 'en_panne':
-  return <Badge size="md" style={{ ...badgeStyle }} className={`bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200 ${badgeClass}`}>{t('declarations.breakdown')}</Badge>;
-    case 'en_cours':
-  return <Badge size="md" style={{ ...badgeStyle }} className={`bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 ${badgeClass}`}>{t('dashboard.pending')}</Badge>;
-    case 'valide':
-  return <Badge size="md" style={{ ...badgeStyle }} className={`bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 ${badgeClass}`}>{t('dashboard.validated')}</Badge>;
-    case 'refuse':
-  return <Badge size="md" style={{ ...badgeStyle }} className={`bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 ${badgeClass}`}>{t('dashboard.refused')}</Badge>;
+        return <Badge className={`bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 ${badgeClass} ${pad}`}>{t('dashboard.onRoad')}</Badge>;
+      case 'en_panne':
+        return <Badge className={`bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200 ${badgeClass} ${pad}`}>{t('declarations.breakdown')}</Badge>;
+      case 'en_cours':
+        return <Badge className={`bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 ${badgeClass} ${pad}`}>{t('dashboard.pending')}</Badge>;
+      case 'valide':
+        return <Badge className={`bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 ${badgeClass} ${pad}`}>{t('dashboard.validated')}</Badge>;
+      case 'refuse':
+        return <Badge className={`bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 ${badgeClass} ${pad}`}>{t('dashboard.refused')}</Badge>;
       default:
-  return <Badge size="md" variant="outline" style={{ ...badgeStyle }} className={`${badgeClass}`}>{status}</Badge>;
+        return <Badge variant="outline" className={`${badgeClass} ${pad}`}>{status}</Badge>;
     }
   };
 
@@ -119,7 +121,7 @@ const DeclarationsTable = ({
                 {/* Affiche Frais uniquement pour chauffeur externe */}
                 <TableHead data-rtl={settings.language === 'ar'} className={`${getMinWidthForChars(12)} whitespace-nowrap ${cellPaddingClass}`} style={fontSizeStyle}>{t('declarations.deliveryFees')}</TableHead>
                 {/* Affiche Prime de route pour interne et planificateur */}
-                <TableHead data-rtl={settings.language === 'ar'} className={`${colWidth} whitespace-nowrap ${cellPaddingClass}`} style={fontSizeStyle}>{t('declarations.primeDeRoute') === 'declarations.primeDeRoute' ? 'Prime de route (DZD)' : t('declarations.primeDeRoute')}</TableHead>
+                <TableHead data-rtl={settings.language === 'ar'} className={`${colWidth} whitespace-nowrap ${cellPaddingClass}`} style={fontSizeStyle}>{t('declarations.primeDeRoute') === 'declarations.primeDeRoute' ? 'Prime de route' : t('declarations.primeDeRoute')}</TableHead>
                 <TableHead data-rtl={settings.language === 'ar'} className={`${getMinWidthForChars(12)} whitespace-nowrap ${cellPaddingClass}`} style={fontSizeStyle}>{t('declarations.createdDate')}</TableHead>
                 <TableHead data-rtl={settings.language === 'ar'} className={`${getMinWidthForChars(12)} whitespace-nowrap ${cellPaddingClass}`} style={fontSizeStyle}>{t('declarations.validated') || t('declarations.validated') /* fallback handled by translations */}</TableHead>
                 <TableHead data-rtl={settings.language === 'ar'} className={`${colWidthEtat} whitespace-nowrap ${cellPaddingClass}`} style={fontSizeStyle}>{t('declarations.status')}</TableHead>
@@ -163,7 +165,7 @@ const DeclarationsTable = ({
                   <TableCell data-rtl={settings.language === 'ar'} className={`text-right whitespace-nowrap ${cellPaddingClass}`} style={fontSizeStyle}>
                     {chauffeurTypes && chauffeurTypes[declaration.chauffeurId] === 'externe' && declaration.deliveryFees ? (
                       <div className={`flex items-center gap-1 whitespace-nowrap`} style={fontSizeStyle}>
-                        <span className={`whitespace-nowrap`} style={fontSizeStyle}>{declaration.deliveryFees.toFixed(2)}</span>
+                        <span className={`whitespace-nowrap`} style={fontSizeStyle}>{declaration.deliveryFees.toFixed(2)} DZD</span>
                         <CopyButton value={Math.floor(declaration.deliveryFees).toString()} />
                       </div>
                     ) : '-'}
@@ -171,7 +173,7 @@ const DeclarationsTable = ({
                   {/* Prime de route : afficher pour interne et planificateur */}
                   <TableCell data-rtl={settings.language === 'ar'} className={`text-center whitespace-nowrap ${cellPaddingClass}`} style={fontSizeStyle}>
                     {(chauffeurTypes && chauffeurTypes[declaration.chauffeurId] === 'interne' && declaration.primeDeRoute) || (!chauffeurTypes && declaration.primeDeRoute) ? (
-                      <span className={`${getMinWidthForChars(6)} inline-block`} style={fontSizeStyle}>{declaration.primeDeRoute.toFixed(2)}</span>
+                      <span className={`${getMinWidthForChars(6)} inline-block`} style={fontSizeStyle}>{declaration.primeDeRoute.toFixed(2)} DZD</span>
                     ) : '-' }
                   </TableCell>
                   <TableCell data-rtl={settings.language === 'ar'} className={`whitespace-nowrap ${cellPaddingClass}`} style={fontSizeStyle}>
@@ -195,40 +197,44 @@ const DeclarationsTable = ({
                   </TableCell>
                   <TableCell className={`whitespace-nowrap ${cellPaddingClass}`} style={fontSizeStyle}>
                     <div className="flex gap-1 whitespace-nowrap" style={fontSizeStyle}>
-                      <Button 
-                        size="sm" 
+                      <Button
+                        size="sm"
                         variant="outline"
-                        className={`p-0 ${iconSize}`}
+                        className={`flex items-center justify-center rounded-md border border-border`}
+                        style={{ width: computedRowPx, height: computedRowPx }}
                         onClick={() => onEditDeclaration(declaration)}
                       >
-                        <Edit className={`${iconSize} min-w-0`} />
+                        <Edit style={{ width: computedIconPx, height: computedIconPx }} />
                       </Button>
-                      <Button 
-                        size="sm" 
+                      <Button
+                        size="sm"
                         variant="outline"
-                        className={`p-0 ${iconSize} text-red-600 hover:text-red-700`}
+                        className={`flex items-center justify-center rounded-md border border-border text-red-600 hover:text-red-700`}
+                        style={{ width: computedRowPx, height: computedRowPx }}
                         onClick={() => onDeleteDeclaration(declaration.id)}
                       >
-                        <Trash2 className={`${iconSize} min-w-0`} />
+                        <Trash2 style={{ width: computedIconPx, height: computedIconPx }} />
                       </Button>
                       {declaration.status === 'en_cours' && (
                         <>
-                            <Button 
-                              size="sm" 
-                              variant="outline" 
-                              className={`p-0 text-green-600 hover:text-green-700 ${iconSize}`}
-                              onClick={() => onValidateDeclaration(declaration.id)}
-                            >
-                              <Check className={`${iconSize} min-w-0`} />
-                            </Button>
-                            <Button 
-                              size="sm" 
-                              variant="outline" 
-                              className={`p-0 text-red-600 hover:text-red-700 ${iconSize}`}
-                              onClick={() => onRejectDeclaration(declaration.id)}
-                            >
-                              <X className={`${iconSize} min-w-0`} />
-                            </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className={`flex items-center justify-center rounded-md border border-border text-green-600 hover:text-green-700`}
+                            style={{ width: computedRowPx, height: computedRowPx }}
+                            onClick={() => onValidateDeclaration(declaration.id)}
+                          >
+                            <Check style={{ width: computedIconPx, height: computedIconPx }} />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className={`flex items-center justify-center rounded-md border border-border text-red-600 hover:text-red-700`}
+                            style={{ width: computedRowPx, height: computedRowPx }}
+                            onClick={() => onRejectDeclaration(declaration.id)}
+                          >
+                            <X style={{ width: computedIconPx, height: computedIconPx }} />
+                          </Button>
                         </>
                       )}
                     </div>

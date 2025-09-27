@@ -30,13 +30,14 @@ import PlanificateurSidebar from './PlanificateurSidebar';
 import DeclarationsTable from './DeclarationsTable';
 import RefusalReasonDialog from '../RefusalReasonDialog';
 import ChauffeursTable from './ChauffeursTable';
-import CreateChauffeurDialog from './CreateChauffeurDialog';
+import CreateChauffeurDialog from '../CreateChauffeurDialog';
 import ClientsTable from './ClientsTable';
 import ClientDialog from './ClientDialog';
 import ClientMapDialog from './ClientMapDialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from '../../hooks/useTranslation';
+import { getTranslation } from '../../lib/translations';
 import useTableZoom from '../../hooks/useTableZoom';
 
 const PlanificateurDashboard = () => {
@@ -59,6 +60,8 @@ const PlanificateurDashboard = () => {
   const [editingDeclaration, setEditingDeclaration] = useState<Declaration | null>(null);
   // Utilise le mode d'affichage global depuis les settings
   const { settings, updateSettings } = useSettings();
+  // Use hook-based translation to respect current language (including Arabic)
+  const addLabel = t('planificateur.add') || t('buttons.add');
   const { badgeClass, badgeStyle } = useTableZoom();
   // Le style est sélectionné selon le paramètre settings.viewMode
   const viewMode = settings.viewMode || 'desktop';
@@ -885,13 +888,13 @@ const PlanificateurDashboard = () => {
                         {t('planificateur.add')}
                       </Button>
                     </DialogTrigger>
-                    <DialogContent>
+                      <DialogContent>
                       <DialogHeader>
-                        <DialogTitle>Créer un nouvel entrepôt</DialogTitle>
+                        <DialogTitle>{t('warehouses.new')}</DialogTitle>
                       </DialogHeader>
                       <form onSubmit={handleCreateWarehouse} className="space-y-4">
                         <div>
-                          <Label htmlFor="warehouseName">Nom de l'entrepôt *</Label>
+                          <Label htmlFor="warehouseName">{t('warehouses.name')} *</Label>
                           <Input
                             id="warehouseName"
                             value={newWarehouse.name}
@@ -909,7 +912,7 @@ const PlanificateurDashboard = () => {
                             }}
                           >
                             <SelectTrigger>
-                              <SelectValue placeholder="Sélectionner une société" />
+                              <SelectValue placeholder={t('companies.select') || t('companies.name') || 'Sélectionner une société'} />
                             </SelectTrigger>
                             <SelectContent>
                               {companies.map(company => (
@@ -923,6 +926,7 @@ const PlanificateurDashboard = () => {
                             phones={newWarehouse.phone}
                             onChange={phones => setNewWarehouse({ ...newWarehouse, phone: phones })}
                             label={t('planificateur.phoneNumbers')}
+                            addLabel={t('planificateur.add')}
                           />
                         </div>
                         <div>
@@ -932,7 +936,7 @@ const PlanificateurDashboard = () => {
                             onValueChange={value => setNewWarehouse({ ...newWarehouse, status: value })}
                           >
                             <SelectTrigger>
-                              <SelectValue placeholder="Sélectionner le statut" />
+                              <SelectValue placeholder={t('forms.selectPlaceholder') || 'Sélectionner le statut'} />
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="active">{t('warehouses.active') || t('chauffeurs.active') || 'Actif'}</SelectItem>
@@ -941,7 +945,7 @@ const PlanificateurDashboard = () => {
                           </Select>
                         </div>
                         <div>
-                          <Label htmlFor="warehouseAddress">Adresse *</Label>
+                          <Label htmlFor="warehouseAddress">{t('forms.address')} *</Label>
                           <Textarea
                             id="warehouseAddress"
                             value={newWarehouse.address}
@@ -951,7 +955,7 @@ const PlanificateurDashboard = () => {
                           />
                         </div>
                         <div>
-                          <Label htmlFor="warehouseLat">Latitude *</Label>
+                          <Label htmlFor="warehouseLat">{t('forms.latitude') || 'Latitude'} *</Label>
                           <Input
                             id="warehouseLat"
                             type="number"
@@ -962,7 +966,7 @@ const PlanificateurDashboard = () => {
                           />
                         </div>
                         <div>
-                          <Label htmlFor="warehouseLng">Longitude *</Label>
+                          <Label htmlFor="warehouseLng">{t('forms.longitude') || 'Longitude'} *</Label>
                           <Input
                             id="warehouseLng"
                             type="number"
@@ -973,9 +977,9 @@ const PlanificateurDashboard = () => {
                           />
                         </div>
                         <div className="flex gap-2 pt-4">
-                          <Button type="submit" className="flex-1">Créer</Button>
+                          <Button type="submit" className="flex-1">{t('forms.save') || 'Créer'}</Button>
                           <Button type="button" variant="outline" onClick={() => setShowCreateWarehouse(false)}>
-                            Annuler
+                            {t('forms.cancel') || 'Annuler'}
                           </Button>
                         </div>
                       </form>
@@ -1023,7 +1027,7 @@ const PlanificateurDashboard = () => {
                     onClick={() => setShowCreateChauffeur(true)}
                   >
                     <Plus className="h-4 w-4" />
-                    {t('buttons.add') || 'Ajouter'}
+                    {t('planificateur.add')}
                   </Button>
                 </div>
                 {/* Barre de recherche/filtre pour chauffeurs */}
@@ -1080,7 +1084,7 @@ const PlanificateurDashboard = () => {
                     onClick={() => { setEditingClient(null); setShowEditClient(true); }}
                   >
                     <Plus className="h-4 w-4" />
-                    {t('buttons.add') || 'Ajouter'}
+                    {t('planificateur.add')}
                   </Button>
                 </div>
                 {/* Barre de recherche/filtre pour clients */}

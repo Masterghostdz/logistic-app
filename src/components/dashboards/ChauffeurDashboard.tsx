@@ -10,6 +10,7 @@ import CameraPreviewModal from '../CameraPreviewModal';
 import { useAuth } from '../../contexts/AuthContext';
 import { useSharedData } from '../../contexts/SharedDataContext';
 import { useTranslation } from '../../hooks/useTranslation';
+import { getTranslation } from '../../lib/translations';
 import useTableZoom from '../../hooks/useTableZoom';
 import { toast } from '../ui/use-toast';
 import { useIsMobile } from '../../hooks/use-mobile';
@@ -33,6 +34,7 @@ import { Badge, onlineBadgeClass, onlineBadgeInline } from '../ui/badge';
 import { Separator } from '../ui/separator';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { MapPin, Plus, Clock, Search, Edit, Trash2 } from 'lucide-react';
+import CreateChauffeurDialog from '../CreateChauffeurDialog';
 // ...existing code...
 import ChauffeurSidebar from './ChauffeurSidebar';
 import { Declaration, Warehouse, PaymentReceipt } from '../../types';
@@ -76,6 +78,8 @@ const ChauffeurDashboard = () => {
     setUnreadCount(notifs.filter((n: any) => !n.read).length);
   };
   const { t, settings } = useTranslation();
+  // Use hook-based translation to respect current language (including Arabic)
+  const addLabel = t('planificateur.add') || t('buttons.add');
   const auth = useAuth();
   useEffect(() => {
     async function fetchNotifications() {
@@ -211,6 +215,38 @@ const ChauffeurDashboard = () => {
   // Reçus de paiement structurés
   const [paymentReceipts, setPaymentReceipts] = useState<PaymentReceipt[]>([]);
   const [enRouteDeclaration, setEnRouteDeclaration] = useState<Declaration | null>(null);
+  // Keep paymentReceipts in sync with payments collection for the current en-route declaration
+  useEffect(() => {
+    let unsub: (() => void) | undefined;
+    (async () => {
+      const { listenPayments } = await import('../../services/paymentService');
+      unsub = listenPayments((items: any[]) => {
+        if (!enRouteDeclaration) {
+          setPaymentReceipts([]);
+          return;
+        }
+        const declRef = `DCP/${enRouteDeclaration.year}/${enRouteDeclaration.month}/${enRouteDeclaration.programNumber}`;
+        const filtered = items.filter(p => {
+          try {
+            if (p.declarationId && enRouteDeclaration.id && String(p.declarationId) === String(enRouteDeclaration.id)) return true;
+            if (!p.declarationId && p.programReference && declRef && String(p.programReference) === String(declRef)) return true;
+            if (!p.declarationId && p.year && p.month && p.programNumber) {
+              const pnMatch = String(p.programNumber) === String(enRouteDeclaration.programNumber);
+              const yearMatch = String(p.year) === String(enRouteDeclaration.year);
+              const monthMatch = String(p.month) === String(enRouteDeclaration.month);
+              const authorMatch = (p.chauffeurId && p.chauffeurId === enRouteDeclaration.chauffeurId) || (p.createdBy && p.createdBy === enRouteDeclaration.chauffeurId);
+              if (pnMatch && yearMatch && monthMatch && authorMatch) return true;
+            }
+          } catch (e) {
+            // ignore
+          }
+          return false;
+        });
+        setPaymentReceipts(filtered);
+      });
+    })();
+    return () => { if (unsub) unsub(); };
+  }, [enRouteDeclaration]);
   // Synchronise paymentReceipts avec ceux de la déclaration en cours si présents
   useEffect(() => {
     if (enRouteDeclaration && Array.isArray(enRouteDeclaration.paymentReceipts)) {
@@ -390,6 +426,24 @@ const ChauffeurDashboard = () => {
       const { updateDeclaration } = await import('../../services/declarationService');
       await updateDeclaration(declarationId, { id: declarationId });
   setEnRouteDeclaration({ ...newDeclaration, id: declarationId, paymentReceipts: paymentReceipts.length > 0 ? paymentReceipts : undefined });
+      // Link any previously created payments (by this chauffeur for same program) to this new declaration
+      try {
+        const { getPayments, updatePayment } = await import('../../services/paymentService');
+        const allPayments = await getPayments();
+        const toLink = (allPayments || []).filter((p: any) => {
+          // match by programNumber/year/month and same chauffeur, and no declarationId yet
+          return String(p.programNumber) === String(formData.programNumber) && String(p.year) === String(formData.year) && String(p.month) === String(formData.month) && (p.chauffeurId === auth.user.id) && (!p.declarationId);
+        });
+        for (const p of toLink) {
+          try {
+            await updatePayment(p.id, { declarationId });
+          } catch (e) {
+            console.warn('Failed to link payment to declaration', p.id, e);
+          }
+        }
+      } catch (e) {
+        console.warn('Failed to link payments after declaration creation', e);
+      }
     }
     // On ne reset pas le form, il reste ouvert pour la suite
   };
@@ -573,7 +627,7 @@ const ChauffeurDashboard = () => {
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel>Annuler</AlertDialogCancel>
+                  <AlertDialogCancel>{t('forms.cancel') || 'Annuler'}</AlertDialogCancel>
                   <AlertDialogAction onClick={() => { setGpsActive(false); setGpsPosition(null); setShowGpsConfirm(false); }}>Désactiver</AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
@@ -659,11 +713,11 @@ const ChauffeurDashboard = () => {
                     {enRouteDeclaration && enRouteDeclaration.status === 'en_route' && (
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
-                          <Button variant="destructive" className="flex items-center gap-2 ml-2" title={t('declarations.breakdown')}>
+                          {/* Mobile: icon-only compact button to save space */}
+                          <Button variant="destructive" className="ml-2 w-10 h-10 flex items-center justify-center rounded-md" title={t('declarations.breakdown') || t('declarations.breakdownButton')} aria-label={t('declarations.breakdown') || t('declarations.breakdownButton')}>
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M12 8v.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
-                            {!isMobile && (t && typeof t === 'function' ? t('declarations.breakdown') : 'En panne')}
                           </Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent>
@@ -748,7 +802,7 @@ const ChauffeurDashboard = () => {
                         }
                         setIsCreating(true);
                       }} className="w-full text-sm">
-                        {t('dashboard.createNewDeclaration')}
+                        {addLabel}
                       </Button>
                     ) : (
                       <div className="space-y-3">
@@ -794,19 +848,35 @@ const ChauffeurDashboard = () => {
                                         const [photoUrl] = await import('../../services/declarationService').then(s => s.uploadDeclarationPhotos([file]));
                                         // Société non sélectionnée par défaut
                                         const company = { id: '', name: '' };
-                                        // Création du reçu
-                                        const newReceipt = {
+                                        // Création du paiement top-level
+                                        const newPayment = {
                                           id: Date.now().toString(),
-                                          programReference: formData.programNumber,
+                                          year: formData.year || enRouteDeclaration?.year || '',
+                                          month: formData.month || enRouteDeclaration?.month || '',
+                                          programNumber: formData.programNumber || enRouteDeclaration?.programNumber || '',
+                                          programReference: `DCP/${formData.year}/${formData.month}/${formData.programNumber}`,
                                           createdAt: new Date().toISOString(),
                                           chauffeurId: auth.user.id,
                                           chauffeurName: auth.user.fullName,
-                                          status: 'brouillon' as 'brouillon',
+                                          status: 'pending' as 'pending',
                                           companyId: company.id,
                                           companyName: company.name,
-                                          photoUrl
-                                        };
-                                        setPaymentReceipts(prev => [...prev, newReceipt]);
+                                          photoUrl,
+                                          declarationId: enRouteDeclaration?.id || null
+                                        } as PaymentReceipt;
+                                        // Add creator metadata and initial traceability
+                                        (newPayment as any).createdBy = auth.user?.id || null;
+                                        (newPayment as any).createdByName = auth.user?.fullName || null;
+                                        (newPayment as any).traceability = [
+                                          { userId: auth.user.id, userName: auth.user.fullName, action: t('traceability.paymentReceiptCreated'), date: new Date().toISOString() }
+                                        ];
+                                        setPaymentReceipts(prev => [...prev, newPayment]);
+                                        const { addPayment, updatePayment } = await import('../../services/paymentService');
+                                        await addPayment(newPayment);
+                                        // Force link to declaration in Firestore for persistence
+                                        if (enRouteDeclaration?.id && newPayment.id) {
+                                          await updatePayment(newPayment.id, { declarationId: enRouteDeclaration.id });
+                                        }
                                         // Ajout traçabilité
                                         const traceEntry = {
                                           userId: auth.user.id,
@@ -814,11 +884,10 @@ const ChauffeurDashboard = () => {
                                           action: t('traceability.paymentReceiptCreated'),
                                           date: new Date().toISOString()
                                         };
-                                        // Si une déclaration existe déjà, mettre à jour Firestore
+                                        // Si une déclaration existe déjà, ajouter seulement la traceability
                                         if (enRouteDeclaration) {
                                           await updateDeclaration(enRouteDeclaration.id, {
                                             ...enRouteDeclaration,
-                                            paymentReceipts: [...(enRouteDeclaration.paymentReceipts || []), newReceipt],
                                             traceability: [...(enRouteDeclaration.traceability || []), traceEntry]
                                           });
                                         }
@@ -833,10 +902,10 @@ const ChauffeurDashboard = () => {
                                   title="Prendre une photo"
                                   onClick={() => setIsCameraModalOpen(true)}
                                 >
-                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="white">
-                                    <rect x="3" y="7" width="18" height="13" rx="2" stroke="white" strokeWidth="2" fill="none"/>
-                                    <circle cx="12" cy="13.5" r="3.5" stroke="white" strokeWidth="2" fill="none"/>
-                                    <rect x="8" y="3" width="8" height="4" rx="1" stroke="white" strokeWidth="2" fill="none"/>
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 fill-current text-gray-900 dark:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <rect x="3" y="7" width="18" height="13" rx="2" stroke="currentColor" strokeWidth="2" fill="none"/>
+                                    <circle cx="12" cy="13.5" r="3.5" stroke="currentColor" strokeWidth="2" fill="none"/>
+                                    <rect x="8" y="3" width="8" height="4" rx="1" stroke="currentColor" strokeWidth="2" fill="none"/>
                                   </svg>
                                 </button>
                               </div>
@@ -868,9 +937,28 @@ const ChauffeurDashboard = () => {
       )}
                                     <div className="flex-1 min-w-0 flex flex-col justify-center">
                                       <div className="font-medium truncate">{receipt.companyName || <span className="italic text-muted-foreground">Société non renseignée</span>}</div>
-                                      <div className="text-xs text-muted-foreground truncate">{receipt.status === 'brouillon' ? 'Brouillon' : 'Validée'}</div>
+                                      <div className="text-xs text-muted-foreground truncate">
+                                        {/* Render a badge consistent with PaymentReceiptsTable */}
+                                        <span className="inline-block align-middle">
+                                          {(() => {
+                                            const s = String(receipt.status || '').toLowerCase();
+                                            // pending / brouillon -> pending label (uploadPending toggles synchronized)
+                                            if (['brouillon', 'pending', 'pending_validation'].includes(s)) {
+                                              const label = (s === 'pending' && !receipt.uploadPending) ? (t('declarations.synchronized') || 'Synchronisé') : (t('dashboard.pending') || 'En attente');
+                                              return <Badge size="sm" style={{ ...badgeStyle }} className={`bg-yellow-100 text-yellow-800 ${badgeClass}`}>{label}</Badge>;
+                                            }
+                                            if (['validee', 'validated', 'valid', 'valide'].includes(s)) {
+                                              return <Badge size="sm" style={{ ...badgeStyle }} className={`bg-green-100 text-green-800 ${badgeClass}`}>{t('dashboard.validated') || 'Validé'}</Badge>;
+                                            }
+                                            if (['refuse', 'refused', 'rejected'].includes(s)) {
+                                              return <Badge size="sm" style={{ ...badgeStyle }} className={`bg-red-100 text-red-800 ${badgeClass}`}>{t('declarations.refused') || 'Refusé'}</Badge>;
+                                            }
+                                            return <Badge size="sm" variant="outline" style={{ ...badgeStyle }} className={badgeClass}>{receipt.status}</Badge>;
+                                          })()}
+                                        </span>
+                                      </div>
                                       {!isMobile && (
-                                        <div className="text-xs text-muted-foreground truncate">{new Date(receipt.createdAt).toLocaleString()}</div>
+                                        <div className="text-xs text-muted-foreground truncate">{receipt.createdAt ? new Date(receipt.createdAt).toLocaleDateString() : ''}</div>
                                       )}
                                     </div>
                                     <AlertDialog>
@@ -891,10 +979,26 @@ const ChauffeurDashboard = () => {
                                           </AlertDialogDescription>
                                         </AlertDialogHeader>
                                         <AlertDialogFooter>
-                                          <AlertDialogCancel>Annuler</AlertDialogCancel>
+                                          <AlertDialogCancel>{t('forms.cancel') || 'Annuler'}</AlertDialogCancel>
                                           <AlertDialogAction
                                             onClick={async () => {
                                               const newReceipts = paymentReceipts.filter((_, i) => i !== idx);
+                                              // If the receipt has an id and was persisted in payments collection, delete it there too
+                                              try {
+                                                const toDelete = paymentReceipts[idx];
+                                                    if (toDelete && toDelete.id) {
+                                                      const { safeDeletePayment } = await import('../../services/paymentService');
+                                                      try {
+                                                        await safeDeletePayment(toDelete.id, auth.user);
+                                                      } catch (e) {
+                                                        // surface to user
+                                                        alert(e.message || 'Suppression non autorisée');
+                                                        throw e;
+                                                      }
+                                                    }
+                                              } catch (e) {
+                                                console.warn('Failed to delete payment doc:', e);
+                                              }
                                               setPaymentReceipts(newReceipts);
                                               if (enRouteDeclaration) {
                                                 const { updateDeclaration } = await import('../../services/declarationService');
@@ -919,6 +1023,7 @@ const ChauffeurDashboard = () => {
                               </div>
                               <CameraPreviewModal
                                 isOpen={isCameraModalOpen}
+                                language={settings.language}
                                 onPhotoTaken={async (dataUrl) => {
                                   // Convertir le dataUrl en File
                                   const res = await fetch(dataUrl);
@@ -928,19 +1033,34 @@ const ChauffeurDashboard = () => {
                                   const [photoUrl] = await import('../../services/declarationService').then(s => s.uploadDeclarationPhotos([file]));
                                   // Société non sélectionnée par défaut
                                   const company = { id: '', name: '' };
-                                  // Création du reçu
-                                  const newReceipt = {
+                                  // Création du paiement top-level
+                                  const newPayment = {
                                     id: Date.now().toString(),
-                                    programReference: formData.programNumber,
+                                    year: formData.year || enRouteDeclaration?.year || '',
+                                    month: formData.month || enRouteDeclaration?.month || '',
+                                    programNumber: formData.programNumber || enRouteDeclaration?.programNumber || '',
+                                    programReference: `DCP/${formData.year}/${formData.month}/${formData.programNumber}`,
                                     createdAt: new Date().toISOString(),
                                     chauffeurId: auth.user.id,
                                     chauffeurName: auth.user.fullName,
-                                    status: 'brouillon' as 'brouillon',
+                                    status: 'pending' as 'pending',
                                     companyId: company.id,
                                     companyName: company.name,
-                                    photoUrl
-                                  };
-                                  setPaymentReceipts(prev => [...prev, newReceipt]);
+                                    photoUrl,
+                                    declarationId: enRouteDeclaration?.id || null
+                                  } as PaymentReceipt;
+                                  (newPayment as any).createdBy = auth.user?.id || null;
+                                  (newPayment as any).createdByName = auth.user?.fullName || null;
+                                  (newPayment as any).traceability = [
+                                    { userId: auth.user.id, userName: auth.user.fullName, action: t('traceability.paymentReceiptCreated'), date: new Date().toISOString() }
+                                  ];
+                                  setPaymentReceipts(prev => [...prev, newPayment]);
+                                  const { addPayment, updatePayment } = await import('../../services/paymentService');
+                                  await addPayment(newPayment);
+                                  // Force link to declaration in Firestore for persistence
+                                  if (enRouteDeclaration?.id && newPayment.id) {
+                                    await updatePayment(newPayment.id, { declarationId: enRouteDeclaration.id });
+                                  }
                                   // Ajout traçabilité
                                   const traceEntry = {
                                     userId: auth.user.id,
@@ -948,11 +1068,9 @@ const ChauffeurDashboard = () => {
                                     action: t('traceability.paymentReceiptCreated'),
                                     date: new Date().toISOString()
                                   };
-                                  // Si une déclaration existe déjà, mettre à jour Firestore
                                   if (enRouteDeclaration) {
                                     await updateDeclaration(enRouteDeclaration.id, {
                                       ...enRouteDeclaration,
-                                      paymentReceipts: [...(enRouteDeclaration.paymentReceipts || []), newReceipt],
                                       traceability: [...(enRouteDeclaration.traceability || []), traceEntry]
                                     });
                                   }
@@ -1284,7 +1402,7 @@ const ChauffeurDashboard = () => {
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel onClick={() => setShowGpsConfirm(false)}>Annuler</AlertDialogCancel>
+          <AlertDialogCancel onClick={() => setShowGpsConfirm(false)}>{t('forms.cancel') || 'Annuler'}</AlertDialogCancel>
           <AlertDialogAction onClick={() => { setGpsActive(false); setGpsPosition(null); setShowGpsConfirm(false); }}>Désactiver</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

@@ -1,12 +1,13 @@
 import React from 'react';
-import { Button } from '../ui/button';
-import { Input } from '../ui/input';
-import { Label } from '../ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog';
-import { Chauffeur } from '../../types';
-import { useSharedData } from '../../contexts/SharedDataContext';
-import PhoneNumbersField from '../PhoneNumbersField';
+import { useTranslation } from '../hooks/useTranslation';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
+import { Chauffeur } from '../types';
+import { useSharedData } from '../contexts/SharedDataContext';
+import PhoneNumbersField from './PhoneNumbersField';
 
 interface CreateChauffeurDialogProps {
   isOpen: boolean;
@@ -35,6 +36,7 @@ const CreateChauffeurDialog = ({
   setNewChauffeur 
 }: CreateChauffeurDialogProps) => {
   const { vehicleTypes } = useSharedData();
+  const { t } = useTranslation();
   const [showPasswordDialog, setShowPasswordDialog] = React.useState(false);
 
   const handleClose = () => {
@@ -58,19 +60,19 @@ const CreateChauffeurDialog = ({
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-md">
-        <DialogHeader>
+          <DialogHeader>
           <DialogTitle>
-            {editingChauffeur ? 'Modifier le chauffeur' : 'Créer un nouveau chauffeur'}
+            {editingChauffeur ? `${t('forms.edit')} ${t('chauffeurs.title')}` : t('chauffeurs.new')}
           </DialogTitle>
           <DialogDescription>
             {editingChauffeur
-              ? "Modifiez les informations du chauffeur sélectionné."
-              : "Remplissez le formulaire pour créer un nouveau chauffeur."}
+              ? t('forms.edit')
+              : t('chauffeurs.new')}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={onSubmit} className="space-y-4">
           <div>
-            <Label htmlFor="fullName">Nom complet *</Label>
+            <Label htmlFor="fullName">{t('forms.name')} *</Label>
             <Input
               id="fullName"
               value={newChauffeur.fullName}
@@ -79,7 +81,7 @@ const CreateChauffeurDialog = ({
             />
           </div>
           <div>
-            <Label htmlFor="username">Nom d'utilisateur *</Label>
+            <Label htmlFor="username">{t('chauffeurs.username')} *</Label>
             <Input
               id="username"
               value={newChauffeur.username}
@@ -88,27 +90,27 @@ const CreateChauffeurDialog = ({
             />
           </div>
           <div>
-            <Label>Mot de passe</Label>
+            <Label>{t('forms.password')}</Label>
             <div className="mt-2">
               <Button type="button" variant="outline" onClick={() => setShowPasswordDialog(true)}>
-                Modifier le mot de passe
+                {t('forms.edit')} {t('forms.password')}
               </Button>
             </div>
             <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>Modifier le mot de passe</DialogTitle>
-                  <DialogDescription>Entrez le nouveau mot de passe et sa confirmation.</DialogDescription>
+                  <DialogTitle>{t('forms.edit')} {t('forms.password')}</DialogTitle>
+                  <DialogDescription>{t('settings.newPassword')} / {t('settings.confirmPassword')}</DialogDescription>
                 </DialogHeader>
                 <div className="space-y-2">
-                  <Label htmlFor="newPassword">Nouveau mot de passe</Label>
+                  <Label htmlFor="newPassword">{t('settings.newPassword')}</Label>
                   <Input
                     id="newPassword"
                     type="password"
                     value={newChauffeur.password || ''}
                     onChange={e => setNewChauffeur({ ...newChauffeur, password: e.target.value })}
                   />
-                  <Label htmlFor="confirmPassword">Confirmer le mot de passe</Label>
+                  <Label htmlFor="confirmPassword">{t('settings.confirmPassword')}</Label>
                   <Input
                     id="confirmPassword"
                     type="password"
@@ -116,7 +118,7 @@ const CreateChauffeurDialog = ({
                     onChange={e => setNewChauffeur({ ...newChauffeur, confirmPassword: e.target.value })}
                   />
                   <Button type="button" onClick={() => setShowPasswordDialog(false)}>
-                    Valider
+                    {t('forms.save')}
                   </Button>
                 </div>
               </DialogContent>
@@ -126,13 +128,15 @@ const CreateChauffeurDialog = ({
             <PhoneNumbersField
               phones={newChauffeur.phone}
               onChange={(phones) => setNewChauffeur({ ...newChauffeur, phone: phones })}
+              label={t('planificateur.phoneNumbers')}
+              addLabel={t('planificateur.add')}
             />
           </div>
           <div>
-            <Label htmlFor="vehicleType">Type de véhicule</Label>
+            <Label htmlFor="vehicleType">{t('chauffeurs.vehicleType')}</Label>
                     <Select value={newChauffeur.vehicleType} onValueChange={(value) => setNewChauffeur({ ...newChauffeur, vehicleType: value })}>
               <SelectTrigger>
-                <SelectValue placeholder="Sélectionner un type" />
+                <SelectValue placeholder={t('forms.selectPlaceholder') || 'Sélectionner un type'} />
               </SelectTrigger>
               <SelectContent>
                         {vehicleTypes.map((type) => (
@@ -142,23 +146,23 @@ const CreateChauffeurDialog = ({
             </Select>
           </div>
           <div>
-            <Label htmlFor="employeeType">Type d'employé</Label>
+            <Label htmlFor="employeeType">{t('chauffeurs.employeeType')}</Label>
             <Select value={newChauffeur.employeeType} onValueChange={(value: 'interne' | 'externe') => setNewChauffeur({ ...newChauffeur, employeeType: value })}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="interne">Interne</SelectItem>
-                <SelectItem value="externe">Externe</SelectItem>
+                <SelectItem value="interne">{t('chauffeurs.internal')}</SelectItem>
+                <SelectItem value="externe">{t('chauffeurs.external')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
           <div className="flex gap-2 pt-4">
             <Button type="submit" className="flex-1">
-              {editingChauffeur ? 'Modifier' : 'Créer'}
+              {editingChauffeur ? t('forms.edit') : t('chauffeurs.new')}
             </Button>
             <Button type="button" variant="outline" onClick={handleClose}>
-              Annuler
+              {t('forms.cancel')}
             </Button>
           </div>
         </form>

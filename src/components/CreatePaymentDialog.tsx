@@ -1,16 +1,17 @@
 import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog';
-import { Button } from '../ui/button';
-import { Input } from '../ui/input';
-import { Label } from '../ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import { useTranslation } from '../../hooks/useTranslation';
-import { useSharedData } from '../../contexts/SharedDataContext';
-import * as declarationService from '../../services/declarationService';
-import SimpleDeclarationNumberForm from '../SimpleDeclarationNumberForm';
-import CameraPreviewModal from '../CameraPreviewModal';
-import { useIsMobile } from '../../hooks/use-mobile';
-import { useSettings } from '../../contexts/SettingsContext';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { useTranslation } from '../hooks/useTranslation';
+import { useSharedData } from '../contexts/SharedDataContext';
+import { useAuth } from '../contexts/AuthContext';
+import * as declarationService from '../services/declarationService';
+import SimpleDeclarationNumberForm from './SimpleDeclarationNumberForm';
+import CameraPreviewModal from './CameraPreviewModal';
+import { useIsMobile } from '../hooks/use-mobile';
+import { useSettings } from '../contexts/SettingsContext';
 
 interface CreatePaymentDialogProps {
   isOpen: boolean;
@@ -20,6 +21,7 @@ interface CreatePaymentDialogProps {
 const CreatePaymentDialog: React.FC<CreatePaymentDialogProps> = ({ isOpen, onClose }) => {
   const { t } = useTranslation();
   const { declarations, companies } = useSharedData();
+  const auth = useAuth();
   const { settings } = useSettings();
   // Always call the hook unconditionally, then prefer the app-level viewMode if set
   const hookIsMobile = useIsMobile();
@@ -31,6 +33,7 @@ const CreatePaymentDialog: React.FC<CreatePaymentDialogProps> = ({ isOpen, onClo
   const [month, setMonth] = React.useState<string>('');
   const [companyId, setCompanyId] = React.useState<string>('');
   const [notes, setNotes] = React.useState<string>('');
+  const [montant, setMontant] = React.useState<string>('');
   const [cameraOpen, setCameraOpen] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -93,6 +96,10 @@ const CreatePaymentDialog: React.FC<CreatePaymentDialogProps> = ({ isOpen, onClo
       setError(t('payment.errors.noPhoto') || 'Photo du reçu requise');
       return;
     }
+    if (!montant || isNaN(Number(montant))) {
+      setError(t('forms.amount') || 'Montant requis');
+      return;
+    }
     if (!programNumber || programNumber.length !== 4 || !year || !month) {
       setError(t('payment.errors.programRequired') || 'Référence programme requise');
       return;
@@ -117,33 +124,48 @@ const CreatePaymentDialog: React.FC<CreatePaymentDialogProps> = ({ isOpen, onClo
         uploadPending = true;
       }
 
-      const newReceipt = {
-        id: `local-${Date.now()}`,
+      const newPayment = {
         photoUrl,
         year,
         month,
         programNumber,
+        programReference: `DCP/${year}/${month}/${programNumber}`,
         companyId: companyId || null,
+        companyName: companies.find(c => c.id === companyId)?.name || null,
         notes: notes || '',
-        status: 'draft',
+        montant: Number(montant),
+        status: 'validee',
+        validatedAt: new Date().toISOString(),
         uploadPending: uploadPending,
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+  createdBy: auth.user?.id || null,
+  chauffeurId: declaration ? declaration.chauffeurId : null,
+        declarationId: declaration ? declaration.id : null
       };
 
+      // Add creator metadata and initial traceability
+      // attach metadata
+      (newPayment as any).createdBy = auth.user?.id || null;
+      (newPayment as any).createdByName = auth.user?.fullName || null;
+      (newPayment as any).traceability = [
+        { userId: auth.user?.id || null, userName: auth.user?.fullName || null, action: t('traceability.paymentReceiptCreated'), date: new Date().toISOString() }
+      ];
+
+      // Persist as a top-level payment document
+      const { addPayment } = await import('../services/paymentService');
+      const paymentRef = await addPayment(newPayment);
+
+      // If attached to a declaration, add traceability entry on declaration
       if (declaration) {
-        const updatedReceipts = [...(declaration.paymentReceipts || []), newReceipt];
-        await declarationService.updateDeclaration(declaration.id, { paymentReceipts: updatedReceipts });
-      } else {
-        // If no declaration exists for the provided program ref, create a minimal declaration record
-        const newDeclaration = {
-          year,
-          month,
-          programNumber,
-          paymentReceipts: [newReceipt],
-          status: 'draft',
-          createdAt: new Date().toISOString()
+        const traceEntry = {
+          userId: auth.user.id,
+          userName: auth.user.fullName,
+          action: t('traceability.paymentReceiptCreated'),
+          date: new Date().toISOString()
         };
-        await declarationService.addDeclaration(newDeclaration);
+        // Update declaration traceability array (don't embed full receipt to avoid duplication)
+        const updatedTrace = [...(declaration.traceability || []), traceEntry];
+        await declarationService.updateDeclaration(declaration.id, { traceability: updatedTrace });
       }
 
       handleClose();
@@ -160,8 +182,8 @@ const CreatePaymentDialog: React.FC<CreatePaymentDialogProps> = ({ isOpen, onClo
       <Dialog open={isOpen} onOpenChange={val => { if (!val) handleClose(); }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>{t('caissier.createPaymentTitle') || 'Ajouter un reçu de paiement'}</DialogTitle>
-            <DialogDescription>{t('caissier.createPaymentDesc') || 'Remplissez le formulaire pour ajouter un reçu de paiement.'}</DialogDescription>
+            <DialogTitle>{t('caissier.createPaymentTitle')}</DialogTitle>
+            <DialogDescription>{t('caissier.createPaymentDesc')}</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
@@ -225,6 +247,11 @@ const CreatePaymentDialog: React.FC<CreatePaymentDialogProps> = ({ isOpen, onClo
                 </SelectContent>
               </Select>
             </div>
+            <div>
+              <Label htmlFor="montant">{t('financial.amount') || t('forms.amount') || 'Montant (DZD)'}</Label>
+              <Input id="montant" value={montant} onChange={e => setMontant(e.target.value)} placeholder="0" />
+            </div>
+
             <div>
               <Label htmlFor="notes">{t('forms.notes') || 'Notes'}</Label>
               <Input id="notes" value={notes} onChange={e => setNotes(e.target.value)} />

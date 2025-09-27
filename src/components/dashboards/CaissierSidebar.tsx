@@ -2,6 +2,7 @@ import React from 'react';
 import { Button } from '../ui/button';
 import { ClipboardList, CreditCard, MapPin, Banknote } from 'lucide-react';
 import { useTranslation } from '../../hooks/useTranslation';
+import { getTranslation } from '../../lib/translations';
 import { useSettings } from '../../contexts/SettingsContext';
 
 interface CaissierSidebarProps {
@@ -11,35 +12,41 @@ interface CaissierSidebarProps {
 
 const CaissierSidebar: React.FC<CaissierSidebarProps> = ({ activeTab, onTabChange }) => {
   const { t } = useTranslation();
-  const { settings } = useSettings();
+  const { settings, updateSettings } = useSettings();
   const isMobile = settings?.viewMode === 'mobile';
+
+  // Use t() so the hook's language settings (and normalization) are applied
+  const labelDashboard = t('tabs.dashboard');
+  const labelRecouvrement = t('tabs.recouvrement');
+  const labelPayment = t('tabs.payment');
+  const labelTracage = t('tabs.tracage');
 
   if (isMobile) {
     return (
       <nav className="flex flex-row justify-center items-center gap-8 py-3 px-4 bg-white dark:bg-gray-900 rounded-full shadow-lg w-full border-2 border-blue-400 dark:border-blue-600 overflow-x-auto">
         <button
-          aria-label={t('tabs.dashboard') || 'Tableau de bord'}
+          aria-label={labelDashboard}
           onClick={() => onTabChange('dashboard')}
           className={`rounded-full p-2 transition-all ${activeTab === 'dashboard' ? 'bg-blue-600 text-white shadow-lg scale-110' : 'bg-gray-100 text-gray-600'} flex items-center justify-center h-10 w-10`}
         >
           <ClipboardList className="h-[22px] w-[22px]" />
         </button>
         <button
-          aria-label={t('tabs.recouvrement') || 'Recouvrement'}
+          aria-label={labelRecouvrement}
           onClick={() => onTabChange('recouvrement')}
           className={`rounded-full p-2 transition-all ${activeTab === 'recouvrement' ? 'bg-blue-600 text-white shadow-lg scale-110' : 'bg-gray-100 text-gray-600'} flex items-center justify-center h-10 w-10`}
         >
           <Banknote className="h-[22px] w-[22px]" />
         </button>
         <button
-          aria-label={t('tabs.payment') || 'Paiement'}
+          aria-label={labelPayment}
           onClick={() => onTabChange('paiement')}
           className={`rounded-full p-2 transition-all ${activeTab === 'paiement' ? 'bg-blue-600 text-white shadow-lg scale-110' : 'bg-gray-100 text-gray-600'} flex items-center justify-center h-10 w-10`}
         >
           <CreditCard className="h-[22px] w-[22px]" />
         </button>
         <button
-          aria-label={t('tabs.tracage') || 'Traçage'}
+          aria-label={labelTracage}
           onClick={() => onTabChange('tracage')}
           className={`rounded-full p-2 transition-all ${activeTab === 'tracage' ? 'bg-blue-600 text-white shadow-lg scale-110' : 'bg-gray-100 text-gray-600'} flex items-center justify-center h-10 w-10`}
         >
@@ -59,7 +66,7 @@ const CaissierSidebar: React.FC<CaissierSidebarProps> = ({ activeTab, onTabChang
           onClick={() => onTabChange('dashboard')}
         >
           <ClipboardList className="mr-2 h-4 w-4" />
-          {t('tabs.dashboard') || 'Tableau de bord'}
+          {labelDashboard}
         </Button>
         <Button
           variant={activeTab === 'recouvrement' ? 'default' : 'ghost'}
@@ -67,7 +74,7 @@ const CaissierSidebar: React.FC<CaissierSidebarProps> = ({ activeTab, onTabChang
           onClick={() => onTabChange('recouvrement')}
         >
           <Banknote className="mr-2 h-4 w-4" />
-          {t('tabs.recouvrement') || 'Recouvrement'}
+          {labelRecouvrement}
         </Button>
         <Button
           variant={activeTab === 'paiement' ? 'default' : 'ghost'}
@@ -75,7 +82,7 @@ const CaissierSidebar: React.FC<CaissierSidebarProps> = ({ activeTab, onTabChang
           onClick={() => onTabChange('paiement')}
         >
           <CreditCard className="mr-2 h-4 w-4" />
-          {t('tabs.payment') || 'Paiement'}
+          {labelPayment}
         </Button>
         <Button
           variant={activeTab === 'tracage' ? 'default' : 'ghost'}
@@ -83,9 +90,34 @@ const CaissierSidebar: React.FC<CaissierSidebarProps> = ({ activeTab, onTabChang
           onClick={() => onTabChange('tracage')}
         >
           <MapPin className="mr-2 h-4 w-4" />
-          {t('tabs.tracage') || 'Traçage'}
+          {labelTracage}
         </Button>
       </nav>
+      {/* Dev-only language switcher to quickly test translations (hidden in production) */}
+      {typeof process !== 'undefined' && process.env && process.env.NODE_ENV !== 'production' && (
+        <div className="mt-4 flex gap-2">
+          <button
+            className={`px-2 py-1 rounded border ${settings.language === 'fr' ? 'bg-blue-600 text-white' : 'bg-transparent'}`}
+            onClick={() => updateSettings({ language: 'fr' })}
+          >FR</button>
+          <button
+            className={`px-2 py-1 rounded border ${settings.language === 'ar' ? 'bg-blue-600 text-white' : 'bg-transparent'}`}
+            onClick={() => updateSettings({ language: 'ar' })}
+          >AR</button>
+        </div>
+      )}
+      {/* Dev debug: show resolved translations to help troubleshoot language issues */}
+      {typeof process !== 'undefined' && process.env && process.env.NODE_ENV !== 'production' && (
+        <div className="mt-3 text-xs text-muted-foreground">
+          <div>Lang: <strong>{settings.language}</strong></div>
+          <div>dashboard (t): {t('tabs.dashboard')}</div>
+          <div>dashboard (get): {labelDashboard}</div>
+          <div>recouvrement (t): {t('tabs.recouvrement')}</div>
+          <div>recouvrement (get): {labelRecouvrement}</div>
+          <div>payment (t): {t('tabs.payment')}</div>
+          <div>payment (get): {labelPayment}</div>
+        </div>
+      )}
     </div>
   );
 };

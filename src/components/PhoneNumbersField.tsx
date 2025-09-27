@@ -9,16 +9,19 @@ interface PhoneNumbersFieldProps {
   phones: string[];
   onChange: (phones: string[]) => void;
   label?: string;
+  addLabel?: string;
   required?: boolean;
 }
 
 const PhoneNumbersField: React.FC<PhoneNumbersFieldProps> = ({
   phones,
   onChange,
-  label = "Numéros de téléphone",
-  required = false
+  label,
+  addLabel,
+  required = false,
 }) => {
   const { t } = useTranslation();
+  const resolvedLabel = label || t('planificateur.phoneNumbers') || t('forms.mobile') || 'Numéros de téléphone';
   const handlePhoneChange = (index: number, value: string) => {
     const newPhones = [...phones];
     newPhones[index] = value;
@@ -38,13 +41,13 @@ const PhoneNumbersField: React.FC<PhoneNumbersFieldProps> = ({
 
   return (
     <div className="space-y-2">
-      <Label>{label} {required && '*'}</Label>
+  <Label>{resolvedLabel} {required && '*'}</Label>
       {phones.map((phone, index) => (
         <div key={index} className="flex items-center gap-2">
           <Input
             value={phone}
             onChange={(e) => handlePhoneChange(index, e.target.value)}
-            placeholder={`Téléphone ${index + 1}`}
+            placeholder={t('forms.phoneIndexedPlaceholder')?.replace('{index}', String(index + 1)) || (`Téléphone ${index + 1}`)}
             required={required && index === 0}
           />
           {phones.length > 1 && (
@@ -68,7 +71,7 @@ const PhoneNumbersField: React.FC<PhoneNumbersFieldProps> = ({
         className="flex items-center gap-2"
       >
         <Plus className="h-4 w-4" />
-        {t('buttons.add') || 'Ajouter'}
+        {addLabel || t('planificateur.add') || t('buttons.add')}
       </Button>
     </div>
   );

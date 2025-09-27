@@ -591,13 +591,13 @@ const AdminDashboard = () => {
                   <DialogTrigger asChild>
                     <Button className="flex items-center gap-2">
                       <Plus className="h-4 w-4" />
-                      {t('buttons.add') || 'Ajouter'}
+                      {t('buttons.add')}
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="max-w-md">
-                    <DialogHeader>
+                      <DialogHeader>
                       <DialogTitle>
-                        {editingUser ? 'Modifier l\'utilisateur' : 'Créer un nouvel utilisateur'}
+                        {editingUser ? (t('forms.edit') + ' ' + (t('admin.fullName') || 'utilisateur')) : (t('forms.add') + ' ' + (t('admin.fullName') || 'nouvel utilisateur'))}
                       </DialogTitle>
                     </DialogHeader>
                     <form onSubmit={handleCreateUser} className="space-y-4">
@@ -647,8 +647,8 @@ const AdminDashboard = () => {
                         <Label htmlFor="role">Rôle</Label>
                         <Select value={newUser.role} onValueChange={(value) => setNewUser({ ...newUser, role: value as UserType['role'] })}>
                           <SelectTrigger>
-                            <SelectValue placeholder="Sélectionner un rôle" />
-                          </SelectTrigger>
+                              <SelectValue placeholder={t('forms.selectPlaceholder') || 'Sélectionner un rôle'} />
+                            </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="chauffeur">{t('roles.chauffeur') || 'Chauffeur'}</SelectItem>
                             <SelectItem value="planificateur">{t('roles.planificateur') || 'Planificateur'}</SelectItem>
@@ -658,13 +658,14 @@ const AdminDashboard = () => {
                         </Select>
                       </div>
                       <PhoneNumbersField
-                        label="Numéros de téléphone"
+                        label={t('planificateur.phoneNumbers') || 'Numéros de téléphone'}
+                        addLabel={t('planificateur.add')}
                         phones={newUser.phone}
                         onChange={(phones) => setNewUser({ ...newUser, phone: phones })}
                       />
                       <div className="flex gap-2 pt-4">
                         <Button type="submit" className="flex-1">
-                          {editingUser ? 'Modifier' : 'Créer'}
+                          {editingUser ? (t('forms.edit') || 'Modifier') : (t('forms.add') || 'Créer')}
                         </Button>
                         <Button type="button" variant="outline" onClick={() => {
                           setShowCreateUser(false);
@@ -678,7 +679,7 @@ const AdminDashboard = () => {
       password: ''
     });
                         }}>
-                          Annuler
+                          {t('forms.cancel') || 'Annuler'}
                         </Button>
                       </div>
                     </form>
@@ -690,7 +691,7 @@ const AdminDashboard = () => {
               <Dialog open={showChangePassword} onOpenChange={setShowChangePassword}>
                 <DialogContent className="max-w-md">
                   <DialogHeader>
-                    <DialogTitle>Changer le mot de passe</DialogTitle>
+                    <DialogTitle>{t('settings.changePassword') || 'Changer le mot de passe'}</DialogTitle>
                   </DialogHeader>
                   <form onSubmit={handleChangePassword} className="space-y-4">
                     <div>
@@ -963,13 +964,13 @@ const AdminDashboard = () => {
                       <DialogTrigger asChild>
                         <Button size="sm">
                           <Plus className="h-4 w-4 mr-2" />
-                          {t('buttons.add') || 'Ajouter'}
+                          {t('buttons.add')}
                         </Button>
                       </DialogTrigger>
                       <DialogContent>
                         <DialogHeader>
                           <DialogTitle>
-                            {editingCompany ? 'Modifier la société' : 'Créer une nouvelle société'}
+                            {editingCompany ? (t('forms.edit') + ' ' + (t('companies.name') || 'société')) : (t('forms.add') + ' ' + (t('companies.name') || 'nouvelle société'))}
                           </DialogTitle>
                         </DialogHeader>
                         <form onSubmit={handleCreateCompany} className="space-y-4">
@@ -991,7 +992,7 @@ const AdminDashboard = () => {
                             />
                           </div>
                           <PhoneNumbersField
-                            label="Numéros de téléphone"
+                            label={t('planificateur.phoneNumbers') || 'Numéros de téléphone'}
                             phones={newCompany.phone}
                             onChange={(phones) => setNewCompany({ ...newCompany, phone: phones })}
                           />
@@ -1006,14 +1007,14 @@ const AdminDashboard = () => {
                           </div>
                           <div className="flex gap-2 pt-4">
                             <Button type="submit" className="flex-1">
-                              {editingCompany ? 'Modifier' : 'Créer'}
+                              {editingCompany ? (t('forms.edit') || 'Modifier') : (t('forms.add') || 'Créer')}
                             </Button>
                             <Button type="button" variant="outline" onClick={() => {
                               setShowCreateCompany(false);
                               setEditingCompany(null);
                               setNewCompany({ name: '', address: '', phone: [], email: '' });
                             }}>
-                              Annuler
+                              {t('forms.cancel') || 'Annuler'}
                             </Button>
                           </div>
                         </form>
@@ -1104,13 +1105,13 @@ const AdminDashboard = () => {
                       <DialogTrigger asChild>
                         <Button size="sm">
                           <Plus className="h-4 w-4 mr-2" />
-                          {t('buttons.add') || 'Ajouter'}
+                          {t('buttons.add')}
                         </Button>
                       </DialogTrigger>
                       <DialogContent>
                         <DialogHeader>
                           <DialogTitle>
-                            {editingVehicleType ? 'Modifier le type de véhicule' : 'Créer un nouveau type de véhicule'}
+                            {editingVehicleType ? (t('forms.edit') + ' ' + (t('vehicleTypes.name') || 'le type de véhicule')) : (t('forms.add') + ' ' + (t('vehicleTypes.name') || 'nouveau type de véhicule'))}
                           </DialogTitle>
                         </DialogHeader>
                         <form onSubmit={handleCreateVehicleType} className="space-y-4">

@@ -44,3 +44,20 @@ export const useAuth = () => {
   }
   return context;
 };
+
+// Expose current user globally for non-hook imports where necessary (best-effort)
+try {
+  Object.defineProperty(window, '__APP_USER', {
+    configurable: true,
+    enumerable: false,
+    get: () => {
+      // lazy: read from context by creating a temporary element? Not possible here; leave undefined until set by Auth logic
+      return (window as any).__APP_USER_INTERNAL || null;
+    },
+    set: (v) => {
+      (window as any).__APP_USER_INTERNAL = v;
+    }
+  });
+} catch (e) {
+  // ignore in non-browser environments
+}

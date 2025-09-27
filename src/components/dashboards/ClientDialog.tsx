@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from '../../hooks/useTranslation';
+import { getTranslation } from '../../lib/translations';
 import { reverseGeocode } from '../../utils/reverseGeocode';
 import { createPortal } from 'react-dom';
 import CameraPreviewModal from '../CameraPreviewModal';
@@ -28,7 +29,9 @@ const emptyClient = {
 };
 
 const ClientDialog = ({ isOpen, onClose, onSubmit, editingClient, readOnly = false }: ClientDialogProps) => {
-  const { t } = useTranslation();
+  const { t, settings } = useTranslation();
+  // Use hook-based translation to respect current language (including Arabic)
+  const addLabel = t('planificateur.add') || t('buttons.add');
   const [client, setClient] = useState<any>(emptyClient);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -121,7 +124,7 @@ const ClientDialog = ({ isOpen, onClose, onSubmit, editingClient, readOnly = fal
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editingClient ? 'Modifier le client' : 'Ajouter un client'}</DialogTitle>
+            <DialogTitle>{editingClient ? t('forms.edit') : addLabel}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
@@ -264,8 +267,8 @@ const ClientDialog = ({ isOpen, onClose, onSubmit, editingClient, readOnly = fal
             )}
             {!readOnly && (
               <div className="flex gap-2 pt-4">
-                <Button type="submit" className="flex-1">{editingClient ? 'Enregistrer' : 'Créer'}</Button>
-                <Button type="button" variant="outline" onClick={onClose}>Annuler</Button>
+                <Button type="submit" className="flex-1">{editingClient ? t('forms.save') : addLabel}</Button>
+                <Button type="button" variant="outline" onClick={onClose}>{t('forms.cancel')}</Button>
               </div>
             )}
           </form>

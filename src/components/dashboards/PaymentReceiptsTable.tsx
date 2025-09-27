@@ -4,7 +4,7 @@ import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
-import { Edit, Trash2 } from 'lucide-react';
+import { Edit, Trash2, Check } from 'lucide-react';
 import useTableZoom from '../../hooks/useTableZoom';
 import { PaymentReceipt } from '../../types';
 import SearchAndFilter from '../SearchAndFilter';
@@ -13,6 +13,8 @@ interface PaymentReceiptsTableProps {
   receipts: PaymentReceipt[];
   onDeleteReceipt?: (id: string) => void;
   onConsultReceipt?: (receipt: PaymentReceipt) => void;
+  onEditReceipt?: (receipt: PaymentReceipt) => void;
+  onValidateReceipt?: (receipt: PaymentReceipt) => void;
   // Optional selection support to mirror DeclarationsTable
   selectedReceiptIds?: string[];
   setSelectedReceiptIds?: (ids: string[]) => void;
@@ -24,9 +26,11 @@ const PaymentReceiptsTable: React.FC<PaymentReceiptsTableProps> = ({
   receipts,
   onDeleteReceipt,
   onConsultReceipt,
+  onEditReceipt,
+  onValidateReceipt,
   selectedReceiptIds = [],
   setSelectedReceiptIds,
-  fontSize = '100'
+  fontSize = '80'
 }) => {
   const { t, settings } = useTranslation();
 
@@ -56,20 +60,25 @@ const PaymentReceiptsTable: React.FC<PaymentReceiptsTableProps> = ({
   // Use same min chars as DeclarationsTable (slightly smaller) to avoid extra right gap
   const colWidthCompany = `${getMinWidthForChars(14)}`;
   const colWidthDate = `${getMinWidthForChars(12)}`;
+  const colWidthMontant = `${getMinWidthForChars(8)} w-[100px]`;
   const colWidthStatus = `${getMinWidthForChars(6)} w-[70px]`;
   const colWidthActions = `${getMinWidthForChars(8)} w-[${Math.max(72, Math.round(4 * 24 * zoomGlobal))}px]`;
   const colWidthCheckbox = `w-[18px] min-w-[18px] max-w-[18px]`;
   const checkboxSize = `h-[14px] w-[14px]`;
 
   const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'brouillon':
-        return <Badge size="md" style={{ ...badgeStyle }} className={`bg-yellow-100 text-yellow-800 ${badgeClass}`}>{t('dashboard.pending') || 'Brouillon'}</Badge>;
-      case 'validee':
-        return <Badge size="md" style={{ ...badgeStyle }} className={`bg-green-100 text-green-800 ${badgeClass}`}>{t('dashboard.validated') || 'Validée'}</Badge>;
-      default:
-        return <Badge size="md" variant="outline" style={{ ...badgeStyle }} className={badgeClass}>{status}</Badge>;
+    const s = (status || '').toLowerCase();
+    // accept several possible stored strings and normalize to translation keys
+    if (['brouillon', 'pending', 'pending_validation', 'pending_validation'].includes(s)) {
+      return <Badge size="md" style={{ ...badgeStyle }} className={`bg-yellow-100 text-yellow-800 ${badgeClass}`}>{t('dashboard.pending') || 'Brouillon'}</Badge>;
     }
+    if (['validee', 'validated', 'valid'].includes(s)) {
+      return <Badge size="md" style={{ ...badgeStyle }} className={`bg-green-100 text-green-800 ${badgeClass}`}>{t('dashboard.validated') || 'Validée'}</Badge>;
+    }
+    if (['refuse', 'refused', 'rejected'].includes(s)) {
+      return <Badge size="md" style={{ ...badgeStyle }} className={`bg-red-100 text-red-800 ${badgeClass}`}>{t('declarations.refused') || 'Refusé'}</Badge>;
+    }
+    return <Badge size="md" variant="outline" style={{ ...badgeStyle }} className={badgeClass}>{status}</Badge>;
   };
 
   // Filtrage local (recherche + statut)
@@ -99,7 +108,7 @@ const PaymentReceiptsTable: React.FC<PaymentReceiptsTableProps> = ({
           onSearchChange={setSearch}
           filterValue={statusFilter}
           onFilterChange={(v) => setStatusFilter(v as any)}
-          filterOptions={[{ value: 'brouillon', label: 'Brouillon' }, { value: 'validee', label: 'Validée' }]}
+          filterOptions={[{ value: 'brouillon', label: t('dashboard.pending') || 'Brouillon' }, { value: 'validee', label: t('dashboard.validated') || 'Validé' }]}
           searchColumn={searchColumn}
           onSearchColumnChange={(v) => setSearchColumn(v as any)}
           searchColumnOptions={[
@@ -155,6 +164,7 @@ const PaymentReceiptsTable: React.FC<PaymentReceiptsTableProps> = ({
                   <TableHead data-rtl={settings.language === 'ar'} className={`${colWidthPhoto} ${cellPaddingClass} whitespace-nowrap`} style={fontSizeStyle}>{t('forms.photo') || 'Photo'}</TableHead>
                   <TableHead data-rtl={settings.language === 'ar'} className={`${colWidthRef} ${cellPaddingClass} whitespace-nowrap`} style={fontSizeStyle}>{t('declarations.programNumber') || 'Référence'}</TableHead>
                   <TableHead data-rtl={settings.language === 'ar'} className={`${colWidthCompany} ${cellPaddingClass} whitespace-nowrap`} style={fontSizeStyle}>{t('companies.name') || 'Société'}</TableHead>
+                  <TableHead data-rtl={settings.language === 'ar'} className={`${colWidthMontant} ${cellPaddingClass} whitespace-nowrap`} style={fontSizeStyle}>{t('financial.amount') || t('forms.amount') || 'Montant'}</TableHead>
                   <TableHead data-rtl={settings.language === 'ar'} className={`${colWidthDate} ${cellPaddingClass} whitespace-nowrap`} style={fontSizeStyle}>{t('declarations.createdDate') || 'Date de création'}</TableHead>
                   <TableHead data-rtl={settings.language === 'ar'} className={`${colWidthStatus} ${cellPaddingClass} whitespace-nowrap`} style={fontSizeStyle}>{t('declarations.status') || 'État'}</TableHead>
                   <TableHead data-rtl={settings.language === 'ar'} className={`${colWidthActions} ${cellPaddingClass} whitespace-nowrap`} style={fontSizeStyle}>{t('declarations.actions') || 'Actions'}</TableHead>
@@ -164,7 +174,7 @@ const PaymentReceiptsTable: React.FC<PaymentReceiptsTableProps> = ({
               <TableBody data-rtl={settings.language === 'ar'}>
                 {filteredReceipts.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={setSelectedReceiptIds ? 7 : 6} className={`text-center text-muted-foreground text-sm py-8 ${cellPaddingClass}`}>{t('declarations.noPaymentReceipts') || 'Aucun reçu de paiement'}</TableCell>
+                    <TableCell colSpan={setSelectedReceiptIds ? 8 : 7} className={`text-center text-muted-foreground text-sm py-8 ${cellPaddingClass}`}>{t('declarations.noPaymentReceipts') || 'Aucun reçu de paiement'}</TableCell>
                   </TableRow>
                 ) : (
                   filteredReceipts.map(receipt => (
@@ -212,8 +222,12 @@ const PaymentReceiptsTable: React.FC<PaymentReceiptsTableProps> = ({
                         <div className={`whitespace-nowrap truncate`} style={fontSizeStyle}>{receipt.companyName}</div>
                       </TableCell>
 
+                      <TableCell className={`${colWidthMontant} ${cellPaddingClass} whitespace-nowrap`} style={fontSizeStyle}>
+                        <div className={`whitespace-nowrap truncate`} style={fontSizeStyle}>{receipt.montant ? `${receipt.montant} DZD` : ''}</div>
+                      </TableCell>
+
                       <TableCell className={`${colWidthDate} ${cellPaddingClass} whitespace-nowrap`} style={fontSizeStyle}>
-                        <span className="whitespace-nowrap">{new Date(receipt.createdAt).toLocaleString()}</span>
+                        <span className="whitespace-nowrap">{receipt.createdAt ? new Date(receipt.createdAt).toLocaleDateString() : ''}</span>
                       </TableCell>
 
                       <TableCell className={`${colWidthStatus} ${cellPaddingClass} whitespace-nowrap`} style={fontSizeStyle}>
@@ -222,15 +236,36 @@ const PaymentReceiptsTable: React.FC<PaymentReceiptsTableProps> = ({
 
                       <TableCell className={`${colWidthActions} ${cellPaddingClass} whitespace-nowrap`} style={fontSizeStyle}>
                         <div className="flex gap-1 whitespace-nowrap" style={fontSizeStyle}>
-                          {onConsultReceipt && (
-                            <Button size="sm" variant="outline" className={`p-0 ${iconSize}`} onClick={() => onConsultReceipt(receipt)}>
-                              <Edit className={`${iconSize} min-w-0`} />
-                            </Button>
-                          )}
-                          {onDeleteReceipt && (
-                            <Button size="sm" variant="outline" className={`p-0 ${iconSize} text-red-600 hover:text-red-700`} onClick={() => onDeleteReceipt(receipt.id)}>
-                              <Trash2 className={`${iconSize} min-w-0`} />
-                            </Button>
+                          {/* If payment is validated, no actions should be shown */}
+                          {!(receipt.status && ['validee', 'validated', 'valid'].includes(String(receipt.status).toLowerCase())) && (
+                            <>
+                              {onEditReceipt ? (
+                                <Button size="sm" variant="outline" className={`flex items-center justify-center rounded-md border border-border`} style={{ width: computedRowPx, height: computedRowPx }} onClick={() => onEditReceipt(receipt)}>
+                                  <Edit style={{ width: computedIconPx, height: computedIconPx }} />
+                                </Button>
+                              ) : onConsultReceipt && (
+                                <Button size="sm" variant="outline" className={`flex items-center justify-center rounded-md border border-border`} style={{ width: computedRowPx, height: computedRowPx }} onClick={() => onConsultReceipt(receipt)}>
+                                  <Edit style={{ width: computedIconPx, height: computedIconPx }} />
+                                </Button>
+                              )}
+                              {onDeleteReceipt && (
+                                <Button size="sm" variant="outline" className={`flex items-center justify-center rounded-md border border-border text-red-600 hover:text-red-700`} style={{ width: computedRowPx, height: computedRowPx }} onClick={() => onDeleteReceipt(receipt.id)}>
+                                  <Trash2 style={{ width: computedIconPx, height: computedIconPx }} />
+                                </Button>
+                              )}
+                              {/* Validate button for cashier flows (parent passes handler) */}
+                              {onValidateReceipt && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className={`flex items-center justify-center rounded-md border border-border text-green-600 hover:text-green-700`}
+                                  style={{ width: computedRowPx, height: computedRowPx }}
+                                  onClick={() => onValidateReceipt(receipt)}
+                                >
+                                  <Check style={{ width: computedIconPx, height: computedIconPx }} />
+                                </Button>
+                              )}
+                            </>
                           )}
                         </div>
                       </TableCell>

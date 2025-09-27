@@ -1,9 +1,15 @@
 export const translations = {
   fr: {
-    camera: {
-      error: {
-        save: "Impossible d'importer la photo. Vérifiez votre connexion."
-      }
+    caissier: {
+      viewPaymentTitle: "Consulter le reçu",
+      viewPaymentDesc: "Consultation du reçu (lecture seule)",
+      createPaymentTitle: "Ajouter un reçu de paiement",
+  createPaymentDesc: "Remplissez le formulaire pour ajouter un reçu de paiement.",
+  profileTitle: "Profil Caissier",
+      paymentsTitle: "Paiements",
+      emptyDashboard: "Espace Caissier (façade, aucun contenu)",
+      recouvrementEmpty: "Section Recouvrement (façade, aucun contenu)",
+      tracageEmpty: "Section Tracage (façade, aucun contenu)"
     },
     planificateur: {
       clientsTitle: "Gestion des Clients",
@@ -28,7 +34,9 @@ export const translations = {
       planificateur: "Planificateur",
       chauffeur: "Chauffeur",
       client: "Client",
-      caissier: "Caissier"
+      financier: "Financier",
+      financier_unite: "Financier Unité",
+    caissier: "Caissier",
     },
     buttons: {
       myClients: "Mes clients",
@@ -37,6 +45,8 @@ export const translations = {
       centerMap: "Centrer la carte",
       gps: "GPS",
       screenshot: "Capture d'écran",
+      camera: "Caméra",
+      saving: "Enregistrement...",
       mapMode: "Mode carte",
       listMode: "Mode liste",
       changeLayer: "Changer le fond de carte",
@@ -46,6 +56,11 @@ export const translations = {
     common: {
       searchPlaceholder: "Rechercher...",
       filterPlaceholder: "Filtrer..."
+    },
+    camera: {
+      error: {
+        save: "Erreur lors de l'enregistrement de la photo. Veuillez réessayer."
+      }
     },
     admin: {
       fullName: "Nom complet",
@@ -59,42 +74,33 @@ export const translations = {
     companies: {
       name: "Nom",
       company: "Société",
-      select: "Sélectionner une société",
       address: "Adresse",
       phone: "Téléphone",
       email: "Email",
-      actions: "Actions"
+      actions: "Actions",
+      select: "Sélectionner une société"
     },
+      payment: {
+        errors: {
+          saveFailed: "Erreur lors de l'enregistrement du reçu",
+          noPhoto: "Photo du reçu requise",
+          programRequired: "Référence programme requise"
+        }
+      },
     vehicleTypes: {
       name: "Nom",
       primeKilometrique: "Prime kilométrique",
       actions: "Actions"
     },
     tabs: {
-      dashboard: "Tableau de bord",
-      recouvrement: "Recouvrement",
-      declarations: "Déclarations",
-      tracage: "Traçage",
-      warehouses: "Entrepôts",
-      clients: "Clients",
-      chauffeurs: "Chauffeurs",
-      payment: "Paiement",
-      profile: "Profil",
-      reports: "Rapports"
-    },
-    // Traductions spécifiques pour la section Caissier
-    caissier: {
-      paymentsTitle: "Paiements",
-      createPaymentTitle: "Ajouter un reçu de paiement",
-      createPaymentDesc: "Remplissez le formulaire pour ajouter un reçu de paiement."
-    },
-    payment: {
-      errors: {
-        noPhoto: "Photo du reçu requise",
-        programRequired: "Référence programme requise",
-        programNotFound: "Aucune déclaration trouvée pour ce numéro de programme",
-        saveFailed: "Erreur lors de l'enregistrement"
-      }
+  dashboard: "Tableau de bord",
+  recouvrement: "Recouvrement",
+  payment: "Paiement",
+  declarations: "Déclarations",
+  tracage: "Traçage",
+  warehouses: "Entrepôts",
+  clients: "Clients",
+      chauffeurs: "Chauffeurs"
     },
     header: {
       title: "Logigrine",
@@ -142,7 +148,7 @@ export const translations = {
   myDeclarations: "Mes Déclarations",
   warehouseMap: "Carte des Entrepôts",
   onRoad: "En route",
-  pending: "En Attent",
+  pending: "En attente",
   validated: "Validé",
   refused: "Refusé",
   online: "En ligne",
@@ -159,6 +165,7 @@ export const translations = {
       paymentReceipts: "Reçus de paiement (photos)",
       noPaymentReceipts: "Aucun reçu de paiement",
   noReceiptsAdded: "Aucun reçu ajouté",
+    synchronized: "Synchronisé",
     programNumber: "Numéro de programme",
       // Table headers & labels
       number: "Numéro",
@@ -195,18 +202,18 @@ export const translations = {
       admin: "مسؤول",
       planificateur: "مخطط",
       chauffeur: "سائق",
-      caissier: "كاشي",
+      financier: "المالي",
+      financier_unite: "مالي الوحدة",
       client: "عميل"
-    },
-    // Traductions spécifiques pour la section Caissier en arabe
-    caissier: {
-      paymentsTitle: "المدفوعات",
-      createPaymentTitle: "إضافة إيصال دفع",
-      createPaymentDesc: "املأ النموذج لإضافة إيصال الدفع."
     },
     common: {
       searchPlaceholder: "ابحث...",
       filterPlaceholder: "تصفية..."
+    },
+    camera: {
+      error: {
+        save: "حدث خطأ أثناء حفظ الصورة. يرجى المحاولة مرة أخرى."
+      }
     },
     buttons: {
       myClients: "عملائي",
@@ -222,15 +229,14 @@ export const translations = {
       createWarehouse: "إنشاء مستودع جديد"
     },
     tabs: {
-      dashboard: "لوحة القيادة",
-      declarations: "التصريحات",
-      tracage: "التتبع",
-      warehouses: "المستودعات",
-      clients: "العملاء",
-      chauffeurs: "السائقين",
-      recouvrement: "التحصيل",
-      payment: "المدفوعات",
-      reports: "تقارير"
+  dashboard: "لوحة القيادة",
+  recouvrement: "التحصيل",
+  payment: "الدفع",
+  declarations: "التصريحات",
+  tracage: "التتبع",
+  warehouses: "المستودعات",
+  clients: "العملاء",
+      chauffeurs: "السائقين"
     },
   declarations: {
       confirmCancelTitle: "تأكيد الإلغاء",
@@ -240,6 +246,7 @@ export const translations = {
   paymentReceipts: "إيصالات الدفع (صور)",
   noPaymentReceipts: "لا يوجد إيصال دفع",
       noReceiptsAdded: "لم يتم إضافة إيصال",
+        synchronized: "تم المزامنة",
   primeDeRoute: "منحة الطريق (دج)",
       // ...existing keys...
     },
@@ -251,7 +258,7 @@ export const translations = {
       validate: "Valider",
       refuse: "Refuser",
     declare: "Déclarer",
-  pending: "En Attent",
+  pending: "En attente",
   validated: "Validé",
   refused: "Refusé",
   onRoad: "En route",
@@ -350,13 +357,15 @@ export const translations = {
     },
     // Forms
     forms: {
+      notes: "Notes",
       myClients: "Mes clients",
+      selectPlaceholder: "Sélectionner un type",
       add: "Ajouter",
+      replacePhotoConfirm: "Voulez-vous remplacer la photo existante ?",
       save: "Enregistrer",
-      cancel: "Annuler",
+  cancel: "Annuler",
+  close: "Fermer",
       edit: "Modifier",
-      addClient: "Ajouter un client",
-      editClient: "Modifier le client",
       delete: "Supprimer",
       confirm: "Confirmer",
       yes: "Oui",
@@ -368,7 +377,12 @@ export const translations = {
   firstName: "Prénom",
   mobile: "Téléphone mobile",
       phonePlaceholder: "Numéro de téléphone",
-      photo: "Photo",
+      // generic form placeholders
+  phoneIndexedPlaceholder: "Téléphone {index}",
+  latitude: "Latitude",
+  longitude: "Longitude",
+  photo: "Photo",
+  import: "Importer",
       geolocation: "Position géographique",
       address: "Adresse",
       addressPlaceholder: "Adresse du client",
@@ -376,6 +390,18 @@ export const translations = {
       ,
       actions: "Actions",
       password: "Mot de passe"
+      ,
+      // helpers used by payment dialogs
+      traceability: "Historique",
+      creator: "Créateur"
+    },
+    // New form strings used by deletion & traceability UI (French)
+    forms_extra: {
+      cannotDeleteValidated: "Impossible de supprimer un reçu validé",
+      unauthorized: "Non autorisé",
+      deleteFailed: "Suppression échouée",
+      traceability: "Historique",
+      creator: "Créateur"
     },
     clients: {
       name: "Nom",
@@ -397,18 +423,18 @@ export const translations = {
     settings: {
       title: "Paramètres",
       description: "Personnalisez votre expérience utilisateur et le mode d'affichage.",
-      viewMode: "Mode d'affichage",
-      theme: "Thème",
-      light: "Clair",
-      dark: "Sombre",
-      changePassword: "Changer le mot de passe",
-      currentPassword: "Mot de passe actuel",
-      newPassword: "Nouveau mot de passe",
-      confirmPassword: "Confirmer le mot de passe",
-      language: "Langue",
-      mini_vehicule: "Mini véhicule",
-      fourgon: "Fourgon",
-      camion_2_5t: "Camion 2.5T",
+    viewMode: "Mode d'affichage",
+    theme: "Thème",
+    light: "Clair",
+    dark: "Sombre",
+    changePassword: "Changer le mot de passe",
+    currentPassword: "Mot de passe actuel",
+    newPassword: "Nouveau mot de passe",
+    confirmPassword: "Confirmer le mot de passe",
+    language: "Langue",
+  mini_vehicule: "Mini véhicule",
+  fourgon: "Fourgon",
+    camion_2_5t: "Camion 2.5T",
       camion_3_5t: "Camion 3.5T",
       camion_5t: "Camion 5T",
       camion_7_5t: "Camion 7.5T",
@@ -431,28 +457,55 @@ export const translations = {
       clientValidated: "Client validé",
       clientRejected: "Client rejeté",
       clientArchived: "Client archivé",
-      unknownUser: "Utilisateur inconnu"
+      unknownUser: "Utilisateur inconnu",
+      none: "Aucune trace"
     },
     tracage: {
       title: "Suivi des Chauffeurs et Déclarations"
     }
   },
   en: {
-    camera: {
-      error: {
-        save: "Unable to import photo. Please check your connection."
-      }
+    caissier: {
+      viewPaymentTitle: "View receipt",
+      viewPaymentDesc: "Receipt consultation (read-only)",
+      createPaymentTitle: "Add a payment receipt",
+  createPaymentDesc: "Fill out the form to add a payment receipt.",
+  profileTitle: "Cashier Profile",
+      paymentsTitle: "Payments",
+      emptyDashboard: "Cashier area (placeholder, no content)",
+      recouvrementEmpty: "Collection section (placeholder, no content)",
+      tracageEmpty: "Trace section (placeholder, no content)"
     },
     roles: {
-      admin: "Admin",
+      admin: "Administrator",
       planificateur: "Planner",
       chauffeur: "Driver",
-      caissier: "Cashier",
-      client: "Client"
+      financier: "Financial",
+      financier_unite: "Unit Financial",
+      client: "Client",
+    caissier: "Cashier",
     },
     common: {
       searchPlaceholder: "Search...",
       filterPlaceholder: "Filter..."
+    },
+    camera: {
+      error: {
+        save: "Error saving photo. Please try again."
+      }
+    },
+    buttons: {
+      myClients: "My Clients",
+      add: "Add",
+      settings: "Settings",
+      centerMap: "Center map",
+      gps: "GPS",
+      screenshot: "Screenshot",
+      mapMode: "Map mode",
+      listMode: "List mode",
+      changeLayer: "Change layer",
+      viewWarehouses: "View warehouses",
+      createWarehouse: "Create warehouse"
     },
     planificateur: {
       clientsTitle: "Clients Management",
@@ -478,6 +531,13 @@ export const translations = {
       dashboard: "Dashboard",
       declarations: "Declarations",
       chauffeurs: "Drivers",
+      payment: {
+        errors: {
+          saveFailed: "Failed to save receipt",
+          noPhoto: "Receipt photo required",
+          programRequired: "Program reference required"
+        }
+      },
       warehouses: "Warehouses",
       financial: "Financial",
       users: "Users",
@@ -506,11 +566,11 @@ export const translations = {
     companies: {
       name: "Name",
       company: "Company",
-      select: "Select a company",
       address: "Address",
       phone: "Phone",
       email: "Email",
-      actions: "Actions"
+      actions: "Actions",
+      select: "Select a company"
     },
     vehicleTypes: {
       name: "Name",
@@ -560,7 +620,8 @@ export const translations = {
   deliveryFees: "Delivery Fees (DZD)",
   primeDeRoute: "Route Allowance (DZD)",
       paymentReceipts: "Payment receipts (photos)",
-      noReceiptsAdded: "No receipts added",
+    noReceiptsAdded: "No receipts added",
+    synchronized: "Synchronized",
       programNumber: "Program Number",
       notes: "Notes",
       photos: "Supporting Photos",
@@ -671,12 +732,14 @@ export const translations = {
     },
     // Forms
     forms: {
-      myClients: "My clients",
+      notes: "Notes",
+      myClients: "My Clients",
+      selectPlaceholder: "Select a type",
       add: "Add",
-      addClient: "Add a client",
-      editClient: "Edit client",
+      replacePhotoConfirm: "Do you want to replace the existing photo?",
       save: "Save",
-      cancel: "Cancel",
+  cancel: "Cancel",
+  close: "Close",
       edit: "Edit",
       delete: "Delete",
       confirm: "Confirm",
@@ -688,8 +751,12 @@ export const translations = {
   name: "Name",
   firstName: "First Name",
   mobile: "Mobile phone",
-      phonePlaceholder: "Phone number",
-      photo: "Photo",
+  phonePlaceholder: "Phone number",
+  // generic form placeholders
+  phoneIndexedPlaceholder: "Phone {index}",
+  latitude: "Latitude",
+  longitude: "Longitude",
+  photo: "Photo",
       geolocation: "Geolocation",
       address: "Address",
       addressPlaceholder: "Client address",
@@ -697,6 +764,18 @@ export const translations = {
       ,
       actions: "Actions",
       password: "Password"
+    ,
+    // helpers used by payment dialogs
+    traceability: "Traceability",
+    creator: "Creator"
+    },
+    // New form strings used by deletion & traceability UI (English)
+    forms_extra: {
+      cannotDeleteValidated: "Cannot delete a validated receipt",
+      unauthorized: "Unauthorized",
+      deleteFailed: "Delete failed",
+      traceability: "Traceability",
+      creator: "Creator"
     },
     clients: {
       name: "Name",
@@ -725,19 +804,17 @@ export const translations = {
       changePassword: "Change Password",
       currentPassword: "Current Password",
       newPassword: "New Password",
-      confirmPassword: "Confirm Password"
+  confirmPassword: "Confirm Password",
     },
     tabs: {
-      dashboard: "Dashboard",
-      recouvrement: "Recovery",
-      declarations: "Declarations",
-      tracage: "Tracking",
-      warehouses: "Warehouses",
-      clients: "Clients",
-      chauffeurs: "Drivers",
-      payment: "Payment",
-      profile: "Profile",
-      reports: "Reports"
+  dashboard: "Dashboard",
+  recouvrement: "Collection",
+  payment: "Payment",
+  declarations: "Declarations",
+  tracage: "Traceability",
+  warehouses: "Warehouses",
+  clients: "Clients",
+      chauffeurs: "Drivers"
     },
     // Vehicle types
     vehicles: {
@@ -767,6 +844,8 @@ export const translations = {
       clientRejected: "Client rejected",
       clientArchived: "Client archived",
       unknownUser: "Unknown user"
+      ,
+      none: "No trace"
     },
     tracage: {
       title: "Chauffeurs & Declarations Tracking"
@@ -775,32 +854,45 @@ export const translations = {
   ar: {
     camera: {
       error: {
-        save: "تعذر حفظ الصورة. يرجى التحقق من الاتصال."
+        save: "حدث خطأ أثناء حفظ الصورة. يرجى المحاولة مرة أخرى."
       }
+    },
+    caissier: {
+      payment: {
+        errors: {
+          saveFailed: "فشل في حفظ الإيصال",
+          noPhoto: "صورة الإيصال مطلوبة",
+          programRequired: "مرجع البرنامج مطلوب"
+        }
+      },
+      viewPaymentTitle: "عرض الإيصال",
+      viewPaymentDesc: "استعراض الإيصال (للقراءة فقط)",
+      createPaymentTitle: "إضافة إيصال دفع",
+      createPaymentDesc: "املأ النموذج لإضافة إيصال دفع.",
+      profileTitle: "ملف أمين الصندوق",
+      paymentsTitle: "المدفوعات",
+      emptyDashboard: "مساحة أمين الصندوق (نموذج، لا يوجد محتوى)",
+      recouvrementEmpty: "قسم التحصيل (نموذج، لا يوجد محتوى)",
+      tracageEmpty: "قسم التتبع (نموذج، لا يوجد محتوى)"
     },
     roles: {
       admin: "مسؤول",
       planificateur: "مخطط",
       chauffeur: "سائق",
-      caissier: "كاشي",
-      client: "عميل"
-    },
-    // Traductions spécifiques pour la section Caissier en arabe
-    caissier: {
-      paymentsTitle: "المدفوعات",
-      createPaymentTitle: "إضافة إيصال دفع",
-      createPaymentDesc: "املأ النموذج لإضافة إيصال الدفع."
+      financier: "المالي",
+      financier_unite: "مالي الوحدة",
+    client: "عميل",
+    caissier: "أمين الصندوق",
     },
     tabs: {
       dashboard: "لوحة القيادة",
+      recouvrement: "التحصيل",
+      payment: "الدفع",
       declarations: "التصريحات",
       tracage: "التتبع",
       warehouses: "المستودعات",
       clients: "العملاء",
-      chauffeurs: "السائقين",
-      recouvrement: "التحصيل",
-      payment: "المدفوعات",
-      reports: "تقارير"
+      chauffeurs: "السائقين"
     },
     // Planificateur translations (moved/merged here so final `ar` block contains them)
     planificateur: {
@@ -855,11 +947,11 @@ export const translations = {
       companies: {
         name: "الاسم",
         company: "الشركة",
-        select: "اختر شركة",
         address: "العنوان",
         phone: "الهاتف",
         email: "البريد الإلكتروني",
-        actions: "الإجراءات"
+        actions: "الإجراءات",
+        select: "اختر شركة"
       },
       vehicleTypes: {
         name: "الاسم",
@@ -1014,18 +1106,19 @@ export const translations = {
       cph_sud: "CPH الجنوب",
       cph_est: "CPH الشرق",
       cph_ouest: "CPH الغرب",
-      cph_centre: "CPH الوسط"
-      ,
+      cph_centre: "CPH الوسط",
       save: "حفظ"
     },
     // Forms
     forms: {
+      notes: "ملاحظات",
       myClients: "عملائي",
+      selectPlaceholder: "اختر نوعًا",
       add: "إضافة",
-      addClient: "إضافة عميل",
-      editClient: "تعديل العميل",
+      replacePhotoConfirm: "هل تريد استبدال الصورة الحالية؟",
       save: "حفظ",
-      cancel: "إلغاء",
+  cancel: "إلغاء",
+  close: "إغلاق",
       edit: "تعديل",
       delete: "حذف",
       confirm: "تأكيد",
@@ -1037,8 +1130,12 @@ export const translations = {
   name: "الاسم",
   firstName: "الاسم الأول",
   mobile: "الهاتف المحمول",
-      phonePlaceholder: "رقم الهاتف",
-      photo: "صورة",
+  phonePlaceholder: "رقم الهاتف",
+  // generic form placeholders
+  phoneIndexedPlaceholder: "الهاتف {index}",
+  latitude: "خط العرض",
+  longitude: "خط الطول",
+  photo: "صورة",
       geolocation: "الموقع الجغرافي",
       address: "العنوان",
       addressPlaceholder: "عنوان العميل",
@@ -1046,6 +1143,10 @@ export const translations = {
       ,
       actions: "الإجراءات",
       password: "كلمة المرور"
+    ,
+    // helpers used by payment dialogs
+    traceability: "سجل التتبع",
+    creator: "المنشئ"
     },
     clients: {
       name: "الاسم",
@@ -1105,6 +1206,8 @@ export const translations = {
       clientRejected: "تم رفض العميل",
       clientArchived: "تم أرشفة العميل",
       unknownUser: "مستخدم غير معروف"
+      ,
+      none: "لا توجد أي آثار"
     },
     tracage: {
       title: "تتبع السائقين والتصريحات"

@@ -38,6 +38,7 @@ export const useAuthLogic = () => {
           vehicleType: userData.vehicleType,
           employeeType: userData.employeeType
         });
+  try { (window as any).__APP_USER_INTERNAL = { id: userData.id, role: userData.role, fullName: userData.fullName }; } catch (e) {}
         setIsAuthenticated(true);
         await setUserOnlineStatus(userData.id, true);
         if (userData.role === 'chauffeur') {
@@ -63,6 +64,7 @@ export const useAuthLogic = () => {
       }
     }
     setUser(null);
+    try { (window as any).__APP_USER_INTERNAL = null; } catch (e) {}
     setIsAuthenticated(false);
     clearSession();
     console.log('User logged out securely');
@@ -93,6 +95,7 @@ export const useAuthLogic = () => {
           vehicleType: userData.vehicleType,
           employeeType: userData.employeeType
         });
+        try { (window as any).__APP_USER_INTERNAL = { id: userData.id, role: userData.role, fullName: userData.fullName }; } catch (e) {}
         setIsAuthenticated(true);
         return true;
       }

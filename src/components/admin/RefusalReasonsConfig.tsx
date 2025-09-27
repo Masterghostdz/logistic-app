@@ -89,7 +89,7 @@ export default function RefusalReasonsConfig({ showAddButton, hideHeader, onlyBu
           <DialogTrigger asChild>
             <Button size="sm">
               <Plus className="h-4 w-4 mr-2" />
-              {t('buttons.add') || 'Ajouter'}
+              {t('buttons.add')}
             </Button>
           </DialogTrigger>
           <DialogContent>
@@ -97,7 +97,8 @@ export default function RefusalReasonsConfig({ showAddButton, hideHeader, onlyBu
               <DialogTitle>
                 {editingReason
                   ? `Modifier le motif (${inputLang.toUpperCase()})`
-                  : t('refusalReasons.addReason') || 'Ajouter un motif de refus'}
+                  : t('refusalReasons.addReason')
+                }
               </DialogTitle>
             </DialogHeader>
             <form onSubmit={e => { e.preventDefault(); handleAdd(); }} className="space-y-4">

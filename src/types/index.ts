@@ -56,7 +56,16 @@ export interface PaymentReceipt {
   createdAt: string; // Date de création (auto)
   chauffeurId: string;
   chauffeurName: string;
-  status: 'brouillon' | 'validee';
+  montant?: number;
+  status: 'pending' | 'brouillon' | 'validee' | 'valide' | 'validated';
+  uploadPending?: boolean;
+  declarationId?: string | null;
+  createdBy?: string | null;
+  createdByName?: string | null;
+  traceability?: DeclarationTrace[];
+  year?: string;
+  month?: string;
+  programNumber?: string;
   validatedAt?: string;
   companyId: string;
   companyName: string;

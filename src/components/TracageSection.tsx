@@ -452,7 +452,7 @@ const TracageSection = ({ gpsActive, setGpsActive, userPosition, setUserPosition
           <div className="bg-white dark:bg-muted rounded-lg shadow-lg p-4 max-w-[95vw] w-[400px] relative">
             <Button onClick={() => setShowCreateWarehouse(false)} className="absolute top-2 right-2" size="icon">✕</Button>
             <CardHeader className="pb-4">
-              <CardTitle className="text-base md:text-lg">Créer un nouvel entrepôt</CardTitle>
+              <CardTitle className="text-base md:text-lg">{t('warehouses.new') || 'Créer un nouvel entrepôt'}</CardTitle>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleCreateWarehouse} className="space-y-4">
@@ -652,7 +652,7 @@ const TracageSection = ({ gpsActive, setGpsActive, userPosition, setUserPosition
               <Button
                 size="icon"
                 variant="default"
-                title={t('forms.add') || 'Ajouter un client'}
+                title={t('forms.add')}
                 onClick={() => {
                   setEditingClient(null);
                   setShowEditClient(true);
