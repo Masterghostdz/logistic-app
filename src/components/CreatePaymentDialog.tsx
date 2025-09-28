@@ -250,6 +250,7 @@ const CreatePaymentDialog: React.FC<CreatePaymentDialogProps> = ({ isOpen, onClo
             <div>
               <Label htmlFor="montant">{t('financial.amount') || t('forms.amount') || 'Montant (DZD)'}</Label>
               <Input id="montant" value={montant} onChange={e => setMontant(e.target.value)} placeholder="0" />
+              <div className="mt-1">{typeof montant === 'string' && montant !== '' && !isNaN(Number(montant)) ? `${Number(montant).toFixed(2)} DZD` : ''}</div>
             </div>
 
             <div>

@@ -90,6 +90,7 @@ const ValidatePaymentDialog: React.FC<ValidatePaymentDialogProps> = ({ receipt, 
           <div>
             <Label>{t('financial.amount') || 'Montant (DZD)'}</Label>
             <Input value={montant} onChange={e => setMontant(e.target.value)} />
+            <div className="mt-1">{typeof receipt.montant === 'number' ? `${receipt.montant.toFixed(2)} DZD` : ''}</div>
           </div>
 
           <div>

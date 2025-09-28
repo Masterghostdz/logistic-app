@@ -5,7 +5,7 @@ import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { Check, X, Edit, Trash2 } from 'lucide-react';
-import { Declaration } from '../../types';
+import { Declaration, PaymentReceipt } from '../../types';
 import CopyButton from '../CopyButton';
 import useTableZoom from '../../hooks/useTableZoom';
 
@@ -13,14 +13,19 @@ interface DeclarationsTableProps {
   declarations: Declaration[];
   onValidateDeclaration: (id: string) => void;
   onRejectDeclaration: (id: string) => void;
-  onEditDeclaration: (declaration: Declaration) => void;
-  onDeleteDeclaration: (id: string) => void;
+  onEditDeclaration?: (declaration: Declaration) => void;
+  onDeleteDeclaration?: (id: string) => void;
   selectedDeclarationIds?: string[];
   setSelectedDeclarationIds?: (ids: string[]) => void;
   mobile?: boolean;
   fontSize?: '40' | '50' | '60' | '70' | '80' | '90' | '100';
   onConsultDeclaration?: (declaration: Declaration) => void;
+  onSendReceipts?: (declaration: Declaration) => void;
   chauffeurTypes?: Record<string, 'interne' | 'externe'>;
+  // optional payments list to compute recouvrement status and totals
+  payments?: PaymentReceipt[];
+  // hide the recouvrement-specific columns (used by Caissier recouvrement view)
+  hideRecouvrementFields?: boolean;
 }
 
 const DeclarationsTable = ({ 
@@ -34,7 +39,10 @@ const DeclarationsTable = ({
   mobile = false,
   fontSize = '80',
   onConsultDeclaration,
-  chauffeurTypes
+  onSendReceipts,
+  chauffeurTypes,
+  payments,
+  hideRecouvrementFields = false
 }: DeclarationsTableProps) => {
   const {
     localFontSize,
@@ -117,13 +125,21 @@ const DeclarationsTable = ({
                 )}
                 <TableHead data-rtl={settings.language === 'ar'} className={`${getMinWidthForChars(12)} whitespace-nowrap ${cellPaddingClass}`} style={fontSizeStyle}>{t('declarations.number')}</TableHead>
                 <TableHead data-rtl={settings.language === 'ar'} className={`${getMinWidthForChars(16)} whitespace-nowrap ${cellPaddingClass}`} style={fontSizeStyle}>{t('declarations.chauffeur') || 'Chauffeur'}</TableHead>
+                {/* programReference column hidden per request */}
                 <TableHead data-rtl={settings.language === 'ar'} className={`${getMinWidthForChars(8)} whitespace-nowrap ${cellPaddingClass}`} style={fontSizeStyle}>{t('declarations.distance')}</TableHead>
                 {/* Affiche Frais uniquement pour chauffeur externe */}
                 <TableHead data-rtl={settings.language === 'ar'} className={`${getMinWidthForChars(12)} whitespace-nowrap ${cellPaddingClass}`} style={fontSizeStyle}>{t('declarations.deliveryFees')}</TableHead>
                 {/* Affiche Prime de route pour interne et planificateur */}
                 <TableHead data-rtl={settings.language === 'ar'} className={`${colWidth} whitespace-nowrap ${cellPaddingClass}`} style={fontSizeStyle}>{t('declarations.primeDeRoute') === 'declarations.primeDeRoute' ? 'Prime de route' : t('declarations.primeDeRoute')}</TableHead>
                 <TableHead data-rtl={settings.language === 'ar'} className={`${getMinWidthForChars(12)} whitespace-nowrap ${cellPaddingClass}`} style={fontSizeStyle}>{t('declarations.createdDate')}</TableHead>
-                <TableHead data-rtl={settings.language === 'ar'} className={`${getMinWidthForChars(12)} whitespace-nowrap ${cellPaddingClass}`} style={fontSizeStyle}>{t('declarations.validated') || t('declarations.validated') /* fallback handled by translations */}</TableHead>
+                  <TableHead data-rtl={settings.language === 'ar'} className={`${getMinWidthForChars(12)} whitespace-nowrap ${cellPaddingClass}`} style={fontSizeStyle}>{t('declarations.validated') || t('declarations.validated') /* fallback handled by translations */}</TableHead>
+                  {/* Recouvrement columns (can be hidden in Caissier Recouvrement view) */}
+                  {!hideRecouvrementFields && (
+                    <TableHead data-rtl={settings.language === 'ar'} className={`${colWidthSmall} whitespace-nowrap ${cellPaddingClass}`} style={fontSizeStyle}>{t('declarations.payments') || 'Paiements'}</TableHead>
+                  )}
+                  {!hideRecouvrementFields && (
+                    <TableHead data-rtl={settings.language === 'ar'} className={`${colWidthSmall} whitespace-nowrap ${cellPaddingClass}`} style={fontSizeStyle}>{t('declarations.recoveredAmount') || 'Montant Recouvré'}</TableHead>
+                  )}
                 <TableHead data-rtl={settings.language === 'ar'} className={`${colWidthEtat} whitespace-nowrap ${cellPaddingClass}`} style={fontSizeStyle}>{t('declarations.status')}</TableHead>
                 <TableHead data-rtl={settings.language === 'ar'} className={`${getMinWidthForChars(12)} whitespace-nowrap ${cellPaddingClass}`} style={fontSizeStyle}>{t('declarations.actions')}</TableHead>
               </TableRow>
@@ -153,6 +169,7 @@ const DeclarationsTable = ({
                   <TableCell data-rtl={settings.language === 'ar'} className={`whitespace-nowrap ${getMinWidthForChars(12)} ${cellPaddingClass}`} style={fontSizeStyle}>
                     <div className={`whitespace-nowrap`} style={fontSizeStyle}>{declaration.chauffeurName}</div>
                   </TableCell>
+                  {/* programReference cell hidden */}
                   <TableCell data-rtl={settings.language === 'ar'} className={`text-center whitespace-nowrap ${cellPaddingClass}`} style={fontSizeStyle}>
                     {declaration.distance ? (
                       <div className={`flex items-center gap-1 whitespace-nowrap`} style={fontSizeStyle}>
@@ -192,29 +209,102 @@ const DeclarationsTable = ({
                         })
                       : '-'}</span>
                   </TableCell>
+                  {/* Recouvrement columns */}
+                  {!hideRecouvrementFields && (() => {
+                    // determine payments related to this declaration
+                    const related = (payments || (declaration as any).paymentReceipts || []).filter((p: PaymentReceipt) => String(p.declarationId || '') === String(declaration.id));
+                    const validated = related.filter(p => ['validee', 'validated', 'valide', 'valid'].includes(String(p.status || '').toLowerCase()));
+                    const totalRecovered = validated.reduce((s, p) => s + (Number(p.montant || 0)), 0);
+                    // The declaration is considered 'Recouvré' only when the declaration itself
+                    // has been marked by the caissier (we set this via updateDeclaration on Envoyer).
+                    const declPaymentState = String((declaration as any).paymentState || '').toLowerCase();
+                    const isRecouvre = declPaymentState.startsWith('recouv');
+                    return (
+                      <>
+                            <TableCell data-rtl={settings.language === 'ar'} className={`text-center whitespace-nowrap ${cellPaddingClass}`} style={fontSizeStyle}>
+                              {isRecouvre ? (
+                                <Badge className={`bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 ${badgeClass} px-[10px]`}>
+                                  {t('declarations.recovered') || 'Recouvré'}
+                                </Badge>
+                              ) : (
+                                <Badge className={`bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200 ${badgeClass} px-[10px]`}>
+                                  {t('declarations.notRecovered') || 'Non Recouvré'}
+                                </Badge>
+                              )}
+                            </TableCell>
+                        <TableCell data-rtl={settings.language === 'ar'} className={`text-right whitespace-nowrap ${cellPaddingClass}`} style={fontSizeStyle}>
+                          {isRecouvre ? <span className="inline-block">{totalRecovered.toFixed(2)} DZD</span> : '-' }
+                        </TableCell>
+                      </>
+                    );
+                  })()}
                   <TableCell data-rtl={settings.language === 'ar'} className={`whitespace-nowrap text-center ${cellPaddingClass}`} style={fontSizeStyle}>
                     {getStatusBadge(declaration.status)}
                   </TableCell>
                   <TableCell className={`whitespace-nowrap ${cellPaddingClass}`} style={fontSizeStyle}>
                     <div className="flex gap-1 whitespace-nowrap" style={fontSizeStyle}>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className={`flex items-center justify-center rounded-md border border-border`}
-                        style={{ width: computedRowPx, height: computedRowPx }}
-                        onClick={() => onEditDeclaration(declaration)}
-                      >
-                        <Edit style={{ width: computedIconPx, height: computedIconPx }} />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className={`flex items-center justify-center rounded-md border border-border text-red-600 hover:text-red-700`}
-                        style={{ width: computedRowPx, height: computedRowPx }}
-                        onClick={() => onDeleteDeclaration(declaration.id)}
-                      >
-                        <Trash2 style={{ width: computedIconPx, height: computedIconPx }} />
-                      </Button>
+                      {onEditDeclaration && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className={`flex items-center justify-center rounded-md border border-border`}
+                          style={{ width: computedRowPx, height: computedRowPx }}
+                          onClick={() => onEditDeclaration(declaration)}
+                        >
+                          <Edit style={{ width: computedIconPx, height: computedIconPx }} />
+                        </Button>
+                      )}
+                      {onDeleteDeclaration && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className={`flex items-center justify-center rounded-md border border-border text-red-600 hover:text-red-700`}
+                          style={{ width: computedRowPx, height: computedRowPx }}
+                          onClick={() => onDeleteDeclaration(declaration.id)}
+                        >
+                          <Trash2 style={{ width: computedIconPx, height: computedIconPx }} />
+                        </Button>
+                      )}
+                      {onSendReceipts && (
+                        (() => {
+                          const declPaymentState = String((declaration as any).paymentState || '').toLowerCase();
+                          const isRecouvre = declPaymentState.startsWith('recouv');
+                          if (isRecouvre) {
+                            // show Annuler button (undo) to revert recouvrement
+                            return (
+                              <button key="cancel-recouv" title={t('payments.undo') || 'Annuler'} onClick={async () => {
+                                try {
+                                  const { updateDeclaration } = await import('../../services/declarationService');
+                                  const traceEntry = { userId: null, userName: null, action: t('traceability.revokedRecouvrement') || 'Annulation recouvrement', date: new Date().toISOString() };
+                                  await updateDeclaration(declaration.id, { paymentState: '', paymentRecoveredAt: null }, traceEntry);
+                                } catch (e) {
+                                  console.error('Cancel recouvrement failed', e);
+                                  alert(t('forms.error') || 'Erreur');
+                                }
+                              }} className="p-2 rounded border-0 text-yellow-600 hover:bg-yellow-50 dark:hover:bg-yellow-900 flex items-center justify-center" style={{ width: computedRowPx, height: computedRowPx }}>
+                                {/* Undo icon */}
+                                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                                  <path d="M21 12a9 9 0 10-9 9" />
+                                  <path d="M21 3v9h-9" />
+                                </svg>
+                              </button>
+                            );
+                          }
+                          return (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className={`text-green-600 hover:text-green-700 flex items-center justify-center`}
+                              style={{ width: computedRowPx, height: computedRowPx }}
+                              onClick={() => onSendReceipts(declaration)}
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
+                                <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2 .01 5z" />
+                              </svg>
+                            </Button>
+                          );
+                        })()
+                      )}
                       {declaration.status === 'en_cours' && (
                         <>
                           <Button

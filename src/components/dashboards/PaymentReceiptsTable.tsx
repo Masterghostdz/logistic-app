@@ -51,7 +51,8 @@ const PaymentReceiptsTable: React.FC<PaymentReceiptsTableProps> = ({
   } = useTableZoom(fontSize as any);
 
   const [search, setSearch] = useState('');
-  const [searchColumn, setSearchColumn] = useState<'all' | 'programReference' | 'companyName' | 'id'>('all');
+  // Only allow search by programReference (numéro de programme)
+  const [searchColumn, setSearchColumn] = useState<'programReference'>('programReference');
   const [statusFilter, setStatusFilter] = useState<'all' | 'brouillon' | 'validee'>('all');
 
   // Column width helpers (aligned with DeclarationsTable)
@@ -86,17 +87,7 @@ const PaymentReceiptsTable: React.FC<PaymentReceiptsTableProps> = ({
     if (statusFilter !== 'all' && r.status !== statusFilter) return false;
     if (!search) return true;
     const s = search.toLowerCase();
-    if (searchColumn === 'all') {
-      return (
-        (r.programReference && r.programReference.toLowerCase().includes(s)) ||
-        (r.companyName && r.companyName.toLowerCase().includes(s)) ||
-        (r.id && r.id.toLowerCase().includes(s))
-      );
-    }
-    if (searchColumn === 'programReference') return !!(r.programReference && r.programReference.toLowerCase().includes(s));
-    if (searchColumn === 'companyName') return !!(r.companyName && r.companyName.toLowerCase().includes(s));
-    if (searchColumn === 'id') return !!(r.id && r.id.toLowerCase().includes(s));
-    return true;
+    return !!(r.programReference && r.programReference.toLowerCase().includes(s));
   });
 
   return (
@@ -108,17 +99,17 @@ const PaymentReceiptsTable: React.FC<PaymentReceiptsTableProps> = ({
           onSearchChange={setSearch}
           filterValue={statusFilter}
           onFilterChange={(v) => setStatusFilter(v as any)}
-          filterOptions={[{ value: 'brouillon', label: t('dashboard.pending') || 'Brouillon' }, { value: 'validee', label: t('dashboard.validated') || 'Validé' }]}
-          searchColumn={searchColumn}
-          onSearchColumnChange={(v) => setSearchColumn(v as any)}
-          searchColumnOptions={[
-            { value: 'all', label: 'Tous' },
-            { value: 'programReference', label: t('declarations.programNumber') || 'Référence' },
-            { value: 'companyName', label: t('companies.name') || 'Société' },
-            { value: 'id', label: 'ID' }
+          filterOptions={[
+            { value: 'brouillon', label: t('dashboard.pending') || 'Brouillon' },
+            { value: 'validee', label: t('dashboard.validated') || 'Validé' }
           ]}
-          searchPlaceholder={t('declarations.searchPlaceholder') || 'Rechercher...'}
-          filterPlaceholder={t('declarations.filterPlaceholder') || 'Filtrer...'}
+          searchColumn={searchColumn}
+          onSearchColumnChange={() => {}}
+          searchColumnOptions={[
+            { value: 'programReference', label: t('declarations.programNumber') || 'Numéro de programme' }
+          ]}
+          searchPlaceholder={t('declarations.searchPlaceholder') || t('common.searchPlaceholder') || 'Rechercher...'}
+          filterPlaceholder={t('declarations.filterPlaceholder') || t('common.filterPlaceholder') || 'Filtrer...'}
         />
       </div>
 
@@ -127,12 +118,12 @@ const PaymentReceiptsTable: React.FC<PaymentReceiptsTableProps> = ({
           <CardContent className="p-0">
             {/* Header inside the framed card: zoom selector on the right */}
             <div className="flex items-center justify-end p-3 border-b border-border">
-              <label className="mr-2 text-xs text-muted-foreground">Zoom :</label>
+              <label className="mr-2 text-xs text-muted-foreground">{t('common.zoom') || 'Zoom'} :</label>
               <select
                 value={localFontSize}
                 onChange={e => setLocalFontSize(e.target.value as typeof fontSize)}
                 className="border rounded px-2 py-1 text-xs bg-background"
-                title="Zoom sur la taille d'écriture du tableau"
+                title={t('common.zoom') || 'Zoom'}
               >
                 <option value="100">100%</option>
                 <option value="90">90%</option>
@@ -223,7 +214,7 @@ const PaymentReceiptsTable: React.FC<PaymentReceiptsTableProps> = ({
                       </TableCell>
 
                       <TableCell className={`${colWidthMontant} ${cellPaddingClass} whitespace-nowrap`} style={fontSizeStyle}>
-                        <div className={`whitespace-nowrap truncate`} style={fontSizeStyle}>{receipt.montant ? `${receipt.montant} DZD` : ''}</div>
+                        <div className={`whitespace-nowrap truncate`} style={fontSizeStyle}>{typeof receipt.montant === 'number' ? `${receipt.montant.toFixed(2)}` : ''}</div>
                       </TableCell>
 
                       <TableCell className={`${colWidthDate} ${cellPaddingClass} whitespace-nowrap`} style={fontSizeStyle}>

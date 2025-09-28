@@ -840,6 +840,8 @@ const PlanificateurDashboard = () => {
                         mobile={viewMode === 'mobile'}
                         fontSize={tableFontSize as '40' | '60' | '80' | '100'}
                         onConsultDeclaration={setConsultingDeclaration}
+                        // For Planificateur we hide the Paiements / Montant Recouvré columns
+                        hideRecouvrementFields={true}
                       />
                     {/* Confirmation suppression programme (déclaration) */}
                     <AlertDialog open={!!declarationToDelete} onOpenChange={open => { if (!open) setDeclarationToDelete(null); }}>

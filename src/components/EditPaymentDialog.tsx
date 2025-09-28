@@ -314,7 +314,7 @@ const EditPaymentDialog: React.FC<EditPaymentDialogProps> = ({ receipt, isOpen, 
               {!readOnly ? (
                 <Input id="montant" value={montant} onChange={e => setMontant(e.target.value)} />
               ) : (
-                <div className="mt-1">{receipt.montant ? `${receipt.montant} DZD` : ''}</div>
+                <div className="mt-1">{typeof receipt.montant === 'number' ? `${receipt.montant.toFixed(2)} DZD` : ''}</div>
               )}
             </div>
 

@@ -12,12 +12,16 @@ import SimpleDeclarationNumberForm from './SimpleDeclarationNumberForm';
 import { Badge } from './ui/badge';
 import { useAuth } from '../contexts/AuthContext';
 import useTableZoom from '../hooks/useTableZoom';
+import { useIsMobile } from '../hooks/use-mobile';
+import { useSettings } from '../contexts/SettingsContext';
 
 // Inline helper component: lists payments for a given declaration (or matching program)
 const PaymentsForDeclaration: React.FC<{ declaration?: Declaration | null; readOnly?: boolean }> = ({ declaration, readOnly = false }) => {
   const [payments, setPayments] = useState<any[]>([]);
   const { t } = useTranslation();
   const { badgeClass, badgeStyle } = useTableZoom();
+
+  // Payments list does not need to control dialog sizing; parent handles mobile detection
   const [previewPhotoUrl, setPreviewPhotoUrl] = useState<string | null>(null);
   const authCtx = useAuth();
 
@@ -241,6 +245,11 @@ const EditDeclarationDialog: React.FC<EditDeclarationDialogProps> = ({
 
   const { badgeClass, badgeStyle } = useTableZoom();
 
+  // Detect mobile/desktop to adapt dialog sizing (main dialog)
+  const hookIsMobile = useIsMobile();
+  const { settings } = useSettings();
+  const isMobile = settings?.viewMode === 'mobile' || hookIsMobile;
+
   // Copie de la logique getStatusBadge pour cohérence avec le tableau
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -263,7 +272,7 @@ const EditDeclarationDialog: React.FC<EditDeclarationDialogProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md" aria-describedby="edit-declaration-description">
+      <DialogContent className={isMobile ? 'max-w-md mx-4' : 'max-w-4xl mx-6'} aria-describedby="edit-declaration-description">
         <div id="edit-declaration-description" className="sr-only">
           Ce dialogue permet de modifier ou consulter une déclaration. Remplissez les champs requis puis validez.
         </div>

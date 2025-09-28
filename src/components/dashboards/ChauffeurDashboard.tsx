@@ -1,6 +1,4 @@
-// ...imports...
-
-// Aperçu photo reçu (doit être déclaré dans le composant, après les imports)
+// Chauffeur dashboard
 import { useOnlineStatus } from '../../contexts/OnlineStatusContext';
 import { DocumentReference, DocumentData } from 'firebase/firestore';
 
@@ -35,7 +33,6 @@ import { Separator } from '../ui/separator';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { MapPin, Plus, Clock, Search, Edit, Trash2 } from 'lucide-react';
 import CreateChauffeurDialog from '../CreateChauffeurDialog';
-// ...existing code...
 import ChauffeurSidebar from './ChauffeurSidebar';
 import { Declaration, Warehouse, PaymentReceipt } from '../../types';
 import SimpleDeclarationNumberForm from '../SimpleDeclarationNumberForm';
@@ -1023,7 +1020,6 @@ const ChauffeurDashboard = () => {
                               </div>
                               <CameraPreviewModal
                                 isOpen={isCameraModalOpen}
-                                language={settings.language}
                                 onPhotoTaken={async (dataUrl) => {
                                   // Convertir le dataUrl en File
                                   const res = await fetch(dataUrl);
@@ -1044,6 +1040,8 @@ const ChauffeurDashboard = () => {
                                     chauffeurId: auth.user.id,
                                     chauffeurName: auth.user.fullName,
                                     status: 'pending' as 'pending',
+                                    // Mark uploads created by chauffeur as pending upload so UI shows "En attente"
+                                    uploadPending: true,
                                     companyId: company.id,
                                     companyName: company.name,
                                     photoUrl,

@@ -76,6 +76,7 @@ export interface Declaration {
   id: string;
   number: string;
   programNumber: string;
+  programReference?: string;
   year: string;
   month: string;
   chauffeurId: string;

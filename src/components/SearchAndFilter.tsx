@@ -62,7 +62,7 @@ const SearchAndFilter = ({
           <SelectValue placeholder={finalFilterPlaceholder} />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">Tous</SelectItem>
+          <SelectItem value="all">{t('filters.all') || 'Tous'}</SelectItem>
           {filterOptions.map(option => (
             <SelectItem key={option.value} value={option.value}>
               {option.label}

@@ -6,7 +6,10 @@ export const translations = {
       createPaymentTitle: "Ajouter un reçu de paiement",
   createPaymentDesc: "Remplissez le formulaire pour ajouter un reçu de paiement.",
   profileTitle: "Profil Caissier",
-      paymentsTitle: "Paiements",
+      paymentsTitle: "Gestion des paiements",
+      recouvrementTitle: "Gestion des Recouvrements",
+      // Created for CreateRecouvrementDialog
+      createRecouvrement: "Créer un recouvrement",
       emptyDashboard: "Espace Caissier (façade, aucun contenu)",
       recouvrementEmpty: "Section Recouvrement (façade, aucun contenu)",
       tracageEmpty: "Section Tracage (façade, aucun contenu)"
@@ -55,7 +58,11 @@ export const translations = {
     },
     common: {
       searchPlaceholder: "Rechercher...",
-      filterPlaceholder: "Filtrer..."
+      filterPlaceholder: "Filtrer...",
+      zoom: "Zoom"
+    },
+    filters: {
+      all: "Tous"
     },
     camera: {
       error: {
@@ -72,13 +79,24 @@ export const translations = {
       actions: "Actions"
     },
     companies: {
-      name: "Nom",
+      name: "Société",
       company: "Société",
       address: "Adresse",
       phone: "Téléphone",
       email: "Email",
       actions: "Actions",
       select: "Sélectionner une société"
+    },
+    payments: {
+      sendReceipts: "Envoyer des reçus",
+      sendDialogDescription: "Envoyer des reçus de paiement",
+      send: "Envoyer",
+      validate: "Valider",
+      confirmDeleteReceipt: "Confirmez-vous la suppression de ce reçu ?",
+      undo: "Annuler",
+      // added keys for recouvrement flows
+      deleted: "Reçu supprimé",
+      validated: "Reçu validé"
     },
       payment: {
         errors: {
@@ -87,6 +105,7 @@ export const translations = {
           programRequired: "Référence programme requise"
         }
       },
+      
     vehicleTypes: {
       name: "Nom",
       primeKilometrique: "Prime kilométrique",
@@ -167,6 +186,9 @@ export const translations = {
   noReceiptsAdded: "Aucun reçu ajouté",
     synchronized: "Synchronisé",
     programNumber: "Numéro de programme",
+      // recouvrement helpers
+      savedMessage: "Déclaration enregistrée",
+      recoveredMessage: "Déclaration marquée comme recouvrée",
       // Table headers & labels
       number: "Numéro",
       chauffeur: "Chauffeur",
@@ -174,9 +196,14 @@ export const translations = {
       date: "Date",
       createdDate: "Date de création",
       validated: "Validé",
-      distance: "Distance (km)",
-      deliveryFees: "Frais de livraison (DZD)",
+    distance: "Distance (km)",
+    deliveryFees: "Frais de livraison (DZD)",
   primeDeRoute: "Prime de route (DZD)",
+    // Recouvrement / payments headers
+    payments: "Paiements",
+    recoveredAmount: "Montant Recouvré",
+    recovered: "Recouvré",
+    notRecovered: "Non Recouvré",
       notes: "Notes",
       photos: "Photos justificatives",
       status: "Statut",
@@ -208,7 +235,11 @@ export const translations = {
     },
     common: {
       searchPlaceholder: "ابحث...",
-      filterPlaceholder: "تصفية..."
+      filterPlaceholder: "تصفية...",
+      zoom: "تكبير"
+    },
+    filters: {
+      all: "الكل"
     },
     camera: {
       error: {
@@ -341,7 +372,8 @@ export const translations = {
       new: "Nouvel enregistrement",
       remboursement: "Remboursement",
       reglement: "Règlement",
-      programNumber: "Numéro de programme",
+  programReference: "Référence programme",
+  programNumber: "Numéro de programme",
       destinationUnit: "Unité de destination",
       amount: "Montant (DZD)",
       description: "Description",
@@ -377,6 +409,8 @@ export const translations = {
   firstName: "Prénom",
   mobile: "Téléphone mobile",
       phonePlaceholder: "Numéro de téléphone",
+    amount: "Montant",
+    saving: "Enregistrement...",
       // generic form placeholders
   phoneIndexedPlaceholder: "Téléphone {index}",
   latitude: "Latitude",
@@ -447,6 +481,9 @@ export const translations = {
       created: "Déclaration Créée",
       modified: "Déclaration Modifiée",
       validated: "Déclaration Validée",
+      createdDraft: "Déclaration brouillon créée",
+      sentReceipts: "Reçus envoyés",
+      revokedRecouvrement: "Annulation recouvrement",
       refused: "Déclaration Refusée",
       declared: "Déclaration Envoyée",
       breakdown: "Un panne Signalée",
@@ -471,10 +508,22 @@ export const translations = {
       createPaymentTitle: "Add a payment receipt",
   createPaymentDesc: "Fill out the form to add a payment receipt.",
   profileTitle: "Cashier Profile",
-      paymentsTitle: "Payments",
+    paymentsTitle: "Payments Management",
+      recouvrementTitle: "Collections Management",
       emptyDashboard: "Cashier area (placeholder, no content)",
       recouvrementEmpty: "Collection section (placeholder, no content)",
       tracageEmpty: "Trace section (placeholder, no content)"
+    },
+    payments: {
+      sendReceipts: "Send receipts",
+      sendDialogDescription: "Send payment receipts",
+      send: "Send",
+      validate: "Validate",
+      confirmDeleteReceipt: "Confirm deletion of this receipt?",
+      confirmDeleteTitle: "Delete receipt",
+      undo: "Undo",
+      deleted: "Receipt deleted",
+      validated: "Receipt validated",
     },
     roles: {
       admin: "Administrator",
@@ -488,6 +537,10 @@ export const translations = {
     common: {
       searchPlaceholder: "Search...",
       filterPlaceholder: "Filter..."
+    ,  zoom: "Zoom"
+    },
+    filters: {
+      all: "All"
     },
     camera: {
       error: {
@@ -619,10 +672,18 @@ export const translations = {
       distance: "Distance (km)",
   deliveryFees: "Delivery Fees (DZD)",
   primeDeRoute: "Route Allowance (DZD)",
+    // Recouvrement / payments headers
+    payments: "Payments",
+    recoveredAmount: "Recovered Amount",
+    recovered: "Recovered",
+    notRecovered: "Not Recovered",
       paymentReceipts: "Payment receipts (photos)",
     noReceiptsAdded: "No receipts added",
     synchronized: "Synchronized",
       programNumber: "Program Number",
+  // recouvrement helpers
+  savedMessage: "Declaration saved",
+  recoveredMessage: "Declaration marked as recovered",
       notes: "Notes",
       photos: "Supporting Photos",
       status: "Status",
@@ -752,6 +813,8 @@ export const translations = {
   firstName: "First Name",
   mobile: "Mobile phone",
   phonePlaceholder: "Phone number",
+    amount: "Amount",
+    saving: "Saving...",
   // generic form placeholders
   phoneIndexedPlaceholder: "Phone {index}",
   latitude: "Latitude",
@@ -833,6 +896,8 @@ export const translations = {
       created: "Declare Created",
       modified: "Declare Modified",
       validated: "Declare Validated",
+      sentReceipts: "Receipts sent",
+      revokedRecouvrement: "Revoked collection",
       refused: "Declare Refused",
       declared: "Declare sent",
       breakdown: "Reported as breakdown",
@@ -852,6 +917,15 @@ export const translations = {
     }
   },
   ar: {
+    // common UI strings (search/filter/zoom) — ensure present in final AR block
+    common: {
+      searchPlaceholder: "ابحث...",
+      filterPlaceholder: "تصفية...",
+      zoom: "تكبير"
+    },
+    filters: {
+      all: "الكل"
+    },
     camera: {
       error: {
         save: "حدث خطأ أثناء حفظ الصورة. يرجى المحاولة مرة أخرى."
@@ -870,10 +944,22 @@ export const translations = {
       createPaymentTitle: "إضافة إيصال دفع",
       createPaymentDesc: "املأ النموذج لإضافة إيصال دفع.",
       profileTitle: "ملف أمين الصندوق",
-      paymentsTitle: "المدفوعات",
+      paymentsTitle: "إدارة المدفوعات",
+      
+      recouvrementTitle: "إدارة التحصيل",
       emptyDashboard: "مساحة أمين الصندوق (نموذج، لا يوجد محتوى)",
       recouvrementEmpty: "قسم التحصيل (نموذج، لا يوجد محتوى)",
       tracageEmpty: "قسم التتبع (نموذج، لا يوجد محتوى)"
+    },
+    payments: {
+      sendReceipts: "إرسال الإيصالات",
+      sendDialogDescription: "إرسال إيصالات الدفع",
+      send: "إرسال",
+      validate: "تأكيد",
+      confirmDeleteReceipt: "هل تؤكد حذف هذا الإيصال؟",
+      undo: "تراجع",
+      deleted: "تم حذف الإيصال",
+      validated: "تم تأكيد الإيصال",
     },
     roles: {
       admin: "مسؤول",
@@ -1000,6 +1086,11 @@ export const translations = {
       distance: "المسافة (كم)",
       deliveryFees: "رسوم التسليم (دج)",
       primeDeRoute: "منحة الطريق (دج)",
+        // Recouvrement / payments headers
+        payments: "المدفوعات",
+        recoveredAmount: "المبلغ المحصل",
+        recovered: "محصل",
+        notRecovered: "غير محصل",
       notes: "ملاحظات",
       photos: "الصور المبررة",
       status: "الحالة",
@@ -1011,6 +1102,9 @@ export const translations = {
   paymentReceipts: "إيصالات الدفع (صور)",
   noReceiptsAdded: "لم يتم إضافة إيصال",
   programNumber: "رقم البرنامج",
+    // recouvrement helpers
+    savedMessage: "تم حفظ التصريح",
+    recoveredMessage: "تم وضع التصريح كمحصل",
     declare: "تصريح",
   pending: "معلق",
   validated: "مؤكد",
@@ -1131,6 +1225,8 @@ export const translations = {
   firstName: "الاسم الأول",
   mobile: "الهاتف المحمول",
   phonePlaceholder: "رقم الهاتف",
+      amount: "المبلغ",
+      saving: "جارٍ الحفظ...",
   // generic form placeholders
   phoneIndexedPlaceholder: "الهاتف {index}",
   latitude: "خط العرض",
@@ -1195,6 +1291,8 @@ export const translations = {
       created: "تم إنشاء التصريح",
       modified: "تم تعديل التصريح",
       validated: "تم تأكيد التصريح",
+      sentReceipts: "تم إرسال الإيصالات",
+      revokedRecouvrement: "تم التراجع عن التحصيل",
       refused: "تم رفض التصريح",
       declared: "تم التصريح",
       breakdown: "تم الإبلاغ عن عطل",
@@ -1214,6 +1312,39 @@ export const translations = {
     }
   }
 };
+// Ensure 'ar' has all keys present in 'en' (then 'fr') to avoid accidental fallbacks to French
+const fillMissingTranslations = () => {
+  const langs: Array<'fr'|'en'|'ar'> = ['en', 'fr'];
+  const target = translations['ar'] as any;
+
+  const ensure = (srcObj: any, dstObj: any) => {
+    for (const key of Object.keys(srcObj)) {
+      const srcVal = srcObj[key];
+      if (typeof srcVal === 'object' && srcVal !== null && !Array.isArray(srcVal)) {
+        if (!(key in dstObj) || typeof dstObj[key] !== 'object' || dstObj[key] === null) {
+          dstObj[key] = {};
+        }
+        ensure(srcVal, dstObj[key]);
+      } else {
+        if (!(key in dstObj) || dstObj[key] === undefined || dstObj[key] === null || dstObj[key] === '') {
+          dstObj[key] = srcVal;
+        }
+      }
+    }
+  };
+
+  for (const lang of langs) {
+    const src = translations[lang] as any;
+    if (src) ensure(src, target);
+  }
+};
+
+try {
+  fillMissingTranslations();
+} catch (e) {
+  // non-fatal, leave translations as-is if the helper fails
+  // console.warn('fillMissingTranslations failed', e);
+}
 
 export const getTranslation = (key: string, language: string) => {
   // Accept language codes like 'ar-DZ' or 'en-US' and normalize to base code
@@ -1239,8 +1370,9 @@ export const getTranslation = (key: string, language: string) => {
     // ignore if process is not available (e.g., some WebView envs)
   }
 
-  // Fallback mechanism: try baseLang, then fr -> en -> ar
-  const order: Array<'fr' | 'en' | 'ar'> = ['fr', 'en', 'ar'];
+  // Fallback mechanism: try baseLang, then prefer English, then French, then Arabic
+  // This avoids returning French when Arabic keys are missing (English is usually a better fallback)
+  const order: Array<'fr' | 'en' | 'ar'> = ['en', 'fr', 'ar'];
 
   if (translation) return translation;
 
