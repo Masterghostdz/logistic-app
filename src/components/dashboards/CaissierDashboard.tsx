@@ -22,6 +22,7 @@ import { getTranslation } from '../../lib/translations';
 import { Plus } from 'lucide-react';
 import SendReceiptsDialog from './SendReceiptsDialog';
 import CreateRecouvrementDialog from '../CreateRecouvrementDialog';
+import CaissierStats from './CaissierStats';
 
 const CaissierDashboard = () => {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'recouvrement' | 'paiement' | 'tracage' | 'profile'>('dashboard');
@@ -57,8 +58,15 @@ const CaissierDashboard = () => {
     return () => { if (unsub) unsub(); };
   }, []);
   // Backwards-compat: declarations may still contain embedded receipts, but the table uses `payments` now
-  const receipts = payments;
-  
+  const receipts = declarations.flatMap(d => d.paymentReceipts || []);
+  // Dashboard stats for cashier
+  const recouvrementsCount = declarations.filter(d => (d.paymentReceipts || []).length > 0 && String((d as any).paymentState || '').toLowerCase() !== 'recouvre').length;
+  const paymentsNotValidatedCount = receipts.filter(r => r.status !== 'validee').length;
+  const paymentsNoCompanyCount = receipts.filter(r => !r.companyId).length;
+  const [paymentInitialFilter, setPaymentInitialFilter] = React.useState<'all'|'brouillon'|'validee'>('all');
+  // allow forcing company filter when navigating from stats (e.g. paiements sans société)
+  const [paymentInitialCompanyFilter, setPaymentInitialCompanyFilter] = React.useState<'all'|'no-company'>('all');
+
   const [consultReceipt, setConsultReceipt] = React.useState<PaymentReceipt | null>(null);
   const [editReceipt, setEditReceipt] = React.useState<PaymentReceipt | null>(null);
   const [validateReceipt, setValidateReceipt] = React.useState<PaymentReceipt | null>(null);
@@ -152,8 +160,19 @@ const CaissierDashboard = () => {
         <main className="flex-1 min-w-0 p-6 pt-16 overflow-auto">
           {/* Affichage façade selon la tab sélectionnée */}
           {activeTab === 'dashboard' && (
-            <div className="mb-4">
-              <h1 className="text-2xl font-bold">{t('caissier.recouvrementTitle') || 'Gestion des Recouvrements'}</h1>
+            <div className="space-y-6">
+              <div className="mb-4">
+                <h1 className="text-2xl font-bold">{t('caissier.dashboardTitle') || 'Tableau de bord - Caissier'}</h1>
+              </div>
+              {/* Constrain stats width like Planificateur to avoid occupying too much horizontal space */}
+              <div className="w-full max-w-xl">
+                <CaissierStats
+                  stats={{ recouvrements: recouvrementsCount, paymentsPending: paymentsNotValidatedCount, paymentsNoCompany: paymentsNoCompanyCount }}
+                  onRecouvrementsClick={() => { setStatusFilter('non_recouvre'); setPaymentInitialFilter('all'); setPaymentInitialCompanyFilter('all'); setActiveTab('recouvrement'); }}
+                  onPaymentsPendingClick={() => { setPaymentInitialFilter('brouillon'); setPaymentInitialCompanyFilter('all'); setActiveTab('paiement'); }}
+                  onPaymentsNoCompanyClick={() => { setPaymentInitialFilter('all'); setPaymentInitialCompanyFilter('no-company'); setActiveTab('paiement'); }}
+                />
+              </div>
             </div>
           )}
           {activeTab === 'recouvrement' && (
@@ -169,16 +188,15 @@ const CaissierDashboard = () => {
               </div>
               <div className="space-y-4">
                 <SearchAndFilter
-                  searchValue={searchTerm}
-                  onSearchChange={setSearchTerm}
-                  filterValue={statusFilter}
-                  onFilterChange={setStatusFilter}
+                   searchValue={searchTerm}
+                   onSearchChange={setSearchTerm}
+                   filterValue={statusFilter}
+                   onFilterChange={setStatusFilter}
+                  // Filter should reflect recouvrement state (based on payments), not declaration status
+                  // Note: SearchAndFilter injects the default 'all' option, so do NOT include it here to avoid duplication
                   filterOptions={[
-                    { value: 'en_route', label: t('dashboard.onRoad') },
-                    { value: 'en_panne', label: t('declarations.breakdown') },
-                    { value: 'en_cours', label: t('dashboard.pending') },
-                    { value: 'valide', label: t('dashboard.validated') },
-                    { value: 'refuse', label: t('dashboard.refused') }
+                    { value: 'recouvre', label: t('declarations.recovered') || 'Recouvré' },
+                    { value: 'non_recouvre', label: t('declarations.notRecovered') || 'Non Recouvré' }
                   ]}
                   searchPlaceholder={t('declarations.searchPlaceholder')}
                   filterPlaceholder={t('declarations.filterPlaceholder')}
@@ -212,9 +230,15 @@ const CaissierDashboard = () => {
                       String(d.number || '').toLowerCase().includes(lowerSearch) ||
                       String(d.notes || '').toLowerCase().includes(lowerSearch) ||
                       String(d.chauffeurName || '').toLowerCase().includes(lowerSearch);
-                    const matchesStatus = statusFilter === 'all' || d.status === statusFilter;
-                    return matchesSearch && matchesStatus;
-                  });
+                    // Interpret statusFilter as recouvrement filter based on paymentState on declaration
+                    const paymentState = String((d as any).paymentState || '').toLowerCase();
+                    let matchesStatus = true;
+                    // Use startsWith to be robust to accents/variants (recouvre, recouvré, recouvr...) 
+                    const isRecouvre = paymentState.startsWith('recouvr');
+                    if (statusFilter === 'recouvre') matchesStatus = isRecouvre;
+                    else if (statusFilter === 'non_recouvre') matchesStatus = !isRecouvre;
+                     return matchesSearch && matchesStatus;
+                   });
 
                     return finalFiltered.length === 0 ? (
                     <div className="text-center py-8 text-muted-foreground text-sm">
@@ -286,7 +310,7 @@ const CaissierDashboard = () => {
                 </div>
               </div>
               <div className={(isMobile ? 'overflow-x-auto ' : '') + 'mb-2'}>
-                <PaymentReceiptsTable receipts={receipts} onConsultReceipt={(r) => setConsultReceipt(r)} onEditReceipt={(r) => setEditReceipt(r)} onDeleteReceipt={handleDeleteReceipt} onValidateReceipt={(r) => setValidateReceipt(r)} />
+                <PaymentReceiptsTable receipts={receipts} onConsultReceipt={(r) => setConsultReceipt(r)} initialStatusFilter={paymentInitialFilter} initialCompanyFilter={paymentInitialCompanyFilter} />
               </div>
               <EditPaymentDialog receipt={consultReceipt} isOpen={!!consultReceipt} onClose={() => setConsultReceipt(null)} readOnly={true} />
               <EditPaymentDialog receipt={editReceipt} isOpen={!!editReceipt} onClose={() => setEditReceipt(null)} onSave={(updated) => { /* parent can refresh or handle */ setEditReceipt(null); }} />

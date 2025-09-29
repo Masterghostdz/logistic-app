@@ -12,7 +12,12 @@ export const translations = {
       createRecouvrement: "Créer un recouvrement",
       emptyDashboard: "Espace Caissier (façade, aucun contenu)",
       recouvrementEmpty: "Section Recouvrement (façade, aucun contenu)",
-      tracageEmpty: "Section Tracage (façade, aucun contenu)"
+      tracageEmpty: "Section Tracage (façade, aucun contenu)",
+      // Dashboard / stats
+      dashboardTitle: "Tableau de bord - Caissier",
+      recouvrementsTitle: "Recouvrements en attente",
+      paymentsPendingTitle: "Paiements non validés",
+      paymentsNoCompanyTitle: "Paiements sans société"
     },
     planificateur: {
       clientsTitle: "Gestion des Clients",
@@ -232,6 +237,13 @@ export const translations = {
       financier: "المالي",
       financier_unite: "مالي الوحدة",
       client: "عميل"
+    },
+    // Caissier translations (cashier dashboard / stats)
+    caissier: {
+      dashboardTitle: "لوحة القيادة - أمين الصندوق",
+      recouvrementsTitle: "التحصيلات المعلقة",
+      paymentsPendingTitle: "المدفوعات غير المعتمدة",
+      paymentsNoCompanyTitle: "مدفوعات بدون شركة"
     },
     common: {
       searchPlaceholder: "ابحث...",
@@ -949,17 +961,12 @@ export const translations = {
       recouvrementTitle: "إدارة التحصيل",
       emptyDashboard: "مساحة أمين الصندوق (نموذج، لا يوجد محتوى)",
       recouvrementEmpty: "قسم التحصيل (نموذج، لا يوجد محتوى)",
-      tracageEmpty: "قسم التتبع (نموذج، لا يوجد محتوى)"
-    },
-    payments: {
-      sendReceipts: "إرسال الإيصالات",
-      sendDialogDescription: "إرسال إيصالات الدفع",
-      send: "إرسال",
-      validate: "تأكيد",
-      confirmDeleteReceipt: "هل تؤكد حذف هذا الإيصال؟",
-      undo: "تراجع",
-      deleted: "تم حذف الإيصال",
-      validated: "تم تأكيد الإيصال",
+      tracageEmpty: "قسم التتبع (نموذج، لا يوجد محتوى)",
+      // Dashboard / stats
+      dashboardTitle: "لوحة القيادة - أمين الصندوق",
+      recouvrementsTitle: "التحصيلات المعلقة",
+      paymentsPendingTitle: "المدفوعات غير المعتمدة",
+      paymentsNoCompanyTitle: "مدفوعات بدون شركة"
     },
     roles: {
       admin: "مسؤول",

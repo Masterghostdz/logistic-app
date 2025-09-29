@@ -20,6 +20,9 @@ interface PaymentReceiptsTableProps {
   setSelectedReceiptIds?: (ids: string[]) => void;
   mobile?: boolean;
   fontSize?: '40' | '50' | '60' | '70' | '80' | '90' | '100';
+  initialStatusFilter?: 'all' | 'brouillon' | 'validee';
+  initialCompanyFilter?: 'all' | 'no-company';
+  mode?: 'default' | 'recouvrement';
 }
 
 const PaymentReceiptsTable: React.FC<PaymentReceiptsTableProps> = ({
@@ -30,7 +33,10 @@ const PaymentReceiptsTable: React.FC<PaymentReceiptsTableProps> = ({
   onValidateReceipt,
   selectedReceiptIds = [],
   setSelectedReceiptIds,
-  fontSize = '80'
+  fontSize = '80',
+  initialStatusFilter = 'all',
+  initialCompanyFilter = 'all',
+  mode = 'default'
 }) => {
   const { t, settings } = useTranslation();
 
@@ -53,7 +59,17 @@ const PaymentReceiptsTable: React.FC<PaymentReceiptsTableProps> = ({
   const [search, setSearch] = useState('');
   // Only allow search by programReference (numéro de programme)
   const [searchColumn, setSearchColumn] = useState<'programReference'>('programReference');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'brouillon' | 'validee'>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'brouillon' | 'validee'>(initialStatusFilter || 'all');
+  const [companyFilter, setCompanyFilter] = useState<'all' | 'no-company'>(initialCompanyFilter || 'all');
+  React.useEffect(() => {
+    setStatusFilter(initialStatusFilter || 'all');
+  }, [initialStatusFilter]);
+  React.useEffect(() => {
+    setCompanyFilter(initialCompanyFilter || 'all');
+  }, [initialCompanyFilter]);
+
+  // If in recouvrement mode, statusFilter is not payment status but recouvrement filter.
+  // We don't change internal state here; the parent should set initialStatusFilter appropriately when switching modes.
 
   // Column width helpers (aligned with DeclarationsTable)
   const colWidthPhoto = `${getMinWidthForChars(6)} min-w-[56px]`;
@@ -84,7 +100,14 @@ const PaymentReceiptsTable: React.FC<PaymentReceiptsTableProps> = ({
 
   // Filtrage local (recherche + statut)
   const filteredReceipts = receipts.filter(r => {
-    if (statusFilter !== 'all' && r.status !== statusFilter) return false;
+    // company filter (from stats click) — consider both companyId and companyName empty
+    if (companyFilter === 'no-company') {
+      const hasCompanyId = !!(r.companyId);
+      const hasCompanyName = !!(r.companyName && String(r.companyName).trim().length > 0);
+      if (hasCompanyId || hasCompanyName) return false; // exclude receipts that have a company
+    }
+    // statusFilter normally filters by receipt.status (brouillon/validee)
+    if (statusFilter !== 'all' && ['brouillon', 'validee'].includes(statusFilter) && r.status !== statusFilter) return false;
     if (!search) return true;
     const s = search.toLowerCase();
     return !!(r.programReference && r.programReference.toLowerCase().includes(s));
@@ -99,7 +122,10 @@ const PaymentReceiptsTable: React.FC<PaymentReceiptsTableProps> = ({
           onSearchChange={setSearch}
           filterValue={statusFilter}
           onFilterChange={(v) => setStatusFilter(v as any)}
-          filterOptions={[
+          filterOptions={mode === 'recouvrement' ? [
+            { value: 'recouvre', label: t('declarations.recovered') || 'Recouvré' },
+            { value: 'non_recouvre', label: t('declarations.notRecovered') || 'Non Recouvré' }
+          ] : [
             { value: 'brouillon', label: t('dashboard.pending') || 'Brouillon' },
             { value: 'validee', label: t('dashboard.validated') || 'Validé' }
           ]}
@@ -114,7 +140,7 @@ const PaymentReceiptsTable: React.FC<PaymentReceiptsTableProps> = ({
       </div>
 
       <div className="w-full overflow-x-auto">
-        <Card className="w-full min-w-full rounded-lg border border-border bg-card shadow-sm">
+        <Card className="w-full min-w-full rounded-lg border border-border bg-card">
           <CardContent className="p-0">
             {/* Header inside the framed card: zoom selector on the right */}
             <div className="flex items-center justify-end p-3 border-b border-border">
