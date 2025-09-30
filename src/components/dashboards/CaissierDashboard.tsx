@@ -27,7 +27,7 @@ import CaissierStats from './CaissierStats';
 const CaissierDashboard = () => {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'recouvrement' | 'paiement' | 'tracage' | 'profile'>('dashboard');
   const [showCreatePayment, setShowCreatePayment] = useState(false);
-  const { badgeClass, badgeStyle } = useTableZoom();
+  const { badgeClass, badgeStyle, localFontSize } = useTableZoom();
   const { isOnline } = useOnlineStatus();
   const { t, settings } = useTranslation();
   const isMobile = settings?.viewMode === 'mobile';
@@ -57,12 +57,32 @@ const CaissierDashboard = () => {
     })();
     return () => { if (unsub) unsub(); };
   }, []);
-  // Backwards-compat: declarations may still contain embedded receipts, but the table uses `payments` now
-  const receipts = declarations.flatMap(d => d.paymentReceipts || []);
-  // Dashboard stats for cashier
-  const recouvrementsCount = declarations.filter(d => (d.paymentReceipts || []).length > 0 && String((d as any).paymentState || '').toLowerCase() !== 'recouvre').length;
-  const paymentsNotValidatedCount = receipts.filter(r => r.status !== 'validee').length;
-  const paymentsNoCompanyCount = receipts.filter(r => !r.companyId).length;
+  // Prefer payments listener as the source of truth; fallback to embedded receipts from declarations
+  const receipts = (payments && payments.length > 0) ? payments : declarations.flatMap(d => d.paymentReceipts || []);
+
+  // Dashboard stats for cashier (robust checks)
+  // Recouvrements: count declarations that have receipts but are NOT marked recouvré
+  const recouvrementsCount = (declarations || []).filter(d => {
+    const hasPayments = Array.isArray((d as any).paymentReceipts) && (d as any).paymentReceipts.length > 0
+      || (payments || []).some(p => String(p.declarationId || '') === String(d.id));
+    if (!hasPayments) return false;
+    const paymentState = String((d as any).paymentState || '').toLowerCase();
+    const isRecouvre = paymentState.startsWith('recouvr'); // covers recouvre/recouvré/etc.
+    return !isRecouvre;
+  }).length;
+
+  // Payments not validated: consider multiple normalization variants for status
+  const paymentsNotValidatedCount = (receipts || []).filter(r => {
+    const s = String(r.status || '').toLowerCase();
+    return !['validee', 'validated', 'valid', 'valide'].includes(s);
+  }).length;
+
+  // Payments without company: no companyId and no companyName (empty/whitespace)
+  const paymentsNoCompanyCount = (receipts || []).filter(r => {
+    const hasCompanyId = !!(r.companyId);
+    const hasCompanyName = !!(r.companyName && String(r.companyName).trim().length > 0);
+    return !hasCompanyId && !hasCompanyName;
+  }).length;
   const [paymentInitialFilter, setPaymentInitialFilter] = React.useState<'all'|'brouillon'|'validee'>('all');
   // allow forcing company filter when navigating from stats (e.g. paiements sans société)
   const [paymentInitialCompanyFilter, setPaymentInitialCompanyFilter] = React.useState<'all'|'no-company'>('all');
@@ -254,7 +274,7 @@ const CaissierDashboard = () => {
                               onConsultDeclaration={(declaration) => setConsultDeclaration(declaration)}
                               onSendReceipts={(declaration) => setSendReceiptsFor(declaration)}
                               mobile={isMobile}
-                              fontSize={isMobile ? '60' : '80'}
+                              fontSize={isMobile ? '60' : localFontSize}
                                // pass payments so the table can compute recouvrement totals
                                payments={payments}
                             />
@@ -310,7 +330,14 @@ const CaissierDashboard = () => {
                 </div>
               </div>
               <div className={(isMobile ? 'overflow-x-auto ' : '') + 'mb-2'}>
-                <PaymentReceiptsTable receipts={receipts} onConsultReceipt={(r) => setConsultReceipt(r)} initialStatusFilter={paymentInitialFilter} initialCompanyFilter={paymentInitialCompanyFilter} />
+                <PaymentReceiptsTable
+                  receipts={receipts}
+                  onConsultReceipt={(r) => setConsultReceipt(r)}
+                  initialStatusFilter={paymentInitialFilter}
+                  initialCompanyFilter={paymentInitialCompanyFilter}
+                  fontSize={isMobile ? '60' : localFontSize}
+                  mobile={isMobile}
+                />
               </div>
               <EditPaymentDialog receipt={consultReceipt} isOpen={!!consultReceipt} onClose={() => setConsultReceipt(null)} readOnly={true} />
               <EditPaymentDialog receipt={editReceipt} isOpen={!!editReceipt} onClose={() => setEditReceipt(null)} onSave={(updated) => { /* parent can refresh or handle */ setEditReceipt(null); }} />

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Label } from './ui/label';
@@ -12,6 +11,7 @@ interface SimpleDeclarationNumberFormProps {
   initialMonth?: string;
   initialProgramNumber?: string;
   readOnly?: boolean;
+  noWrapper?: boolean;
 }
 
 const SimpleDeclarationNumberForm = ({ 
@@ -21,6 +21,7 @@ const SimpleDeclarationNumberForm = ({
   initialMonth = '',
   initialProgramNumber = '',
   readOnly = false
+  , noWrapper = false
 }: SimpleDeclarationNumberFormProps) => {
   // Get current date for defaults
   const now = new Date();
@@ -78,11 +79,41 @@ const SimpleDeclarationNumberForm = ({
   };
 
   const { t } = useTranslation();
+ 
+  // If readOnly and initial values are 'NA', render disabled controls showing 'NA'
+  const isNAReadOnly = readOnly && (initialYear === 'NA' || initialMonth === 'NA' || initialProgramNumber === 'NA');
 
-  return (
-    <div className="space-y-4">
-      <Label>{t('declarations.programNumber') || 'Programme de Livraison'}</Label>
-  <div className="flex items-center gap-1 p-3 bg-gray-50 rounded-md border" dir="ltr">
+  const renderControls = (compact: boolean) => {
+    const baseClass = compact ? 'flex items-center gap-1' : 'flex items-center gap-1 p-3 bg-gray-50 rounded-md border';
+    if (isNAReadOnly) {
+      return (
+        <div className={baseClass} dir="ltr">
+          <span dir="ltr" className="text-muted-foreground font-mono text-sm">DCP/</span>
+          <Select value={''} onValueChange={() => {}} disabled>
+            <SelectTrigger className="w-16 h-8 px-2 py-1 text-sm" disabled>
+              <SelectValue placeholder="NA" />
+            </SelectTrigger>
+          </Select>
+          <span dir="ltr" className="text-muted-foreground font-mono text-sm">/</span>
+          <Select value={''} onValueChange={() => {}} disabled>
+            <SelectTrigger className="w-16 h-8 px-2 py-1 text-sm" disabled>
+              <SelectValue placeholder="NA" />
+            </SelectTrigger>
+          </Select>
+          <span dir="ltr" className="text-muted-foreground font-mono text-sm">/</span>
+          <Input
+            type="text"
+            value={'NA'}
+            readOnly
+            className="w-16 h-8 px-2 py-1 text-center text-sm"
+            disabled
+          />
+        </div>
+      );
+    }
+
+    return (
+      <div className={baseClass} dir="ltr">
         <span dir="ltr" className="text-gray-500 font-mono text-sm">DCP/</span>
         <Select value={year} onValueChange={setYear} disabled={readOnly}>
           <SelectTrigger className="w-16 h-8 px-2 py-1 text-sm" disabled={readOnly}>
@@ -94,7 +125,7 @@ const SimpleDeclarationNumberForm = ({
             ))}
           </SelectContent>
         </Select>
-  <span dir="ltr" className="text-gray-500 font-mono text-sm">/</span>
+        <span dir="ltr" className="text-gray-500 font-mono text-sm">/</span>
         <Select value={month} onValueChange={setMonth} disabled={readOnly}>
           <SelectTrigger className="w-16 h-8 px-2 py-1 text-sm" disabled={readOnly}>
             <SelectValue placeholder="MM" />
@@ -105,7 +136,7 @@ const SimpleDeclarationNumberForm = ({
             ))}
           </SelectContent>
         </Select>
-  <span dir="ltr" className="text-gray-500 font-mono text-sm">/</span>
+        <span dir="ltr" className="text-gray-500 font-mono text-sm">/</span>
         <Input
           type="text"
           value={programNumber}
@@ -116,6 +147,18 @@ const SimpleDeclarationNumberForm = ({
           disabled={readOnly}
         />
       </div>
+    );
+  };
+ 
+  // If parent wants to render the outer wrapper (noWrapper=true), render controls only and let parent render label/wrapper
+  if (noWrapper) {
+    return renderControls(true);
+  }
+ 
+  return (
+    <div className="space-y-4">
+      <Label>{t('declarations.programNumber') || 'Programme de Livraison'}</Label>
+      {renderControls(false)}
     </div>
   );
 };

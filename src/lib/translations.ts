@@ -19,6 +19,10 @@ export const translations = {
       paymentsPendingTitle: "Paiements non validés",
       paymentsNoCompanyTitle: "Paiements sans société"
     },
+    // Recouvrement specific labels
+    recouvrement: {
+      noProgramReference: "Pas de référence programme"
+    },
     planificateur: {
       clientsTitle: "Gestion des Clients",
       dashboardTitle: "Tableau de bord - Planificateur",
@@ -245,6 +249,10 @@ export const translations = {
       paymentsPendingTitle: "المدفوعات غير المعتمدة",
       paymentsNoCompanyTitle: "مدفوعات بدون شركة"
     },
+    // Recouvrement labels (Arabic)
+    recouvrement: {
+      noProgramReference: "بدون مرجع البرنامج"
+    },
     common: {
       searchPlaceholder: "ابحث...",
       filterPlaceholder: "تصفية...",
@@ -262,7 +270,7 @@ export const translations = {
       myClients: "عملائي",
       add: "إضافة",
       settings: "الإعدادات",
-      centerMap: "توسيط الخريطة",
+      centerMap: "توسيع الخريطة",
       gps: "نظام تحديد المواقع",
       screenshot: "لقطة شاشة",
       mapMode: "وضع الخريطة",
@@ -518,13 +526,17 @@ export const translations = {
       viewPaymentTitle: "View receipt",
       viewPaymentDesc: "Receipt consultation (read-only)",
       createPaymentTitle: "Add a payment receipt",
-  createPaymentDesc: "Fill out the form to add a payment receipt.",
-  profileTitle: "Cashier Profile",
+      createPaymentDesc: "Fill out the form to add a payment receipt.",
+      profileTitle: "Cashier Profile",
     paymentsTitle: "Payments Management",
       recouvrementTitle: "Collections Management",
       emptyDashboard: "Cashier area (placeholder, no content)",
       recouvrementEmpty: "Collection section (placeholder, no content)",
       tracageEmpty: "Trace section (placeholder, no content)"
+    },
+    // Recouvrement labels (English)
+    recouvrement: {
+      noProgramReference: "No program reference"
     },
     payments: {
       sendReceipts: "Send receipts",
@@ -967,6 +979,10 @@ export const translations = {
       recouvrementsTitle: "التحصيلات المعلقة",
       paymentsPendingTitle: "المدفوعات غير المعتمدة",
       paymentsNoCompanyTitle: "مدفوعات بدون شركة"
+    },
+    // Recouvrement labels (Arabic)
+    recouvrement: {
+      noProgramReference: "بدون مرجع البرنامج"
     },
     roles: {
       admin: "مسؤول",

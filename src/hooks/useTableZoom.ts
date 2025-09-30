@@ -1,32 +1,33 @@
 import { useState } from 'react';
 
-type FontSizeKey = '40' | '50' | '60' | '70' | '80' | '90' | '100';
+type FontSizeKey = '60' | '70' | '80' | '90' | '100';
 
 export default function useTableZoom(initial: FontSizeKey = '80') {
   // Default local font size set to '80' to meet product requirement (80% default zoom)
   const [localFontSize, setLocalFontSize] = useState<FontSizeKey>(initial);
 
-  // Centralized zoom mapping (label -> multiplier).
-  // Use straightforward mapping so '80' corresponds ~0.8, '100' -> 1.0, etc.
-  const zoomLevels: Record<FontSizeKey, number> = {
-    '40': 0.4,
-    '50': 0.5,
-    '60': 0.6,
-    '70': 0.7,
-    '80': 0.8,
-    '90': 0.9,
-    '100': 1.0,
-  };
+  // Supported explicit levels: 100%, 90%, 80%, 70%, 60%.
+  // Compute zoom using a compressed exponential mapping so changes are smoother
+  // and the perceived variation between adjacent steps is smaller.
+  const sizeNum = parseInt(String(localFontSize), 10); // 60..100
+  const baseZoom = Math.max(0.6, Math.min(1.0, sizeNum / 100));
+  // Compression exponent: values <1 compress range towards 1 (smaller visual jumps).
+  const compressionExp = 0.92; // tweak this to adjust perceived step size (0.85..0.99)
+  let zoomGlobal = Math.pow(baseZoom, compressionExp);
 
-  const zoomGlobal = zoomLevels[String(localFontSize) as FontSizeKey] ?? 1.0;
+  // Small visual boost for the default '80' setting so the UI initially appears a
+  // bit more legible before the user actively adjusts zoom.
+  const initialFontBoost = localFontSize === '80' ? 1.04 : 1.0;
+  // We'll apply the boost only to font px computation (not to row height) so spacing
+  // remains better controlled while text appears slightly larger.
 
   const baseFontPx = 14;
   const baseIcon = 18;
 
-  // Slightly increased base row height to give a bit more vertical breathing room
-  // (user requested slightly taller rows). Previously 40px, increase to 44px.
-  const computedFontPx = Math.round(baseFontPx * zoomGlobal);
-  const computedRowPx = Math.round(44 * zoomGlobal);
+  // Compute font size with an optional small boost on the default 80% level.
+  const computedFontPx = Math.round(baseFontPx * zoomGlobal * initialFontBoost);
+  // Row height remains directly proportional to zoomGlobal (compact default is 36px base)
+  const computedRowPx = Math.round(36 * zoomGlobal);
   const computedIconPx = Math.round(baseIcon * zoomGlobal);
 
   // Inline style for font size (keeps backward compatibility with existing consumers)

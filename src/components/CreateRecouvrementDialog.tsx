@@ -30,6 +30,8 @@ const CreateRecouvrementDialog: React.FC<Props> = ({ isOpen, onClose }) => {
   const [year, setYear] = useState<string>('');
   const [month, setMonth] = useState<string>('');
   const [programNumber, setProgramNumber] = useState<string>('');
+  // Checkbox: this recouvrement doesn't relate to a program reference (DCP/NA/NA/NA)
+  const [noProgramReference, setNoProgramReference] = useState<boolean>(false);
   const [notes, setNotes] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [draftDeclId, setDraftDeclId] = useState<string | null>(null);
@@ -52,16 +54,63 @@ const CreateRecouvrementDialog: React.FC<Props> = ({ isOpen, onClose }) => {
   const hookIsMobile = useIsMobile();
   const { settings } = useSettings();
   const isMobile = (settings?.viewMode === 'mobile') || hookIsMobile;
+  // key to force remount of the SimpleDeclarationNumberForm when we need a full reset
+  const [formKey, setFormKey] = useState<number>(0);
+  // If a declaration already exists for the entered components, keep its id here
+  const [existingDeclId, setExistingDeclId] = useState<string | null>(null);
+
+  // Reset internal dialog state when the dialog opens so we don't keep a previous draftDeclId
+  useEffect(() => {
+    if (!isOpen) return;
+    setProgramReference('');
+    setYear('');
+    setMonth('');
+    setProgramNumber('');
+    setNotes('');
+    setDraftDeclId(null);
+    setExistingDeclId(null);
+    setSavingDraft(false);
+    setLoading(false);
+    setPhotoFile(null);
+    setLocalPreviewUrl(null);
+    setPreviewPhotoUrl(null);
+    setAdding(false);
+    setAddError(null);
+    setPayments([]);
+    setLocalAmounts({});
+    setLocalCompany({});
+    setValidatingIds({});
+    setDeleteDialogOpen(false);
+    setReceiptToDelete(null);
+    setNoProgramReference(false);
+    // bump the formKey to ensure SimpleDeclarationNumberForm remounts for a full reset
+    setFormKey(k => k + 1);
+  }, [isOpen]);
+
+  // detect if there is already a declaration matching the current inputs
+  useEffect(() => {
+    if (!declarations || declarations.length === 0) { setExistingDeclId(null); return; }
+    if (noProgramReference) {
+      const found = (declarations || []).find(d => String(d.programReference || '') === 'DCP/NA/NA/NA');
+      setExistingDeclId(found ? found.id : null);
+      return;
+    }
+    if (!programNumber || programNumber.length !== 4) { setExistingDeclId(null); return; }
+    const found = (declarations || []).find(d => String(d.programNumber) === String(programNumber) && String(d.year) === String(year) && String(d.month) === String(month));
+    setExistingDeclId(found ? found.id : null);
+  }, [declarations, programNumber, year, month, noProgramReference]);
 
   const handleSend = async () => {
-    if (!programNumber || programNumber.length !== 4) {
+    if (!noProgramReference && (!programNumber || programNumber.length !== 4)) {
       toast({ title: t('declarations.programNumberRequired') || 'Numéro de programme requis', variant: 'destructive' });
       return;
     }
     setLoading(true);
     try {
-      // find existing declaration matching components (year/month/programNumber)
-      const existing = (declarations || []).find(d => String(d.programNumber) === String(programNumber) && String(d.year) === String(year) && String(d.month) === String(month)) || (draftDeclId ? { id: draftDeclId } as any : null);
+      // find existing declaration matching components (year/month/programNumber) or sentinel when noProgramReference
+      const existing = (!noProgramReference)
+        ? (declarations || []).find(d => String(d.programNumber) === String(programNumber) && String(d.year) === String(year) && String(d.month) === String(month)) || (draftDeclId ? { id: draftDeclId } as any : null)
+        : (declarations || []).find(d => String(d.programReference || '') === 'DCP/NA/NA/NA') || (draftDeclId ? { id: draftDeclId } as any : null);
       const traceEntry = { userId: auth.user?.id || null, userName: auth.user?.fullName || null, action: t('traceability.sentReceipts') || 'Recouvrement créé', date: new Date().toISOString() };
 
       if (existing) {
@@ -73,7 +122,12 @@ const CreateRecouvrementDialog: React.FC<Props> = ({ isOpen, onClose }) => {
         try {
           const { getPayments, updatePayment } = await import('../services/paymentService');
           const allPayments = await getPayments();
-          const toLink = (allPayments || []).filter((p: any) => String(p.programNumber) === String(programNumber) && String(p.year) === String(year) && String(p.month) === String(month) && !p.declarationId);
+          let toLink: any[] = [];
+          if (noProgramReference) {
+            toLink = (allPayments || []).filter((p: any) => String(p.programReference || '') === 'DCP/NA/NA/NA' && !p.declarationId);
+          } else {
+            toLink = (allPayments || []).filter((p: any) => String(p.programNumber) === String(programNumber) && String(p.year) === String(year) && String(p.month) === String(month) && !p.declarationId);
+          }
           for (const p of toLink) {
             try { await updatePayment(p.id, { declarationId: existing.id }); } catch (err) { console.warn('linking payment failed', err); }
           }
@@ -83,10 +137,10 @@ const CreateRecouvrementDialog: React.FC<Props> = ({ isOpen, onClose }) => {
       } else {
         // create new declaration already marked recouvrement
         const newDecl: any = {
-          number: programReference || `DCP/${year}/${month}/${programNumber}`,
-          year,
-          month,
-          programNumber,
+          number: noProgramReference ? 'DCP/NA/NA/NA' : (programReference || `DCP/${year}/${month}/${programNumber}`),
+          year: noProgramReference ? null : year,
+          month: noProgramReference ? null : month,
+          programNumber: noProgramReference ? null : programNumber,
           chauffeurId: null,
           chauffeurName: null,
           status: '',
@@ -94,7 +148,7 @@ const CreateRecouvrementDialog: React.FC<Props> = ({ isOpen, onClose }) => {
           createdAt: new Date().toISOString(),
           paymentState: 'recouvre',
           paymentRecoveredAt: new Date().toISOString(),
-          programReference: programReference || `DCP/${year}/${month}/${programNumber}`,
+          programReference: noProgramReference ? 'DCP/NA/NA/NA' : (programReference || `DCP/${year}/${month}/${programNumber}`),
           traceability: [traceEntry]
         };
         const docRef = await addDeclaration(newDecl);
@@ -106,7 +160,12 @@ const CreateRecouvrementDialog: React.FC<Props> = ({ isOpen, onClose }) => {
           try {
             const { getPayments, updatePayment } = await import('../services/paymentService');
             const allPayments = await getPayments();
-            const toLink = (allPayments || []).filter((p: any) => String(p.programNumber) === String(programNumber) && String(p.year) === String(year) && String(p.month) === String(month) && !p.declarationId);
+            let toLink: any[] = [];
+            if (noProgramReference) {
+              toLink = (allPayments || []).filter((p: any) => String(p.programReference || '') === 'DCP/NA/NA/NA' && !p.declarationId);
+            } else {
+              toLink = (allPayments || []).filter((p: any) => String(p.programNumber) === String(programNumber) && String(p.year) === String(year) && String(p.month) === String(month) && !p.declarationId);
+            }
             for (const p of toLink) {
               try { await updatePayment(p.id, { declarationId: declId }); } catch (err) { console.warn('linking payment failed', err); }
             }
@@ -127,7 +186,7 @@ const CreateRecouvrementDialog: React.FC<Props> = ({ isOpen, onClose }) => {
   };
 
   const handleSaveDraft = async () => {
-    if (!programNumber || programNumber.length !== 4) {
+    if (!noProgramReference && (!programNumber || programNumber.length !== 4)) {
       toast({ title: t('declarations.programNumberRequired') || 'Numéro de programme requis', variant: 'destructive' });
       return;
     }
@@ -135,17 +194,17 @@ const CreateRecouvrementDialog: React.FC<Props> = ({ isOpen, onClose }) => {
     try {
       const traceEntry = { userId: auth.user?.id || null, userName: auth.user?.fullName || null, action: t('traceability.createdDraft') || 'Déclaration brouillon créée', date: new Date().toISOString() };
       const newDecl: any = {
-        number: programReference || `DCP/${year}/${month}/${programNumber}`,
-        year,
-        month,
-        programNumber,
+        number: noProgramReference ? 'DCP/NA/NA/NA' : (programReference || `DCP/${year}/${month}/${programNumber}`),
+        year: noProgramReference ? null : year,
+        month: noProgramReference ? null : month,
+        programNumber: noProgramReference ? null : programNumber,
         chauffeurId: null,
         chauffeurName: null,
         status: 'brouillon',
         notes: notes || '',
         createdAt: new Date().toISOString(),
         paymentState: 'brouillon',
-        programReference: programReference || `DCP/${year}/${month}/${programNumber}`,
+        programReference: noProgramReference ? 'DCP/NA/NA/NA' : (programReference || `DCP/${year}/${month}/${programNumber}`),
         traceability: [traceEntry]
       };
       const docRef = await addDeclaration(newDecl);
@@ -163,7 +222,12 @@ const CreateRecouvrementDialog: React.FC<Props> = ({ isOpen, onClose }) => {
         try {
           const { getPayments, updatePayment } = await import('../services/paymentService');
           const allPayments = await getPayments();
-          const toLink = (allPayments || []).filter((p: any) => String(p.programNumber) === String(programNumber) && String(p.year) === String(year) && String(p.month) === String(month) && !p.declarationId);
+          let toLink: any[] = [];
+          if (noProgramReference) {
+            toLink = (allPayments || []).filter((p: any) => String(p.programReference || '') === 'DCP/NA/NA/NA' && !p.declarationId);
+          } else {
+            toLink = (allPayments || []).filter((p: any) => String(p.programNumber) === String(programNumber) && String(p.year) === String(year) && String(p.month) === String(month) && !p.declarationId);
+          }
           for (const p of toLink) {
             try { await updatePayment(p.id, { declarationId: declId }); } catch (err) { console.warn('linking payment failed', err); }
           }
@@ -210,20 +274,31 @@ const CreateRecouvrementDialog: React.FC<Props> = ({ isOpen, onClose }) => {
       try {
         const { listenPayments } = await import('../services/paymentService');
         unsub = listenPayments((all: any[]) => {
-          if (!programNumber) {
-            setPayments([]);
-            return;
+          let filtered: any[] = [];
+          if (noProgramReference) {
+            // show payments that were created for the NA sentinel or payments already attached to the draft declaration
+            filtered = (all || []).filter((p: any) => String(p.programReference || '') === 'DCP/NA/NA/NA' || String(p.declarationId || '') === String(draftDeclId || ''));
+          } else {
+            if (!programNumber) {
+              setPayments([]);
+              return;
+            }
+            filtered = (all || []).filter((p: any) => String(p.programNumber || '') === String(programNumber || '') && String(p.year || '') === String(year || '') && String(p.month || '') === String(month || ''));
           }
-            const filtered = (all || []).filter((p: any) => String(p.programNumber || '') === String(programNumber || '') && String(p.year || '') === String(year || '') && String(p.month || '') === String(month || ''));
-            setPayments(filtered as PaymentReceipt[]);
+          setPayments(filtered as PaymentReceipt[]);
         });
       } catch (e) {
         // fallback: load once
         try {
           const { getPayments } = await import('../services/paymentService');
           const all = await getPayments();
-            const filtered = (all || []).filter((p: any) => String(p.programNumber || '') === String(programNumber || '') && String(p.year || '') === String(year || '') && String(p.month || '') === String(month || ''));
-            setPayments(filtered as PaymentReceipt[]);
+          let filtered: any[] = [];
+          if (noProgramReference) {
+            filtered = (all || []).filter((p: any) => String(p.programReference || '') === 'DCP/NA/NA/NA' || String(p.declarationId || '') === String(draftDeclId || ''));
+          } else {
+            filtered = (all || []).filter((p: any) => String(p.programNumber || '') === String(programNumber || '') && String(p.year || '') === String(year || '') && String(p.month || '') === String(month || ''));
+          }
+          setPayments(filtered as PaymentReceipt[]);
         } catch (err) {
           console.warn('Failed to load payments', err);
         }
@@ -231,7 +306,7 @@ const CreateRecouvrementDialog: React.FC<Props> = ({ isOpen, onClose }) => {
     };
     listen();
     return () => { if (unsub) unsub(); };
-  }, [programNumber, year, month]);
+  }, [programNumber, year, month, noProgramReference, draftDeclId]);
 
   useEffect(() => {
     const amounts: Record<string, number> = {};
@@ -349,10 +424,10 @@ const CreateRecouvrementDialog: React.FC<Props> = ({ isOpen, onClose }) => {
 
       const newPayment: any = {
         photoUrl,
-        year: year || null,
-        month: month || null,
-        programNumber: programNumber || null,
-        programReference: programReference || `DCP/${year}/${month}/${programNumber}` || null,
+        year: noProgramReference ? null : (year || null),
+        month: noProgramReference ? null : (month || null),
+        programNumber: noProgramReference ? null : (programNumber || null),
+        programReference: noProgramReference ? 'DCP/NA/NA/NA' : (programReference || `DCP/${year}/${month}/${programNumber}`) || null,
         companyId: null,
         companyName: null,
         notes: '',
@@ -388,10 +463,52 @@ const CreateRecouvrementDialog: React.FC<Props> = ({ isOpen, onClose }) => {
           <DialogTitle>{t('caissier.createRecouvrement') || 'Créer Recouvrement'}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
-          <SimpleDeclarationNumberForm
-            onNumberChange={(num) => setProgramReference(num)}
-            onComponentsChange={(y, m, pn) => { setYear(y); setMonth(m); setProgramNumber(pn); }}
-          />
+          <div>
+            {/* Label placed above the DCP/... controls and outside the colored band */}
+            <Label className="mb-2 block">{t('declarations.programNumber') || 'Numéro de programme'}</Label>
+            {/* Outer wrapper identical to consultation dialog: full-width colored box */}
+            <div className="p-3 bg-gray-50 rounded-md border flex items-center justify-between gap-4">
+              <div className="flex-1">
+                {/* Keep the exact SimpleDeclarationNumberForm layout for both cases.
+                    When noProgramReference is true we prefill the components with 'NA' and set readOnly to true */}
+                <SimpleDeclarationNumberForm
+                  key={formKey}
+                   onNumberChange={(num) => setProgramReference(num)}
+                   onComponentsChange={(y, m, pn) => { setYear(y); setMonth(m); setProgramNumber(pn); }}
+                   initialYear={noProgramReference ? 'NA' : ''}
+                   initialMonth={noProgramReference ? 'NA' : ''}
+                   initialProgramNumber={noProgramReference ? 'NA' : ''}
+                   readOnly={noProgramReference}
+                   noWrapper={true}
+                 />
+              </div>
+              <div className="flex items-center ml-4">
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <span className="text-sm text-black">{t('recouvrement.noProgramReference') || 'Pas de référence programme (DCP/NA/NA/NA)'}</span>
+                  <input
+                    type="checkbox"
+                    className="accent-primary w-5 h-5 ml-3"
+                    checked={noProgramReference}
+                    onChange={(e) => {
+                      const checked = !!e.target.checked;
+                      setNoProgramReference(checked);
+                      // bump formKey to force the SimpleDeclarationNumberForm to remount and fully reset its internal state
+                      setFormKey(k => k + 1);
+                      if (checked) {
+                        // Prefill components with NA and keep the same program reference format
+                        setProgramReference('DCP/NA/NA/NA');
+                        setYear('NA'); setMonth('NA'); setProgramNumber('NA');
+                      } else {
+                        // reset component fields to empty so SimpleDeclarationNumberForm will revert to defaults
+                        setProgramReference('');
+                        setYear(''); setMonth(''); setProgramNumber('');
+                      }
+                    }}
+                  />
+                </label>
+              </div>
+            </div>
+          </div>
 
           {/* Photo-first upload controls (appear only after draft is saved) */}
           {draftDeclId ? (
@@ -490,8 +607,9 @@ const CreateRecouvrementDialog: React.FC<Props> = ({ isOpen, onClose }) => {
           </div>
           <div className="flex gap-2 pt-2 justify-end">
             <Button variant="outline" onClick={onClose}>{t('forms.cancel') || 'Annuler'}</Button>
-            {!draftDeclId ? (
-              <Button onClick={handleSaveDraft} disabled={savingDraft || !(programNumber && programNumber.length === 4)}>{savingDraft ? (t('forms.saving') || 'Enregistrement...') : (t('forms.save') || 'Enregistrer')}</Button>
+            {/* If an existing declaration or a draft exists, show 'Envoyer' to avoid creating duplicates; otherwise show 'Enregistrer' */}
+            {!(existingDeclId || draftDeclId) ? (
+              <Button onClick={handleSaveDraft} disabled={savingDraft || (!noProgramReference && !(programNumber && programNumber.length === 4))}>{savingDraft ? (t('forms.saving') || 'Enregistrement...') : (t('forms.save') || 'Enregistrer')}</Button>
             ) : (
               <Button onClick={handleSend} disabled={loading}>{t('payments.send') || 'Envoyer'}</Button>
             )}
