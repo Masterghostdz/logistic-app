@@ -7,7 +7,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '.
 import { Check, X, Edit, Trash2 } from 'lucide-react';
 import { Declaration, PaymentReceipt } from '../../types';
 import CopyButton from '../CopyButton';
-import useTableZoom from '../../hooks/useTableZoom';
+import useTableZoom, { FontSizeKey } from '../../hooks/useTableZoom';
+import { toast } from '../ui/use-toast';
 
 interface DeclarationsTableProps {
   declarations: Declaration[];
@@ -18,7 +19,7 @@ interface DeclarationsTableProps {
   selectedDeclarationIds?: string[];
   setSelectedDeclarationIds?: (ids: string[]) => void;
   mobile?: boolean;
-  fontSize?: '40' | '50' | '60' | '70' | '80' | '90' | '100';
+  fontSize?: FontSizeKey | '40' | '50';
   onConsultDeclaration?: (declaration: Declaration) => void;
   onSendReceipts?: (declaration: Declaration) => void;
   chauffeurTypes?: Record<string, 'interne' | 'externe'>;
@@ -91,7 +92,7 @@ const DeclarationsTable = ({
         <label className="mr-2 text-xs text-muted-foreground">Zoom :</label>
         <select
           value={localFontSize}
-          onChange={e => setLocalFontSize(e.target.value as typeof fontSize)}
+          onChange={e => setLocalFontSize(e.target.value as FontSizeKey)}
           className="border rounded px-2 py-1 text-xs bg-background"
           title="Zoom sur la taille d'écriture du tableau"
         >
@@ -279,7 +280,11 @@ const DeclarationsTable = ({
                                   await updateDeclaration(declaration.id, { paymentState: '', paymentRecoveredAt: null }, traceEntry);
                                 } catch (e) {
                                   console.error('Cancel recouvrement failed', e);
-                                  alert(t('forms.error') || 'Erreur');
+                                  toast({
+                                    title: t('forms.error') || 'Erreur',
+                                    description: (e as any)?.message || undefined,
+                                    variant: 'destructive'
+                                  });
                                 }
                               }} className="p-2 rounded border-0 text-yellow-600 hover:bg-yellow-50 dark:hover:bg-yellow-900 flex items-center justify-center" style={{ width: computedRowPx, height: computedRowPx }}>
                                 {/* Undo icon */}

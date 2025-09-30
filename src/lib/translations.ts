@@ -21,7 +21,13 @@ export const translations = {
     },
     // Recouvrement specific labels
     recouvrement: {
-      noProgramReference: "Pas de référence programme"
+      noProgramReference: "Pas de référence programme",
+      cancel: "Annulation recouvrement",
+      return: "Retourner",
+      // Notices / toasts used in recouvrement flows
+      sent: "Recouvrement envoyé",
+      created: "Recouvrement créé",
+      revoked: "Recouvrement annulé"
     },
     planificateur: {
       clientsTitle: "Gestion des Clients",
@@ -536,7 +542,13 @@ export const translations = {
     },
     // Recouvrement labels (English)
     recouvrement: {
-      noProgramReference: "No program reference"
+      noProgramReference: "No program reference",
+      cancel: "Revoke collection",
+      return: "Return",
+      // Notices / toasts used in collection flows
+      sent: "Collection sent",
+      created: "Collection created",
+      revoked: "Collection revoked"
     },
     payments: {
       sendReceipts: "Send receipts",
@@ -982,7 +994,13 @@ export const translations = {
     },
     // Recouvrement labels (Arabic)
     recouvrement: {
-      noProgramReference: "بدون مرجع البرنامج"
+      noProgramReference: "بدون مرجع البرنامج",
+      // Notices / toasts used in recouvrement flows
+      sent: "تم إرسال التحصيل",
+      created: "تم إنشاء التحصيل",
+  revoked: "تم إلغاء التحصيل",
+      cancel: "إلغاء التحصيل",
+      return: "إرجاع"
     },
     roles: {
       admin: "مسؤول",

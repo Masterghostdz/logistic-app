@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-type FontSizeKey = '60' | '70' | '80' | '90' | '100';
+export type FontSizeKey = '60' | '70' | '80' | '90' | '100';
 
 export default function useTableZoom(initial: FontSizeKey = '80') {
   // Default local font size set to '80' to meet product requirement (80% default zoom)

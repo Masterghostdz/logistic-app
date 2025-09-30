@@ -91,8 +91,10 @@ const CreateRecouvrementDialog: React.FC<Props> = ({ isOpen, onClose }) => {
   useEffect(() => {
     if (!declarations || declarations.length === 0) { setExistingDeclId(null); return; }
     if (noProgramReference) {
-      const found = (declarations || []).find(d => String(d.programReference || '') === 'DCP/NA/NA/NA');
-      setExistingDeclId(found ? found.id : null);
+      // When user selects "Pas de référence programme" we must treat it as a new unknown
+      // — do NOT consider any existing declaration that uses the NA sentinel as a match.
+      // NA means unknown identity and should never be used to match/merge.
+      setExistingDeclId(null);
       return;
     }
     if (!programNumber || programNumber.length !== 4) { setExistingDeclId(null); return; }
@@ -244,6 +246,29 @@ const CreateRecouvrementDialog: React.FC<Props> = ({ isOpen, onClose }) => {
     }
   };
 
+  const handleCancelRecouvrement = async () => {
+    // if there's an existing declaration marked recouvre, allow revoking it from the dialog
+    if (!existingDeclId) return;
+    try {
+      setLoading(true);
+      const decl = (declarations || []).find(d => d.id === existingDeclId);
+      if (!decl) {
+        toast({ title: t('forms.error') || 'Erreur', description: t('declarations.notFound') || 'Déclaration introuvable', variant: 'destructive' });
+        return;
+      }
+      const { updateDeclaration } = await import('../services/declarationService');
+      const traceEntry = { userId: auth.user?.id || null, userName: auth.user?.fullName || null, action: t('traceability.revokedRecouvrement') || 'Annulation recouvrement', date: new Date().toISOString() };
+      await updateDeclaration(existingDeclId, { paymentState: '', paymentRecoveredAt: null }, traceEntry);
+      toast({ title: t('recouvrement.revoked') || (t('traceability.revokedRecouvrement') || 'Annulation recouvrement') });
+      onClose();
+    } catch (e: any) {
+      console.error('Cancel recouvrement failed', e);
+      toast({ title: e?.message || (t('forms.error') || 'Erreur lors de l\'opération'), variant: 'destructive' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // --- photo-first helpers (similar to SendReceiptsDialog) ---
   React.useEffect(() => {
     if (!photoFile) { setLocalPreviewUrl(null); return; }
@@ -276,8 +301,17 @@ const CreateRecouvrementDialog: React.FC<Props> = ({ isOpen, onClose }) => {
         unsub = listenPayments((all: any[]) => {
           let filtered: any[] = [];
           if (noProgramReference) {
-            // show payments that were created for the NA sentinel or payments already attached to the draft declaration
-            filtered = (all || []).filter((p: any) => String(p.programReference || '') === 'DCP/NA/NA/NA' || String(p.declarationId || '') === String(draftDeclId || ''));
+            // If the user chose "noProgramReference" we must NOT surface arbitrary receipts
+            // that were saved with the NA sentinel. NA is an unknown identity and should be
+            // considered as new. Only show payments already explicitly attached to the
+            // current draft declaration (if any). Otherwise show none.
+            if (draftDeclId) {
+              filtered = (all || []).filter((p: any) => String(p.declarationId || '') === String(draftDeclId));
+            } else {
+              // No draft => don't show any receipts for NA
+              setPayments([]);
+              return;
+            }
           } else {
             if (!programNumber) {
               setPayments([]);
@@ -294,7 +328,12 @@ const CreateRecouvrementDialog: React.FC<Props> = ({ isOpen, onClose }) => {
           const all = await getPayments();
           let filtered: any[] = [];
           if (noProgramReference) {
-            filtered = (all || []).filter((p: any) => String(p.programReference || '') === 'DCP/NA/NA/NA' || String(p.declarationId || '') === String(draftDeclId || ''));
+            if (draftDeclId) {
+              filtered = (all || []).filter((p: any) => String(p.declarationId || '') === String(draftDeclId));
+            } else {
+              setPayments([]);
+              return;
+            }
           } else {
             filtered = (all || []).filter((p: any) => String(p.programNumber || '') === String(programNumber || '') && String(p.year || '') === String(year || '') && String(p.month || '') === String(month || ''));
           }
@@ -318,6 +357,13 @@ const CreateRecouvrementDialog: React.FC<Props> = ({ isOpen, onClose }) => {
     setLocalAmounts(amounts);
     setLocalCompany(comps);
   }, [payments]);
+
+  // Compute whether the declaration currently targeted is already marked 'recouvre'
+  const currentDecl = (declarations || []).find(d => d.id === (existingDeclId || draftDeclId));
+  const declPaymentState = String((currentDecl as any)?.paymentState || '').toLowerCase();
+  const isRecouvre = declPaymentState.startsWith('recouv');
+  // Enable 'Envoyer' only when there is at least one payment and all are validated
+  const allValidated = payments.length > 0 && payments.every(p => ['validee', 'validated', 'valide', 'valid'].includes(String(p.status || '').toLowerCase()));
 
   const handleAmountChange = (id: string, val: string) => {
     const num = parseFloat(val || '0') || 0;
@@ -559,14 +605,15 @@ const CreateRecouvrementDialog: React.FC<Props> = ({ isOpen, onClose }) => {
                       const st = String(r.status || '').toLowerCase();
                       const isPending = ['brouillon', 'pending'].includes(st);
                       const isValidated = ['validee', 'validated', 'valide', 'valid'].includes(st);
+                      const actionsDisabled = !!isRecouvre; // disable per-payment actions when declaration is recouvré
                       return (
                         <>
                           {isPending && (
                             <>
-                              <button title={t('payments.confirmDeleteReceipt') || 'Confirmez-vous la suppression de ce reçu ?'} onClick={() => handleDeleteRequest(r.id)} className="p-2 rounded border border-border text-red-600 hover:bg-red-50 dark:hover:bg-red-900">
+                              <button title={t('payments.confirmDeleteReceipt') || 'Confirmez-vous la suppression de ce reçu ?'} onClick={() => handleDeleteRequest(r.id)} className="p-2 rounded border border-border text-red-600 hover:bg-red-50 dark:hover:bg-red-900" disabled={actionsDisabled}>
                                 <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M1 7h22M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
                               </button>
-                              <button title={t('payments.validate') || 'Valider'} onClick={() => handleValidate(r)} className="p-2 rounded border border-border text-green-600 hover:bg-green-50 dark:hover:bg-green-900" disabled={!!validatingIds[r.id]}>
+                              <button title={t('payments.validate') || 'Valider'} onClick={() => handleValidate(r)} className="p-2 rounded border border-border text-green-600 hover:bg-green-50 dark:hover:bg-green-900" disabled={actionsDisabled || !!validatingIds[r.id]}>
                                 <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/></svg>
                               </button>
                             </>
@@ -581,7 +628,7 @@ const CreateRecouvrementDialog: React.FC<Props> = ({ isOpen, onClose }) => {
                                 console.error('Undo failed', e);
                                 toast({ title: t('forms.error') || 'Erreur lors de l\'opération', variant: 'destructive' });
                               }
-                            }} className="p-2 rounded border border-border text-yellow-600 hover:bg-yellow-50 dark:hover:bg-yellow-900">
+                            }} className="p-2 rounded border border-border text-yellow-600 hover:bg-yellow-50 dark:hover:bg-yellow-900" disabled={actionsDisabled}>
                               <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
                                 <path d="M21 12a9 9 0 10-9 9" />
                                 <path d="M21 3v9h-9" />
@@ -589,7 +636,7 @@ const CreateRecouvrementDialog: React.FC<Props> = ({ isOpen, onClose }) => {
                             </button>
                           )}
                           {!isValidated && !isPending && (
-                            <button title={t('payments.validate') || 'Valider'} onClick={() => handleValidate(r)} className="p-2 rounded border border-border text-green-600 hover:bg-green-50 dark:hover:bg-green-900" disabled={!!validatingIds[r.id]}>
+                            <button title={t('payments.validate') || 'Valider'} onClick={() => handleValidate(r)} className="p-2 rounded border border-border text-green-600 hover:bg-green-50 dark:hover:bg-green-900" disabled={actionsDisabled || !!validatingIds[r.id]}>
                               <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/></svg>
                             </button>
                           )}
@@ -611,7 +658,40 @@ const CreateRecouvrementDialog: React.FC<Props> = ({ isOpen, onClose }) => {
             {!(existingDeclId || draftDeclId) ? (
               <Button onClick={handleSaveDraft} disabled={savingDraft || (!noProgramReference && !(programNumber && programNumber.length === 4))}>{savingDraft ? (t('forms.saving') || 'Enregistrement...') : (t('forms.save') || 'Enregistrer')}</Button>
             ) : (
-              <Button onClick={handleSend} disabled={loading}>{t('payments.send') || 'Envoyer'}</Button>
+              (() => {
+                // If the existing declaration has been marked recouvré, offer Annuler (revoke) instead of Envoyer
+                const existingDecl = (declarations || []).find(d => d.id === (existingDeclId || draftDeclId));
+                const declPaymentState = String((existingDecl as any)?.paymentState || '').toLowerCase();
+                const isRecouvre = declPaymentState.startsWith('recouv');
+                if (isRecouvre) {
+                  // Filled orange 'Retourner' button — same shape as Envoyer but orange + contour
+                  return (
+                    <Button
+                      onClick={handleCancelRecouvrement}
+                      disabled={loading}
+                      className={`bg-yellow-600 text-white border border-yellow-700 flex items-center gap-2 ${loading ? 'opacity-50 pointer-events-none' : ''}`}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M21 12a9 9 0 10-9 9" />
+                        <path d="M21 3v9h-9" />
+                      </svg>
+                      <span>{t('recouvrement.return') || 'Retourner'}</span>
+                    </Button>
+                  );
+                }
+                // Green filled 'Envoyer' button with send icon (same as SendReceiptsDialog)
+                return (
+                  <Button
+                    onClick={handleSend}
+                    disabled={loading || !allValidated}
+                    className={`bg-green-600 text-white flex items-center gap-2 ${(loading || !allValidated) ? 'opacity-50 pointer-events-none' : ''}`}>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
+                      <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2 .01 5z" />
+                    </svg>
+                    <span>{t('payments.send') || 'Envoyer'}</span>
+                  </Button>
+                );
+              })()
             )}
           </div>
         </div>
