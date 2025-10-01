@@ -117,52 +117,9 @@ const AdminDashboard = () => {
   // } = useSettings();
   const viewMode = settings.viewMode || 'desktop';
   const [activeTab, setActiveTab] = useState('dashboard');
-  // --- Synchronisation Firestore pour les sociétés ---
-  const [companies, setCompanies] = useState<Company[]>([]);
-  useEffect(() => {
-    let unsubscribe;
-    const listen = async () => {
-      const { listenCompanies } = await import('../../services/companyService');
-      unsubscribe = listenCompanies((cloudCompanies) => {
-        setCompanies(cloudCompanies);
-      });
-    };
-    listen();
-    return () => { if (unsubscribe) unsubscribe(); };
-  }, []);
-
-  // --- Synchronisation Firestore pour les types de véhicules ---
-  const [vehicleTypes, setVehicleTypes] = useState<VehicleType[]>([]);
-  useEffect(() => {
-    let unsubscribe;
-    const listen = async () => {
-      const { listenVehicleTypes } = await import('../../services/vehicleTypeService');
-      unsubscribe = listenVehicleTypes((cloudVehicleTypes) => {
-        setVehicleTypes(cloudVehicleTypes);
-      });
-    };
-    listen();
-    return () => { if (unsubscribe) unsubscribe(); };
-  }, []);
-  
-  // Synchronisation temps réel avec Firestore
+  // Local state for users/creation dialogs
   const [users, setUsers] = useState<(UserType & { password?: string; isOnline?: boolean })[]>([]);
-
   const { isOnline } = useOnlineStatus();
-
-  useEffect(() => {
-    let unsubscribe: (() => void) | undefined;
-    const listen = async () => {
-      const { listenUsers } = await import('../../services/userService');
-      unsubscribe = listenUsers((cloudUsers) => {
-        setUsers(cloudUsers);
-      });
-    };
-    listen();
-    return () => {
-      if (unsubscribe) unsubscribe();
-    };
-  }, []);
 
   const [showCreateUser, setShowCreateUser] = useState(false);
   const [showCreateCompany, setShowCreateCompany] = useState(false);
@@ -179,7 +136,9 @@ const AdminDashboard = () => {
     firstName: '',
     lastName: '',
     phone: [] as string[],
-    password: ''
+    password: '',
+    employeeType: 'interne' as 'interne' | 'externe',
+    companyId: ''
   });
 
   const [newCompany, setNewCompany] = useState({
@@ -198,88 +157,142 @@ const AdminDashboard = () => {
     newPassword: '',
     confirmPassword: ''
   });
+  // --- Synchronisation Firestore pour les sociétés ---
+  const [companies, setCompanies] = useState<Company[]>([]);
+  useEffect(() => {
+    let unsubscribe: (() => void) | undefined;
+    const listen = async () => {
+      const { listenCompanies } = await import('../../services/companyService');
+      unsubscribe = listenCompanies((cloudCompanies) => {
+        setCompanies(cloudCompanies);
+      });
+    };
+    listen();
+    return () => { if (unsubscribe) unsubscribe(); };
+  }, []);
 
-  const handleCreateUser = (e: React.FormEvent) => {
+  // --- Synchronisation Firestore pour les types de véhicules ---
+  const [vehicleTypes, setVehicleTypes] = useState<VehicleType[]>([]);
+  useEffect(() => {
+    let unsubscribe: (() => void) | undefined;
+    const listen = async () => {
+      const { listenVehicleTypes } = await import('../../services/vehicleTypeService');
+      unsubscribe = listenVehicleTypes((cloudVehicleTypes) => {
+        setVehicleTypes(cloudVehicleTypes);
+      });
+    };
+    listen();
+    return () => { if (unsubscribe) unsubscribe(); };
+  }, []);
+
+  // Synchronisation temps réel avec Firestore pour les users
+  useEffect(() => {
+    let unsubscribe: (() => void) | undefined;
+    const listen = async () => {
+      const { listenUsers } = await import('../../services/userService');
+      unsubscribe = listenUsers((cloudUsers) => {
+        setUsers(cloudUsers);
+      });
+    };
+    listen();
+    return () => { if (unsubscribe) unsubscribe(); };
+  }, []);
+
+  const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newUser.username || !newUser.firstName || !newUser.lastName) {
       toast.error('Veuillez remplir tous les champs obligatoires');
       return;
     }
 
-    const saveUserToCloud = async () => {
-      try {
-        const { addUser, updateUser } = await import('../../services/userService');
-        const { simpleHash } = await import('../../utils/authUtils');
-        let userToSave: {
-          username: string;
-          role: UserType['role'];
-          firstName: string;
-          lastName: string;
-          fullName: string;
-          phone: string[];
-          createdAt: string;
-          isActive: boolean;
-          salt?: string;
-          passwordHash?: string;
-        } = {
-          username: newUser.username,
-          role: newUser.role,
-          firstName: newUser.firstName,
-          lastName: newUser.lastName,
-          fullName: `${newUser.firstName} ${newUser.lastName}`,
-          phone: newUser.phone,
-          createdAt: new Date().toISOString(),
-          isActive: true
-        };
-        // Si mot de passe rempli, on hash et ajoute
-        if (newUser.password && newUser.password.length >= 6) {
-          const salt = 'logigrine2025';
-          const passwordHash = await simpleHash(newUser.password, salt);
-          userToSave = { ...userToSave, salt, passwordHash };
-        }
-        if (editingUser) {
-          // Modification utilisateur existant
-          await updateUser(editingUser.id, userToSave);
-          toast.success('Utilisateur modifié dans le cloud');
-        } else {
-          // Création nouvel utilisateur
-          const userDoc = await addUser(userToSave);
-          toast.success('Utilisateur créé dans le cloud');
-          // Synchronisation dans la collection chauffeurs si role chauffeur
-          if (userToSave.role === 'chauffeur') {
-            const { addChauffeur } = await import('../../services/chauffeurService');
-            await addChauffeur({
-              id: userDoc.id || Date.now().toString(),
-              firstName: userToSave.firstName,
-              lastName: userToSave.lastName,
-              fullName: userToSave.fullName,
-              username: userToSave.username,
-              password: userToSave.passwordHash || '',
-              phone: userToSave.phone,
-              vehicleType: '',
-              employeeType: 'interne',
-              isActive: true,
-              createdAt: userToSave.createdAt
-            });
-          }
-        }
-      } catch (err) {
-        toast.error('Erreur lors de la synchronisation avec le cloud');
+    try {
+      const { addUser, updateUser } = await import('../../services/userService');
+
+      let userToSave: {
+        username: string;
+        role: UserType['role'];
+        firstName: string;
+        lastName: string;
+        fullName: string;
+        phone: string[];
+        createdAt: string;
+        isActive: boolean;
+        salt?: string;
+        passwordHash?: string;
+        employeeType?: 'interne' | 'externe';
+        companyId?: string;
+        companyName?: string;
+      } = {
+        username: newUser.username,
+        role: newUser.role,
+        firstName: newUser.firstName,
+        lastName: newUser.lastName,
+        fullName: `${newUser.firstName} ${newUser.lastName}`,
+        phone: newUser.phone,
+        createdAt: new Date().toISOString(),
+        isActive: true
+      };
+
+      // Si mot de passe rempli, on hash et ajoute
+      if (newUser.password && newUser.password.length >= 6) {
+        const salt = 'logigrine2025';
+        const passwordHash = await simpleHash(newUser.password, salt);
+        userToSave = { ...userToSave, salt, passwordHash };
       }
-    };
 
-    saveUserToCloud();
+      // attach employeeType/company if present BEFORE saving
+      if (newUser.employeeType) userToSave.employeeType = newUser.employeeType;
+      if (newUser.companyId) {
+        const company = companies.find(c => c.id === newUser.companyId);
+        userToSave.companyId = newUser.companyId;
+        userToSave.companyName = company ? company.name : '';
+      }
 
-    setNewUser({
-      username: '',
-      role: 'chauffeur',
-      firstName: '',
-      lastName: '',
-      phone: [],
-      password: ''
-    });
-    setEditingUser(null);
-    setShowCreateUser(false);
+      if (editingUser) {
+        // Modification utilisateur existant
+        await updateUser(editingUser.id, userToSave);
+        toast.success('Utilisateur modifié dans le cloud');
+      } else {
+        // Création nouvel utilisateur
+        const userDoc = await addUser(userToSave);
+        toast.success('Utilisateur créé dans le cloud');
+
+        // Synchronisation dans la collection chauffeurs si role chauffeur
+        if (userToSave.role === 'chauffeur') {
+          const { addChauffeur } = await import('../../services/chauffeurService');
+          await addChauffeur({
+            id: userDoc.id || Date.now().toString(),
+            firstName: userToSave.firstName,
+            lastName: userToSave.lastName,
+            fullName: userToSave.fullName,
+            username: userToSave.username,
+            password: userToSave.passwordHash || '',
+            phone: userToSave.phone,
+            vehicleType: '',
+            employeeType: (userToSave.employeeType as 'interne' | 'externe') || 'interne',
+            isActive: true,
+            createdAt: userToSave.createdAt
+          });
+        }
+      }
+
+      // Close dialog and reset form
+      setShowCreateUser(false);
+      setEditingUser(null);
+      setNewUser({
+        username: '',
+        role: 'chauffeur',
+        firstName: '',
+        lastName: '',
+        phone: [],
+        password: '',
+        employeeType: 'interne',
+        companyId: ''
+      });
+    } catch (err) {
+      console.error(err);
+      toast.error('Erreur lors de la synchronisation avec le cloud');
+    }
   };
 
   const handleCreateCompany = async (e: React.FormEvent) => {
@@ -385,7 +398,9 @@ const AdminDashboard = () => {
       firstName: user.firstName,
       lastName: user.lastName,
       phone: user.phone || [],
-      password: ''
+      password: '',
+      employeeType: (user as any).employeeType || 'interne',
+      companyId: (user as any).companyId || ''
     });
     setShowCreateUser(true);
   };
@@ -657,6 +672,36 @@ const AdminDashboard = () => {
                           </SelectContent>
                         </Select>
                       </div>
+
+                      <div>
+                        <Label htmlFor="employeeType">{t('chauffeurs.employeeType') || "Type d'employé"}</Label>
+                        <Select value={newUser.employeeType} onValueChange={(value) => setNewUser({ ...newUser, employeeType: value as 'interne' | 'externe' })}>
+                          <SelectTrigger>
+                            <SelectValue placeholder={t('forms.selectPlaceholder') || 'Sélectionner'} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="interne">{t('chauffeurs.internal') || 'Interne'}</SelectItem>
+                            <SelectItem value="externe">{t('chauffeurs.external') || 'Externe (TP)'}</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {/* Show company dropdown only when employeeType is externe AND role is not chauffeur */}
+                      {(newUser.employeeType === 'externe' && newUser.role !== 'chauffeur') && (
+                        <div>
+                          <Label htmlFor="company">{t('companies.company') || 'Société'}</Label>
+                          <Select value={newUser.companyId} onValueChange={(value) => setNewUser({ ...newUser, companyId: value })}>
+                            <SelectTrigger>
+                              <SelectValue placeholder={t('companies.select') || 'Sélectionner une société'} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {companies.map(c => (
+                                <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
                       <PhoneNumbersField
                         label={t('planificateur.phoneNumbers') || 'Numéros de téléphone'}
                         addLabel={t('planificateur.add')}
@@ -676,7 +721,9 @@ const AdminDashboard = () => {
       firstName: '',
       lastName: '',
       phone: [],
-      password: ''
+      password: '',
+      employeeType: 'interne',
+      companyId: ''
     });
                         }}>
                           {t('forms.cancel') || 'Annuler'}
@@ -756,6 +803,7 @@ const AdminDashboard = () => {
                           <TableRow className={userRowHeight}>
                             <TableHead style={userFontSizeStyle}>{t('admin.fullName') || 'Nom complet'}</TableHead>
                             <TableHead style={userFontSizeStyle}>{t('admin.username') || "Nom d'utilisateur"}</TableHead>
+                            <TableHead style={userFontSizeStyle}>{t('companies.company') || 'Société'}</TableHead>
                             <TableHead style={userFontSizeStyle}>{t('admin.role') || 'Rôle'}</TableHead>
                             <TableHead style={{...userFontSizeStyle, textAlign: 'center', paddingLeft: 0, paddingRight: 0}}>{t('admin.lastLogin') || 'Connexion'}</TableHead>
                             <TableHead style={userFontSizeStyle}>{t('admin.phone') || 'Téléphone'}</TableHead>
@@ -768,6 +816,7 @@ const AdminDashboard = () => {
                             <TableRow key={user.id} className={userRowHeight}>
                               <TableCell className="font-medium" style={userFontSizeStyle}>{user.fullName}</TableCell>
                               <TableCell style={userFontSizeStyle}>{user.username}</TableCell>
+                              <TableCell style={userFontSizeStyle}>{(user as any).companyName || '-'}</TableCell>
                               <TableCell style={userFontSizeStyle}>
                                 {/* Badge rôle harmonisé (identique header) - use getRoleBadge for translation & consistent style */}
                                 {getRoleBadge(user.role)}

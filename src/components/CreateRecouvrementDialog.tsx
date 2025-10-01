@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 import { Button } from './ui/button';
@@ -55,6 +55,9 @@ const CreateRecouvrementDialog: React.FC<Props> = ({ isOpen, onClose }) => {
   const [chauffeurSearch, setChauffeurSearch] = useState<string>('');
   const [selectedChauffeur, setSelectedChauffeur] = useState<Chauffeur | null>(null);
   const [showChauffeurAutocomplete, setShowChauffeurAutocomplete] = useState<boolean>(false);
+  const chauffeurInputRef = useRef<HTMLInputElement | null>(null);
+  const [dropdownRect, setDropdownRect] = useState<DOMRect | null>(null);
+  const dropdownRef = useRef<HTMLDivElement | null>(null);
   const hookIsMobile = useIsMobile();
   const { settings } = useSettings();
   const isMobile = (settings?.viewMode === 'mobile') || hookIsMobile;
@@ -151,7 +154,7 @@ const CreateRecouvrementDialog: React.FC<Props> = ({ isOpen, onClose }) => {
           month: noProgramReference ? null : month,
           programNumber: noProgramReference ? null : programNumber,
           chauffeurId: selectedChauffeur ? selectedChauffeur.id : null,
-          chauffeurName: selectedChauffeur ? `${selectedChauffeur.firstName} ${selectedChauffeur.lastName}` : null,
+          chauffeurName: chauffeurDisplayName(selectedChauffeur) || (selectedChauffeur ? `${selectedChauffeur.firstName} ${selectedChauffeur.lastName}` : null),
           status: '',
           notes: notes || '',
           createdAt: new Date().toISOString(),
@@ -207,8 +210,8 @@ const CreateRecouvrementDialog: React.FC<Props> = ({ isOpen, onClose }) => {
         year: noProgramReference ? null : year,
         month: noProgramReference ? null : month,
         programNumber: noProgramReference ? null : programNumber,
-        chauffeurId: selectedChauffeur ? selectedChauffeur.id : null,
-        chauffeurName: selectedChauffeur ? `${selectedChauffeur.firstName} ${selectedChauffeur.lastName}` : null,
+  chauffeurId: selectedChauffeur ? selectedChauffeur.id : null,
+  chauffeurName: chauffeurDisplayName(selectedChauffeur) || (selectedChauffeur ? `${selectedChauffeur.firstName} ${selectedChauffeur.lastName}` : null),
         status: 'brouillon',
         notes: notes || '',
         createdAt: new Date().toISOString(),
@@ -527,6 +530,53 @@ const CreateRecouvrementDialog: React.FC<Props> = ({ isOpen, onClose }) => {
     return () => { if (unsub) unsub(); };
   }, []);
 
+  // update dropdown rect on resize/scroll while the dropdown is open
+  useEffect(() => {
+    if (!showChauffeurAutocomplete) return;
+    const update = () => {
+      if (chauffeurInputRef.current) setDropdownRect(chauffeurInputRef.current.getBoundingClientRect());
+    };
+    update();
+    window.addEventListener('resize', update);
+    window.addEventListener('scroll', update, true);
+    return () => {
+      window.removeEventListener('resize', update);
+      window.removeEventListener('scroll', update, true);
+    };
+  }, [showChauffeurAutocomplete]);
+
+  // Close dropdown when clicking outside input or the dropdown itself
+  useEffect(() => {
+    if (!showChauffeurAutocomplete) return;
+    const handler = (e: PointerEvent) => {
+      try {
+        const path = (e as any).composedPath ? (e as any).composedPath() : ((e as any).path || []);
+        // If composedPath includes input or dropdown, keep open
+        if (path && path.length) {
+          for (const el of path) {
+            if (el === chauffeurInputRef.current) return;
+            if (el === dropdownRef.current) return;
+          }
+        }
+        // Fallback: use contains checks
+        const target = e.target as Node | null;
+        if (chauffeurInputRef.current && target && chauffeurInputRef.current.contains(target)) return;
+        if (dropdownRef.current && target && dropdownRef.current.contains(target)) return;
+        if (typeof process !== 'undefined' && process.env && process.env.NODE_ENV !== 'production') {
+          console.debug('closing chauffeur dropdown due to outside pointerdown', { target });
+        }
+        setShowChauffeurAutocomplete(false);
+      } catch (err) {
+        setShowChauffeurAutocomplete(false);
+      }
+    };
+  // listen in bubble phase (not capture) so dropdown item handlers can stopPropagation()
+  // which prevents the document handler from closing the dropdown before the
+  // item's own pointerdown runs. Using capture caused a race in some environments.
+  document.addEventListener('pointerdown', handler, false);
+  return () => document.removeEventListener('pointerdown', handler, false as any);
+  }, [showChauffeurAutocomplete]);
+
   // Chauffeur selector: filtered chauffeurs for autocomplete
   const filteredChauffeurs = React.useMemo(() => {
     if (!chauffeurSearch) return chauffeurs;
@@ -536,6 +586,20 @@ const CreateRecouvrementDialog: React.FC<Props> = ({ isOpen, onClose }) => {
       return full.includes(s) || (c.username || '').toLowerCase().includes(s) || (c.phone || []).join(' ').toLowerCase().includes(s);
     });
   }, [chauffeurSearch, chauffeurs]);
+
+  // Helper to compute the display name (adds TP - prefix for externes).
+  // Ensure the TP prefix is only applied for chauffeurs (role === 'chauffeur').
+  // Some passenger/user objects may include employeeType but are not chauffeurs,
+  // so if a role property exists we require it to be 'chauffeur' to show the prefix.
+  const chauffeurDisplayName = (c: Chauffeur | null) => {
+    if (!c) return null;
+    // If the object carries an explicit role, only prefix when it's a chauffeur.
+    const explicitRole = (c as any).role as string | undefined;
+    const isChauffeurRole = explicitRole ? explicitRole === 'chauffeur' : true; // fallback: assume this is a Chauffeur entity
+    const isExterne = (c.employeeType === 'externe' || (c.employeeType || '').toLowerCase() === 'externe');
+    const prefix = (isChauffeurRole && isExterne) ? (t('chauffeurs.tpPrefix') || 'TP - ') : '';
+    return `${prefix}${c.firstName || ''} ${c.lastName || ''}`.trim();
+  };
 
   const dialogClass = isMobile ? 'max-w-md' : 'max-w-3xl mx-4';
 
@@ -695,31 +759,66 @@ const CreateRecouvrementDialog: React.FC<Props> = ({ isOpen, onClose }) => {
             <div className="relative">
               <Input
                 id="chauffeur-search"
+                ref={chauffeurInputRef as any}
                 value={chauffeurSearch}
                 onChange={(e) => setChauffeurSearch(e.target.value)}
-                onFocus={() => setShowChauffeurAutocomplete(true)}
-                onBlur={() => setTimeout(() => setShowChauffeurAutocomplete(false), 100)} // delay to allow item click
+                onFocus={() => {
+                  setShowChauffeurAutocomplete(true);
+                  // update position immediately
+                  if (chauffeurInputRef.current) setDropdownRect(chauffeurInputRef.current.getBoundingClientRect());
+                }}
+                onBlur={() => {
+                  // Do not auto-close on blur; we rely on the document mousedown handler
+                  // which properly handles clicks into the portal dropdown. This avoids
+                  // race conditions where blur fires before the dropdown's mousedown.
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Escape') {
+                    setShowChauffeurAutocomplete(false);
+                  }
+                }}
                 placeholder={t('chauffeurs.search') || 'Rechercher par nom, prénom, téléphone...'}
                 className="pr-10"
               />
-              {showChauffeurAutocomplete && filteredChauffeurs.length > 0 && (
-                <div className="absolute z-10 w-full bg-white border rounded-md shadow-lg mt-1 max-h-60 overflow-auto">
+              {/* Render the dropdown in a portal so it can overflow the dialog and adapt to dark mode */}
+              {showChauffeurAutocomplete && filteredChauffeurs.length > 0 && dropdownRect && createPortal(
+                <div
+                  ref={dropdownRef}
+                  style={{ top: dropdownRect.top + dropdownRect.height + window.scrollY, left: dropdownRect.left + window.scrollX, width: dropdownRect.width, position: 'fixed' as const }}
+                  className="fixed z-[99999] rounded-md shadow-lg max-h-60 overflow-auto border bg-card dark:bg-muted border-border dark:border-slate-700 pointer-events-auto"
+                >
                   {filteredChauffeurs.map(chauffeur => (
                     <div
                       key={chauffeur.id}
-                      className="px-4 py-2 cursor-pointer hover:bg-gray-100"
-                      onMouseDown={() => {
+                      role="option"
+                      tabIndex={0}
+                      aria-selected={selectedChauffeur?.id === chauffeur.id}
+                      className="px-4 py-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-700 text-foreground dark:text-white"
+                      onPointerDown={(e) => {
+                        // prevent input blur race conditions and stop document handler
+                        e.preventDefault();
+                        e.stopPropagation();
                         setSelectedChauffeur(chauffeur);
-                        setChauffeurSearch(`${chauffeur.firstName} ${chauffeur.lastName}`);
+                        setChauffeurSearch(chauffeurDisplayName(chauffeur) || `${chauffeur.firstName} ${chauffeur.lastName}`);
                         setShowChauffeurAutocomplete(false);
+                        // ensure input reflects the new value
+                        setTimeout(() => { try { chauffeurInputRef.current?.focus(); } catch (e) {} }, 0);
+                      }}
+                      onClick={(e) => {
+                        // fallback for environments that don't support pointer events
+                        e.stopPropagation();
+                        setSelectedChauffeur(chauffeur);
+                        setChauffeurSearch(chauffeurDisplayName(chauffeur) || `${chauffeur.firstName} ${chauffeur.lastName}`);
+                        setShowChauffeurAutocomplete(false);
+                        try { chauffeurInputRef.current?.focus(); } catch (e) {}
                       }}
                     >
-                      <div className="font-medium">{`${chauffeur.firstName} ${chauffeur.lastName}`}</div>
-                      <div className="text-sm text-muted-foreground">{chauffeur.username}</div>
-                      <div className="text-sm text-muted-foreground">{(chauffeur.phone || []).join(' ')}</div>
+                      {/* display only the chauffeur display name as requested */}
+                      <div className="font-medium text-sm md:text-base">{chauffeurDisplayName(chauffeur)}</div>
                     </div>
                   ))}
-                </div>
+                </div>,
+                document.body
               )}
             </div>
           </div>

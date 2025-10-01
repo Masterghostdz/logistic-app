@@ -21,6 +21,9 @@ export const listenUsers = (callback: (users: any[]) => void) => {
         employeeType: data.employeeType,
         theme: data.theme || 'light',
         isOnline: data.isOnline ?? false
+        ,
+        companyId: data.companyId || undefined,
+        companyName: data.companyName || undefined
       };
     });
     callback(users);
@@ -49,6 +52,9 @@ export const getUsers = async () => {
       vehicleType: data.vehicleType,
       employeeType: data.employeeType,
       theme: data.theme || 'light'
+      ,
+      companyId: data.companyId || undefined,
+      companyName: data.companyName || undefined
     };
   });
 };

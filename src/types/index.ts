@@ -13,6 +13,8 @@ export interface User {
   avatar?: string;
   vehicleType?: string;
   employeeType?: 'interne' | 'externe';
+  companyId?: string;
+  companyName?: string;
 }
 
 export interface Chauffeur {

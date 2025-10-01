@@ -153,7 +153,7 @@ const CreateChauffeurDialog = ({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="interne">{t('chauffeurs.internal')}</SelectItem>
-                <SelectItem value="externe">{t('chauffeurs.external')}</SelectItem>
+                <SelectItem value="externe">{t('chauffeurs.external') || 'Externe (TP)'}</SelectItem>
               </SelectContent>
             </Select>
           </div>
