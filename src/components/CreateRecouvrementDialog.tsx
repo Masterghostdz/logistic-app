@@ -13,7 +13,7 @@ import { useIsMobile } from '../hooks/use-mobile';
 import { useSettings } from '../contexts/SettingsContext';
 import { toast } from './ui/use-toast';
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogFooter, AlertDialogTitle, AlertDialogDescription, AlertDialogAction, AlertDialogCancel } from './ui/alert-dialog';
-import { PaymentReceipt, Company } from '../types';
+import { PaymentReceipt, Company, Chauffeur } from '../types';
 import { getCompanies } from '../services/companyService';
 
 interface Props {
@@ -51,6 +51,10 @@ const CreateRecouvrementDialog: React.FC<Props> = ({ isOpen, onClose }) => {
   const [validatingIds, setValidatingIds] = useState<Record<string, boolean>>({});
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [receiptToDelete, setReceiptToDelete] = useState<string | null>(null);
+  const [chauffeurs, setChauffeurs] = useState<Chauffeur[]>([]);
+  const [chauffeurSearch, setChauffeurSearch] = useState<string>('');
+  const [selectedChauffeur, setSelectedChauffeur] = useState<Chauffeur | null>(null);
+  const [showChauffeurAutocomplete, setShowChauffeurAutocomplete] = useState<boolean>(false);
   const hookIsMobile = useIsMobile();
   const { settings } = useSettings();
   const isMobile = (settings?.viewMode === 'mobile') || hookIsMobile;
@@ -83,6 +87,9 @@ const CreateRecouvrementDialog: React.FC<Props> = ({ isOpen, onClose }) => {
     setDeleteDialogOpen(false);
     setReceiptToDelete(null);
     setNoProgramReference(false);
+    setChauffeurSearch('');
+    setSelectedChauffeur(null);
+    setShowChauffeurAutocomplete(false);
     // bump the formKey to ensure SimpleDeclarationNumberForm remounts for a full reset
     setFormKey(k => k + 1);
   }, [isOpen]);
@@ -143,8 +150,8 @@ const CreateRecouvrementDialog: React.FC<Props> = ({ isOpen, onClose }) => {
           year: noProgramReference ? null : year,
           month: noProgramReference ? null : month,
           programNumber: noProgramReference ? null : programNumber,
-          chauffeurId: null,
-          chauffeurName: null,
+          chauffeurId: selectedChauffeur ? selectedChauffeur.id : null,
+          chauffeurName: selectedChauffeur ? `${selectedChauffeur.firstName} ${selectedChauffeur.lastName}` : null,
           status: '',
           notes: notes || '',
           createdAt: new Date().toISOString(),
@@ -200,8 +207,8 @@ const CreateRecouvrementDialog: React.FC<Props> = ({ isOpen, onClose }) => {
         year: noProgramReference ? null : year,
         month: noProgramReference ? null : month,
         programNumber: noProgramReference ? null : programNumber,
-        chauffeurId: null,
-        chauffeurName: null,
+        chauffeurId: selectedChauffeur ? selectedChauffeur.id : null,
+        chauffeurName: selectedChauffeur ? `${selectedChauffeur.firstName} ${selectedChauffeur.lastName}` : null,
         status: 'brouillon',
         notes: notes || '',
         createdAt: new Date().toISOString(),
@@ -500,6 +507,36 @@ const CreateRecouvrementDialog: React.FC<Props> = ({ isOpen, onClose }) => {
     }
   };
 
+  // Chauffeur selector: listen chauffeurs
+  useEffect(() => {
+    let unsub: any;
+    (async () => {
+      try {
+        const { listenChauffeurs } = await import('../services/chauffeurService');
+        unsub = listenChauffeurs((list: any[]) => setChauffeurs(list as Chauffeur[]));
+      } catch (e) {
+        try {
+          const { getChauffeurs } = await import('../services/chauffeurService');
+          const list = await getChauffeurs();
+          setChauffeurs(list as Chauffeur[]);
+        } catch (err) {
+          console.warn('Failed to load chauffeurs', err);
+        }
+      }
+    })();
+    return () => { if (unsub) unsub(); };
+  }, []);
+
+  // Chauffeur selector: filtered chauffeurs for autocomplete
+  const filteredChauffeurs = React.useMemo(() => {
+    if (!chauffeurSearch) return chauffeurs;
+    const s = chauffeurSearch.toLowerCase();
+    return chauffeurs.filter(c => {
+      const full = `${c.firstName || ''} ${c.lastName || ''}`.toLowerCase();
+      return full.includes(s) || (c.username || '').toLowerCase().includes(s) || (c.phone || []).join(' ').toLowerCase().includes(s);
+    });
+  }, [chauffeurSearch, chauffeurs]);
+
   const dialogClass = isMobile ? 'max-w-md' : 'max-w-3xl mx-4';
 
   return (
@@ -651,6 +688,40 @@ const CreateRecouvrementDialog: React.FC<Props> = ({ isOpen, onClose }) => {
           <div>
             <Label htmlFor="recouv-notes">{t('forms.notes') || 'Notes'}</Label>
             <Input id="recouv-notes" value={notes} onChange={(e) => setNotes(e.target.value)} />
+          </div>
+          {/* Chauffeur selector (real-time listener + autocomplete) */}
+          <div>
+            <Label htmlFor="chauffeur-search">{t('chauffeurs.select') || 'Sélectionner un chauffeur'}</Label>
+            <div className="relative">
+              <Input
+                id="chauffeur-search"
+                value={chauffeurSearch}
+                onChange={(e) => setChauffeurSearch(e.target.value)}
+                onFocus={() => setShowChauffeurAutocomplete(true)}
+                onBlur={() => setTimeout(() => setShowChauffeurAutocomplete(false), 100)} // delay to allow item click
+                placeholder={t('chauffeurs.search') || 'Rechercher par nom, prénom, téléphone...'}
+                className="pr-10"
+              />
+              {showChauffeurAutocomplete && filteredChauffeurs.length > 0 && (
+                <div className="absolute z-10 w-full bg-white border rounded-md shadow-lg mt-1 max-h-60 overflow-auto">
+                  {filteredChauffeurs.map(chauffeur => (
+                    <div
+                      key={chauffeur.id}
+                      className="px-4 py-2 cursor-pointer hover:bg-gray-100"
+                      onMouseDown={() => {
+                        setSelectedChauffeur(chauffeur);
+                        setChauffeurSearch(`${chauffeur.firstName} ${chauffeur.lastName}`);
+                        setShowChauffeurAutocomplete(false);
+                      }}
+                    >
+                      <div className="font-medium">{`${chauffeur.firstName} ${chauffeur.lastName}`}</div>
+                      <div className="text-sm text-muted-foreground">{chauffeur.username}</div>
+                      <div className="text-sm text-muted-foreground">{(chauffeur.phone || []).join(' ')}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
           <div className="flex gap-2 pt-2 justify-end">
             <Button variant="outline" onClick={onClose}>{t('forms.cancel') || 'Annuler'}</Button>

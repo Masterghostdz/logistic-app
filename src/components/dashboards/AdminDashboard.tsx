@@ -746,8 +746,8 @@ const AdminDashboard = () => {
                       <option value="100">100%</option>
                       <option value="90">90%</option>
                       <option value="80">80%</option>
+                      <option value="70">70%</option>
                       <option value="60">60%</option>
-                      <option value="50">50%</option>
                     </select>
                   </div>
                   <div className="w-full overflow-x-auto">
@@ -1035,8 +1035,8 @@ const AdminDashboard = () => {
                       <option value="100">100%</option>
                       <option value="90">90%</option>
                       <option value="80">80%</option>
+                      <option value="70">70%</option>
                       <option value="60">60%</option>
-                      <option value="50">50%</option>
                     </select>
                   </div>
                   <div className="w-full overflow-x-auto">
@@ -1167,8 +1167,8 @@ const AdminDashboard = () => {
                       <option value="100">100%</option>
                       <option value="90">90%</option>
                       <option value="80">80%</option>
+                      <option value="70">70%</option>
                       <option value="60">60%</option>
-                      <option value="50">50%</option>
                     </select>
                   </div>
                   <div className="w-full overflow-x-auto">

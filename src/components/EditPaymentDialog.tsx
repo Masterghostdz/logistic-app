@@ -34,6 +34,7 @@ const EditPaymentDialog: React.FC<EditPaymentDialogProps> = ({ receipt, isOpen, 
   const [photoFile, setPhotoFile] = useState<File | string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [cameraOpen, setCameraOpen] = useState(false);
+  const [creatorName, setCreatorName] = useState<string | null>(null);
   const [confirmReplaceOpen, setConfirmReplaceOpen] = useState(false);
   const [pendingNewFile, setPendingNewFile] = useState<File | null>(null);
   const [companyId, setCompanyId] = useState<string>('');
@@ -53,6 +54,23 @@ const EditPaymentDialog: React.FC<EditPaymentDialogProps> = ({ receipt, isOpen, 
     setMonth(receipt.month || '');
     setProgramNumber(receipt.programNumber || '');
     setPhotoFile(receipt.photoUrl || null);
+    // resolve creator display name: prefer createdByName, otherwise lookup user by id
+    setCreatorName(null);
+    if (receipt.createdByName) {
+      setCreatorName(receipt.createdByName);
+    } else if (receipt.createdBy) {
+      (async () => {
+        try {
+          const { getUsers } = await import('../services/userService');
+          const users = await getUsers();
+          const u = (users || []).find((x: any) => x.id === receipt.createdBy);
+          if (u) setCreatorName(u.fullName || u.username || receipt.createdBy);
+          else setCreatorName(receipt.createdBy);
+        } catch (e) {
+          setCreatorName(receipt.createdBy);
+        }
+      })();
+    }
   }, [receipt]);
 
   // Manage preview URL for selected file or existing photoUrl
@@ -326,7 +344,7 @@ const EditPaymentDialog: React.FC<EditPaymentDialogProps> = ({ receipt, isOpen, 
             {readOnly && (
               <div>
                 <Label>{t('forms.creator') || 'Créateur'}</Label>
-                <div className="mt-1">{receipt.createdByName || receipt.createdBy || t('traceability.unknownUser') || 'Utilisateur inconnu'}</div>
+                <div className="mt-1">{creatorName || receipt.createdByName || receipt.createdBy || t('traceability.unknownUser') || 'Utilisateur inconnu'}</div>
               </div>
             )}
 

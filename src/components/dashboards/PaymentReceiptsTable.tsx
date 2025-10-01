@@ -147,15 +147,15 @@ const PaymentReceiptsTable: React.FC<PaymentReceiptsTableProps> = ({
               <label className="mr-2 text-xs text-muted-foreground">{t('common.zoom') || 'Zoom'} :</label>
               <select
                 value={localFontSize}
-                onChange={e => setLocalFontSize(e.target.value as typeof fontSize)}
+                onChange={e => setLocalFontSize(e.target.value as any)}
                 className="border rounded px-2 py-1 text-xs bg-background"
                 title={t('common.zoom') || 'Zoom'}
               >
                 <option value="100">100%</option>
                 <option value="90">90%</option>
                 <option value="80">80%</option>
+                <option value="70">70%</option>
                 <option value="60">60%</option>
-                <option value="50">50%</option>
               </select>
             </div>
             <Table data-rtl={settings.language === 'ar'}>

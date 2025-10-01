@@ -152,8 +152,6 @@ export default function RefusalReasonsConfig({ showAddButton, hideHeader, onlyBu
           <option value="80">80%</option>
           <option value="70">70%</option>
           <option value="60">60%</option>
-          <option value="50">50%</option>
-          <option value="40">40%</option>
         </select>
       </div>
       <Table>
