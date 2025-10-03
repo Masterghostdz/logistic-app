@@ -1,6 +1,7 @@
 export const translations = {
   fr: {
     caissier: {
+      statsTitle: "Indicateurs des Recouvrements et Paiements",
       viewPaymentTitle: "Consulter le reçu",
       viewPaymentDesc: "Consultation du reçu (lecture seule)",
       createPaymentTitle: "Ajouter un reçu de paiement",
@@ -15,9 +16,11 @@ export const translations = {
       tracageEmpty: "Section Tracage (façade, aucun contenu)",
       // Dashboard / stats
       dashboardTitle: "Tableau de bord - Caissier",
-      recouvrementsTitle: "Recouvrements en attente",
-      paymentsPendingTitle: "Paiements non validés",
-      paymentsNoCompanyTitle: "Paiements sans société"
+  // French labels for Caissier dashboard stats
+  paymentsPendingTitle: "Paiements non validés",
+  paymentsNoCompanyTitle: "Sans société",
+  paymentsStatsTitle: "Indicateurs des paiements",
+  recouvrementsTitle: "Indicateurs des recouvrements"
     },
     // Recouvrement specific labels
     recouvrement: {
@@ -30,13 +33,14 @@ export const translations = {
       revoked: "Recouvrement annulé"
     },
     planificateur: {
+      statsTitle: "Résumé des déclarations",
+      paymentsStatsTitle: "Payments summary",
       clientsTitle: "Gestion des Clients",
       dashboardTitle: "Tableau de bord - Planificateur",
       recentDeclarations: "Déclarations récentes",
       declarationsTitle: "Gestion des Déclarations",
       warehousesTitle: "Gestion des Entrepôts",
-      add: "Ajouter",
-      company: "Société",
+        paymentsTitle: "Payments Management",
       phoneNumbers: "Numéros de téléphone",
       status: "Statut"
     },
@@ -193,6 +197,8 @@ export const translations = {
     // Declarations
   declarations: {
       confirmCancelTitle: "Confirmer l’annulation",
+      history: "Historique de la déclaration",
+      view: "Consulter la déclaration",
       confirmCancelDescription: "Êtes-vous sûr de vouloir annuler la création de cette déclaration ? Les informations saisies seront perdues.",
       confirmDeleteTitle: "Confirmer la suppression",
       confirmDeleteDescription: "Êtes-vous sûr de vouloir supprimer cette déclaration ? Cette action est irréversible.",
@@ -238,6 +244,28 @@ export const translations = {
       breakdownConfirm: "Êtes-vous sûr de vouloir signaler une panne pour cette déclaration ? Cette action est irréversible.",
       breakdownSuccess: "Déclaration signalée en panne."
     },
+  en: {
+    caissier: {
+      statsTitle: "Collections and payments summary",
+      paymentsStatsTitle: "Payments indicators",
+      recouvrementsTitle: "Collections indicators",
+      paymentsNoCompanyTitle: "No company",
+      dashboardTitle: "Cashier Dashboard",
+      createPaymentTitle: "Add payment receipt",
+      createPaymentDesc: "Fill the form to add a payment receipt.",
+      viewPaymentTitle: "View receipt",
+      viewPaymentDesc: "Receipt consultation (read-only)",
+      paymentsTitle: "Payments management",
+      recouvrementTitle: "Collections management",
+      emptyDashboard: "Cashier area (placeholder, no content)",
+      recouvrementEmpty: "Collection section (placeholder, no content)",
+      tracageEmpty: "Trace section (placeholder, no content)"
+    },
+    planificateur: {
+      statsTitle: "Declarations summary",
+      paymentsStatsTitle: "Payments summary"
+    },
+  },
   ar: {
     // planificateur moved to final `ar` block to avoid duplication
     roles: {
@@ -250,10 +278,11 @@ export const translations = {
     },
     // Caissier translations (cashier dashboard / stats)
     caissier: {
+      statsTitle: "مؤشرات التحصيلات والمدفوعات",
       dashboardTitle: "لوحة القيادة - أمين الصندوق",
-      recouvrementsTitle: "التحصيلات المعلقة",
-      paymentsPendingTitle: "المدفوعات غير المعتمدة",
-      paymentsNoCompanyTitle: "مدفوعات بدون شركة"
+      recouvrementsTitle: "مؤشرات التحصيلات",
+      paymentsPendingTitle: "حالات المدفوعات غير المعتمدة",
+      paymentsNoCompanyTitle: "بدون شركة"
     },
     // Recouvrement labels (Arabic)
     recouvrement: {
@@ -537,8 +566,9 @@ export const translations = {
       createPaymentTitle: "Add a payment receipt",
       createPaymentDesc: "Fill out the form to add a payment receipt.",
       profileTitle: "Cashier Profile",
-    paymentsTitle: "Payments Management",
-      recouvrementTitle: "Collections Management",
+      paymentsStatsTitle: "Payments summary",
+      paymentsTitle: "Payments management",
+      recouvrementTitle: "Collections management",
       emptyDashboard: "Cashier area (placeholder, no content)",
       recouvrementEmpty: "Collection section (placeholder, no content)",
       tracageEmpty: "Trace section (placeholder, no content)"
@@ -600,6 +630,7 @@ export const translations = {
       createWarehouse: "Create warehouse"
     },
     planificateur: {
+      statsTitle: "ملخص التصريحات",
       clientsTitle: "Clients Management",
       dashboardTitle: "Planner Dashboard",
       recentDeclarations: "Recent Declarations",
@@ -704,6 +735,8 @@ export const translations = {
     // Declarations
     declarations: {
       title: "My Declarations",
+      history: "Declaration history",
+      view: "View declaration",
       new: "New Declaration",
       chauffeur: "Driver",
       number: "Number",
@@ -994,9 +1027,9 @@ export const translations = {
       tracageEmpty: "قسم التتبع (نموذج، لا يوجد محتوى)",
       // Dashboard / stats
       dashboardTitle: "لوحة القيادة - أمين الصندوق",
-      recouvrementsTitle: "التحصيلات المعلقة",
+      recouvrementsTitle: "مؤشرات التحصيلات",
       paymentsPendingTitle: "المدفوعات غير المعتمدة",
-      paymentsNoCompanyTitle: "مدفوعات بدون شركة"
+      paymentsNoCompanyTitle: "بدون شركة"
     },
     // Recouvrement labels (Arabic)
     recouvrement: {

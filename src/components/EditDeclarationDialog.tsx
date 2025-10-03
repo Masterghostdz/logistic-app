@@ -11,6 +11,7 @@ import { getAllRefusalReasons } from '../services/refusalReasonService';
 import SimpleDeclarationNumberForm from './SimpleDeclarationNumberForm';
 import { Badge } from './ui/badge';
 import { useAuth } from '../contexts/AuthContext';
+import TraceabilitySection from './TraceabilitySection';
 import useTableZoom from '../hooks/useTableZoom';
 import { useIsMobile } from '../hooks/use-mobile';
 import { useSettings } from '../contexts/SettingsContext';
@@ -20,11 +21,10 @@ const PaymentsForDeclaration: React.FC<{ declaration?: Declaration | null; readO
   const [payments, setPayments] = useState<any[]>([]);
   const { t } = useTranslation();
   const { badgeClass, badgeStyle } = useTableZoom();
-
-  // Payments list does not need to control dialog sizing; parent handles mobile detection
   const [previewPhotoUrl, setPreviewPhotoUrl] = useState<string | null>(null);
   const authCtx = useAuth();
 
+  // listen for payments and filter those related to the given declaration
   React.useEffect(() => {
     let unsub: (() => void) | undefined;
     (async () => {
@@ -34,9 +34,8 @@ const PaymentsForDeclaration: React.FC<{ declaration?: Declaration | null; readO
           setPayments([]);
           return;
         }
-
         const declRef = `DCP/${declaration.year}/${declaration.month}/${declaration.programNumber}`;
-        const filtered = items.filter(p => {
+        let filtered = items.filter(p => {
           try {
             if (p.declarationId && declaration.id && String(p.declarationId) === String(declaration.id)) return true;
             if (!p.declarationId && p.programReference && declRef && String(p.programReference) === String(declRef)) return true;
@@ -52,14 +51,22 @@ const PaymentsForDeclaration: React.FC<{ declaration?: Declaration | null; readO
           }
           return false;
         });
+        // If the current user is an external cashier (caissier externe), only show receipts
+        // that belong to the same company as the user. This ensures external cashiers
+        // consulting a declaration only see receipts for their company.
+        try {
+          const user = authCtx.user;
+          if (user && user.role === 'caissier' && (user as any).employeeType === 'externe' && user.companyId) {
+            filtered = filtered.filter(p => String(p.companyId || '') === String(user.companyId));
+          }
+        } catch (e) {
+          // ignore
+        }
         setPayments(filtered);
       });
     })();
     return () => { if (unsub) unsub(); };
   }, [declaration]);
-
-  if (!declaration) return <span className="text-muted-foreground text-xs italic">{t('declarations.noReceiptsAdded') || 'Aucun reçu lié'}</span>;
-  if (payments.length === 0) return <span className="text-muted-foreground text-xs italic">{t('declarations.noPaymentReceipts') || 'Aucun reçu de paiement'}</span>;
 
   const getStatusBadgeFor = (p: any) => {
     const s = String(p.status || '').toLowerCase();
@@ -92,35 +99,60 @@ const PaymentsForDeclaration: React.FC<{ declaration?: Declaration | null; readO
       console.warn('Failed to delete payment', e);
       alert(e.message || t('forms.deleteFailed') || 'Suppression échouée');
     }
-    // local state will be updated by listener; no explicit removal necessary
   };
+
+  if (!declaration) return <span className="text-muted-foreground text-xs italic">{t('declarations.noReceiptsAdded') || 'Aucun reçu lié'}</span>;
+  if (payments.length === 0) return <span className="text-muted-foreground text-xs italic">{t('declarations.noPaymentReceipts') || 'Aucun reçu de paiement'}</span>;
 
   return (
     <div className="flex flex-col gap-2">
       {payments.map((p, idx) => (
-        <div key={p.id || idx} className="relative flex flex-row items-center border rounded-lg bg-muted px-3 py-2 gap-4 w-full min-h-[48px] h-auto shadow-sm">
-          <button type="button" onClick={() => setPreviewPhotoUrl(p.photoUrl)} className="p-0 m-0">
-            <img src={p.photoUrl} alt={`reçu-${idx}`} className="object-cover w-16 h-12 rounded-md cursor-pointer hover:opacity-80 transition" onError={e => (e.currentTarget.style.display = 'none')} />
-          </button>
-          <div className="flex-1 min-w-0 flex flex-col justify-center">
-            <div className="font-medium truncate">{p.companyName || <span className="italic text-muted-foreground">Société non renseignée</span>}</div>
-            <div className="text-xs text-muted-foreground truncate">{getStatusBadgeFor(p)}</div>
-            <div className="text-xs text-muted-foreground truncate">{p.createdAt ? new Date(p.createdAt).toLocaleString() : ''}</div>
+        <div key={p.id || idx} className="border rounded-lg p-3 bg-card dark:bg-muted flex items-center gap-3 w-full min-w-full">
+          <div className="w-28 flex-shrink-0">
+            <button type="button" onClick={() => setPreviewPhotoUrl(p.photoUrl)} className="block p-0 m-0 w-full h-20 overflow-hidden rounded-md border">
+              <img src={p.photoUrl} alt={`recu-${idx}`} className="object-cover w-full h-full" onError={(e:any) => (e.currentTarget.style.display = 'none')} />
+            </button>
           </div>
-          {!readOnly && (() => {
-            const role = authCtx.user?.role;
-            const s = String(p.status || '').toLowerCase();
-            const isValidated = ['validee', 'validated', 'valide', 'valid'].includes(s);
-            const canDelete = !!authCtx.user && role !== 'planificateur' && !isValidated;
-            if (!canDelete) return null;
-            return (
-              <div className="ml-auto">
-                <button type="button" className="p-2 text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300" onClick={() => handleDelete(p)} title={t('forms.delete') || 'Supprimer'}>
+
+          <div className="w-44">
+            <Label className="text-xs">{t('forms.amount') || 'Montant'}</Label>
+            {String((declaration as any).paymentState || '').toLowerCase() === 'recouvre' ? (
+              <Input id={`montant-${p.id}`} type="text" value={typeof p.montant === 'number' ? p.montant.toFixed(2) : ''} disabled className="bg-background dark:bg-background" />
+            ) : (
+              <div className="text-sm text-muted-foreground">{typeof p.montant === 'number' ? p.montant.toFixed(2) : ''}</div>
+            )}
+          </div>
+
+          <div className="w-56">
+            <Label className="text-xs">{t('companies.name') || 'Société'}</Label>
+            {String((declaration as any).paymentState || '').toLowerCase() === 'recouvre' ? (
+              <Input id={`company-${p.id}`} value={p.companyName || ''} disabled className="w-full bg-background dark:bg-background" />
+            ) : (
+              <div className="text-sm text-muted-foreground truncate">{p.companyName || ''}</div>
+            )}
+          </div>
+
+          <div className={`${(useSettings().settings?.language === 'ar') ? 'mr-auto' : 'ml-auto'} flex gap-2`}>
+            {/* delete action if allowed */}
+            {!readOnly && (() => {
+              const role = authCtx.user?.role;
+              const s = String(p.status || '').toLowerCase();
+              const isValidated = ['validee', 'validated', 'valide', 'valid'].includes(s);
+              const canDelete = !!authCtx.user && role !== 'planificateur' && !isValidated;
+              if (!canDelete) return null;
+              return (
+                <Button size="sm" variant="ghost" className={`flex items-center justify-center rounded-md text-red-600 hover:text-red-700`} onClick={() => handleDelete(p)}>
                   <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M1 7h22M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
-                </button>
-              </div>
-            );
-          })()}
+                </Button>
+              );
+            })()}
+
+            <div className="flex flex-col items-end gap-1">
+              <div className="text-xs text-muted-foreground">{getStatusBadgeFor(p)}</div>
+              <div className="text-xs text-muted-foreground">{p.createdAt ? new Date(p.createdAt).toLocaleString() : ''}</div>
+            </div>
+          </div>
+
           {previewPhotoUrl && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70" onClick={() => setPreviewPhotoUrl(null)}>
               <div className="bg-white rounded-lg shadow-lg p-2 max-w-full max-h-full flex flex-col items-center" onClick={e => e.stopPropagation()}>
@@ -134,6 +166,7 @@ const PaymentsForDeclaration: React.FC<{ declaration?: Declaration | null; readO
     </div>
   );
 };
+
 
 interface EditDeclarationDialogProps {
   declaration: Declaration | null;
@@ -352,22 +385,15 @@ const EditDeclarationDialog: React.FC<EditDeclarationDialogProps> = ({
           </div>
           {/* Section traçabilité (historique) */}
           {declaration?.traceability && declaration.traceability.length > 0 && (
-            <div className="mt-6 border-t pt-4">
-              <div className="font-semibold text-sm mb-2 text-muted-foreground">Historique de la déclaration</div>
-              <div className="space-y-2 text-xs">
-                {declaration.traceability.map((trace, idx) => (
-                  <div key={idx} className="text-muted-foreground">
-                    <span className="font-semibold">{trace.userName}</span>
-                    <span className="mx-2 text-[10px]">({new Date(trace.date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit' })} {new Date(trace.date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })})</span>
-                    : {trace.action}
-                  </div>
-                ))}
-              </div>
-            </div>
+            <TraceabilitySection traces={declaration.traceability} />
           )}
           <div className="flex gap-2 pt-4">
             {!readOnly && (
-              <Button onClick={handleSave} className="flex-1">
+              <Button
+                onClick={handleSave}
+                className="flex-1"
+                disabled={!declaration?.chauffeurId || String(declaration.chauffeurId).trim() === ''}
+              >
                 {t('forms.save') || 'Sauvegarder'}
               </Button>
             )}

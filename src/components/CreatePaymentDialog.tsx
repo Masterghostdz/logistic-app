@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { useTranslation } from '../hooks/useTranslation';
 import { useSharedData } from '../contexts/SharedDataContext';
 import { useAuth } from '../contexts/AuthContext';
+import { useLoading } from '../contexts/LoadingContext';
 import * as declarationService from '../services/declarationService';
 import SimpleDeclarationNumberForm from './SimpleDeclarationNumberForm';
 import CameraPreviewModal from './CameraPreviewModal';
@@ -36,6 +37,7 @@ const CreatePaymentDialog: React.FC<CreatePaymentDialogProps> = ({ isOpen, onClo
   const [montant, setMontant] = React.useState<string>('');
   const [cameraOpen, setCameraOpen] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
+  const loadingCtx = useLoading();
   const [error, setError] = React.useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = React.useState<string | null>(null);
 
@@ -108,7 +110,8 @@ const CreatePaymentDialog: React.FC<CreatePaymentDialogProps> = ({ isOpen, onClo
     // Find declaration by components year/month/programNumber (may be undefined)
     const declaration = declarations.find(d => String(d.programNumber) === String(programNumber) && String(d.year) === String(year) && String(d.month) === String(month));
 
-    setLoading(true);
+  setLoading(true);
+  try { loadingCtx.show(t('forms.saving') || 'Enregistrement...'); } catch (e) {}
     try {
       // Upload photo and get URLs. If the upload server is unreachable, fall back to
       // saving the preview URL (dataURL or object URL) and mark the receipt as pending upload.
@@ -174,6 +177,7 @@ const CreatePaymentDialog: React.FC<CreatePaymentDialogProps> = ({ isOpen, onClo
       setError(t('payment.errors.saveFailed') || "Erreur lors de l'enregistrement");
     } finally {
       setLoading(false);
+      try { loadingCtx.hide(); } catch (e) {}
     }
   };
 

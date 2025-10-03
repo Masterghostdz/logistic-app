@@ -8,6 +8,7 @@ import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '.
 import { Plus, Edit, Trash2 } from 'lucide-react';
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '../ui/select';
 import { useTranslation } from '../../hooks/useTranslation';
+import { useLoading } from '../../contexts/LoadingContext';
 
 // Remplacer par une vraie API de traduction si besoin
 async function fakeTranslate(text: string, lang: 'en' | 'ar'): Promise<string> {
@@ -25,6 +26,7 @@ export default function RefusalReasonsConfig({ showAddButton, hideHeader, onlyBu
   const [reasons, setReasons] = useState<RefusalReason[]>([]);
   const [newFr, setNewFr] = useState('');
   const [loading, setLoading] = useState(false);
+  const loadingCtx = useLoading();
   const [showAdd, setShowAdd] = useState(false);
   const [editingReason, setEditingReason] = useState<RefusalReason | null>(null);
   const [inputLang, setInputLang] = useState<'fr' | 'en' | 'ar'>('fr');
@@ -46,6 +48,7 @@ export default function RefusalReasonsConfig({ showAddButton, hideHeader, onlyBu
   const handleAdd = async () => {
     if (!newFr.trim()) return;
     setLoading(true);
+    try { loadingCtx.show(t('forms.saving') || 'Enregistrement...'); } catch (e) {}
     let fr = '', en = '', ar = '';
     if (inputLang === 'fr') {
       fr = newFr;
@@ -71,13 +74,16 @@ export default function RefusalReasonsConfig({ showAddButton, hideHeader, onlyBu
     setInputLang('fr');
     setReasons(await getAllRefusalReasons());
     setLoading(false);
+    try { loadingCtx.hide(); } catch (e) {}
   };
 
   const handleDelete = async (id: string) => {
     setLoading(true);
+    try { loadingCtx.show(t('forms.deleting') || 'Suppression...'); } catch (e) {}
     await deleteRefusalReason(id);
     setReasons(await getAllRefusalReasons());
     setLoading(false);
+    try { loadingCtx.hide(); } catch (e) {}
   };
 
   const { t } = useTranslation();

@@ -10,6 +10,7 @@ import { useTranslation } from '../hooks/useTranslation';
 import { toast } from 'sonner';
 import { LogIn, User, Lock } from 'lucide-react';
 import { useSettings } from '../contexts/SettingsContext';
+import { useLoading } from '../contexts/LoadingContext';
 
 const LoginForm = () => {
   const firestoreStatus = useFirestoreConnectionStatus();
@@ -18,6 +19,7 @@ const LoginForm = () => {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
+  const loadingCtx = useLoading();
   const { t } = useTranslation();
   const { settings, updateSettings, userAgent } = useSettings();
   // Force le recalcul du mode à chaque rendu du LoginForm
@@ -46,6 +48,7 @@ const LoginForm = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    try { loadingCtx.show(t('auth.loggingIn') || 'Connexion...'); } catch (e) {}
 
     try {
       const success = await login(username, password);
@@ -56,13 +59,21 @@ const LoginForm = () => {
       toast.error(t('forms.error'));
     } finally {
       setIsLoading(false);
+      try { loadingCtx.hide(); } catch (e) {}
     }
   };
 
   return (
     <div className="min-h-screen flex flex-col justify-center items-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-4 relative">
-      {/* Affichage du mode détecté pour l'utilisateur */}
-      <div className="absolute top-2 right-2 bg-white/80 dark:bg-gray-900/80 px-3 py-2 rounded shadow text-xs text-gray-700 dark:text-gray-200 z-10 min-w-[220px]">
+      {/* Affichage du mode détecté pour l'utilisateur (fixé en haut à droite de la fenêtre) */}
+  <div
+    className="fixed bg-white/80 dark:bg-gray-900/80 px-3 py-2 rounded shadow text-xs text-gray-700 dark:text-gray-200 z-50 min-w-[140px]"
+    style={{
+  // Push the badge further down so it's more clearly visible (helps on some WebViews/notches)
+  top: 'calc(env(safe-area-inset-top, 8px) + 20px)',
+      right: 'env(safe-area-inset-right, 0px)'
+    }}
+  >
         <div>
           <span className="font-semibold">Mode détecté :</span>
           <span className={settings.viewMode === 'mobile' ? 'text-orange-600 font-bold ml-1' : 'text-blue-600 font-bold ml-1'}>{settings.viewMode === 'mobile' ? 'Mobile' : 'Desktop'}</span>
@@ -149,8 +160,8 @@ const LoginForm = () => {
             </div>
           </div>
         </CardContent>
-      {/* Firestore status band inside the Card, below content, with top-rounded corners and top border */}
-      <div className="flex justify-center mt-2 mb-1">
+  {/* Firestore status band inside the Card, below content, with top-rounded corners and top border */}
+  <div className="flex justify-center mt-0 mb-0">
         <div
           className={
             `px-4 py-2 rounded-t-lg shadow-md text-sm font-medium min-w-[220px] text-center transition-colors pointer-events-auto ` +

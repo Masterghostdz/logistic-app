@@ -12,6 +12,7 @@ import { useSharedData } from '../contexts/SharedDataContext';
 import { useIsMobile } from '../hooks/use-mobile';
 import { useSettings } from '../contexts/SettingsContext';
 import { toast } from './ui/use-toast';
+import { useLoading } from '../contexts/LoadingContext';
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogFooter, AlertDialogTitle, AlertDialogDescription, AlertDialogAction, AlertDialogCancel } from './ui/alert-dialog';
 import { PaymentReceipt, Company, Chauffeur } from '../types';
 import { getCompanies } from '../services/companyService';
@@ -25,6 +26,7 @@ const CreateRecouvrementDialog: React.FC<Props> = ({ isOpen, onClose }) => {
   const { t } = useTranslation();
   const auth = useAuth();
   const { declarations, addDeclaration } = useSharedData();
+  const loadingCtx = useLoading();
 
   const [programReference, setProgramReference] = useState<string>('');
   const [year, setYear] = useState<string>('');
@@ -110,14 +112,43 @@ const CreateRecouvrementDialog: React.FC<Props> = ({ isOpen, onClose }) => {
     if (!programNumber || programNumber.length !== 4) { setExistingDeclId(null); return; }
     const found = (declarations || []).find(d => String(d.programNumber) === String(programNumber) && String(d.year) === String(year) && String(d.month) === String(month));
     setExistingDeclId(found ? found.id : null);
-  }, [declarations, programNumber, year, month, noProgramReference]);
+    // If we found an existing declaration and it carries a chauffeurId, try to
+    // auto-select that chauffeur (if present in the chauffeurs list). This
+    // ensures when user types a reference for an existing declaration, the
+    // chauffeur gets populated automatically.
+    if (found && found.chauffeurId) {
+      const ch = chauffeurs.find(c => String(c.id) === String(found.chauffeurId));
+      if (ch) {
+        setSelectedChauffeur(ch);
+        // ensure input shows the display name
+        setChauffeurSearch(chauffeurDisplayName(ch) || `${ch.firstName} ${ch.lastName}`);
+      }
+    }
+  }, [declarations, programNumber, year, month, noProgramReference, chauffeurs]);
+
+  // When an existing declaration id or a draft id is present, ensure the
+  // chauffeur field is auto-filled from the declaration (useful when draft
+  // was just created or when matching an existing declaration by reference).
+  useEffect(() => {
+    const id = existingDeclId || draftDeclId;
+    if (!id) return;
+    const decl = (declarations || []).find(d => d.id === id);
+    if (decl && decl.chauffeurId) {
+      const ch = chauffeurs.find(c => String(c.id) === String(decl.chauffeurId));
+      if (ch) {
+        setSelectedChauffeur(ch);
+        setChauffeurSearch(chauffeurDisplayName(ch) || `${ch.firstName} ${ch.lastName}`);
+      }
+    }
+  }, [existingDeclId, draftDeclId, chauffeurs, declarations]);
 
   const handleSend = async () => {
     if (!noProgramReference && (!programNumber || programNumber.length !== 4)) {
       toast({ title: t('declarations.programNumberRequired') || 'Numéro de programme requis', variant: 'destructive' });
       return;
     }
-    setLoading(true);
+  setLoading(true);
+  try { loadingCtx.show(t('forms.sending') || 'Envoi en cours...'); } catch (e) {}
     try {
       // find existing declaration matching components (year/month/programNumber) or sentinel when noProgramReference
       const existing = (!noProgramReference)
@@ -194,6 +225,7 @@ const CreateRecouvrementDialog: React.FC<Props> = ({ isOpen, onClose }) => {
       toast({ title: e?.message || (t('forms.error') || 'Erreur lors de l\'opération'), variant: 'destructive' });
     } finally {
       setLoading(false);
+      try { loadingCtx.hide(); } catch (e) {}
     }
   };
 
@@ -202,7 +234,8 @@ const CreateRecouvrementDialog: React.FC<Props> = ({ isOpen, onClose }) => {
       toast({ title: t('declarations.programNumberRequired') || 'Numéro de programme requis', variant: 'destructive' });
       return;
     }
-    setSavingDraft(true);
+  setSavingDraft(true);
+  try { loadingCtx.show(t('forms.saving') || 'Enregistrement...'); } catch (e) {}
     try {
       const traceEntry = { userId: auth.user?.id || null, userName: auth.user?.fullName || null, action: t('traceability.createdDraft') || 'Déclaration brouillon créée', date: new Date().toISOString() };
       const newDecl: any = {
@@ -253,6 +286,7 @@ const CreateRecouvrementDialog: React.FC<Props> = ({ isOpen, onClose }) => {
       toast({ title: e?.message || (t('forms.error') || 'Erreur lors de l\'enregistrement'), variant: 'destructive' });
     } finally {
       setSavingDraft(false);
+      try { loadingCtx.hide(); } catch (e) {}
     }
   };
 
@@ -261,6 +295,7 @@ const CreateRecouvrementDialog: React.FC<Props> = ({ isOpen, onClose }) => {
     if (!existingDeclId) return;
     try {
       setLoading(true);
+      try { loadingCtx.show(t('recouvrement.revoking') || 'Annulation en cours...'); } catch (e) {}
       const decl = (declarations || []).find(d => d.id === existingDeclId);
       if (!decl) {
         toast({ title: t('forms.error') || 'Erreur', description: t('declarations.notFound') || 'Déclaration introuvable', variant: 'destructive' });
@@ -276,6 +311,7 @@ const CreateRecouvrementDialog: React.FC<Props> = ({ isOpen, onClose }) => {
       toast({ title: e?.message || (t('forms.error') || 'Erreur lors de l\'opération'), variant: 'destructive' });
     } finally {
       setLoading(false);
+      try { loadingCtx.hide(); } catch (e) {}
     }
   };
 
@@ -392,6 +428,7 @@ const CreateRecouvrementDialog: React.FC<Props> = ({ isOpen, onClose }) => {
   const confirmDelete = async () => {
     if (!receiptToDelete) return;
     try {
+      try { loadingCtx.show(t('forms.deleting') || 'Suppression...'); } catch (e) {}
       const { safeDeletePayment } = await import('../services/paymentService');
       await safeDeletePayment(receiptToDelete, auth.user);
       toast({ title: t('payments.deleted') || 'Reçu supprimé' });
@@ -401,6 +438,7 @@ const CreateRecouvrementDialog: React.FC<Props> = ({ isOpen, onClose }) => {
     } finally {
       setDeleteDialogOpen(false);
       setReceiptToDelete(null);
+      try { loadingCtx.hide(); } catch (e) {}
     }
   };
 
@@ -416,6 +454,7 @@ const CreateRecouvrementDialog: React.FC<Props> = ({ isOpen, onClose }) => {
       return;
     }
     try {
+      try { loadingCtx.show(t('payments.validating') || 'Validation en cours...'); } catch (e) {}
       setValidatingIds(prev => ({ ...prev, [r.id]: true }));
       const { updatePayment, getPayments } = await import('../services/paymentService');
       const traceEntry = { userId: auth.user?.id || null, userName: auth.user?.fullName || null, action: t('traceability.validated') || 'Déclaration Validée', date: new Date().toISOString() };
@@ -439,6 +478,7 @@ const CreateRecouvrementDialog: React.FC<Props> = ({ isOpen, onClose }) => {
       toast({ title: e?.message || (t('forms.error') || 'Erreur lors de l\'opération'), variant: 'destructive' });
     } finally {
       setValidatingIds(prev => ({ ...prev, [r.id]: false }));
+      try { loadingCtx.hide(); } catch (e) {}
     }
   };
 
@@ -466,6 +506,7 @@ const CreateRecouvrementDialog: React.FC<Props> = ({ isOpen, onClose }) => {
     setAddError(null);
     setAdding(true);
     try {
+      try { loadingCtx.show(t('forms.saving') || 'Enregistrement...'); } catch (e) {}
       let photoUrl = '';
       let uploadPending = false;
       try {
@@ -507,6 +548,7 @@ const CreateRecouvrementDialog: React.FC<Props> = ({ isOpen, onClose }) => {
     } finally {
       setAdding(false);
       setPhotoFile(null);
+      try { loadingCtx.hide(); } catch (e) {}
     }
   };
 
@@ -657,26 +699,7 @@ const CreateRecouvrementDialog: React.FC<Props> = ({ isOpen, onClose }) => {
             </div>
           </div>
 
-          {/* Photo-first upload controls (appear only after draft is saved) */}
-          {draftDeclId ? (
-            <div className="flex items-center gap-2">
-              <label htmlFor="recouv-upload-gallery" className="w-16 h-16 flex items-center justify-center border-2 border-dashed rounded cursor-pointer text-2xl text-muted-foreground bg-muted hover:bg-accent transition" title={t('forms.import') || 'Importer une photo'}>
-                +
-                <input id="recouv-upload-gallery" type="file" accept="image/*" className="hidden" onChange={handleFileInputChange} />
-              </label>
-              <button type="button" onClick={() => setCameraOpen(true)} className="w-16 h-16 flex items-center justify-center border-2 border-dashed rounded text-2xl text-green-600 bg-muted hover:bg-accent transition" title={t('buttons.camera') || 'Prendre une photo'}>
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="white"><rect x="3" y="7" width="18" height="13" rx="2" stroke="white" strokeWidth="2" fill="none" /><circle cx="12" cy="13.5" r="3.5" stroke="white" strokeWidth="2" fill="none" /><rect x="8" y="3" width="8" height="4" rx="1" stroke="white" strokeWidth="2" fill="none" /></svg>
-              </button>
-              {localPreviewUrl && (
-                <div className="ml-2">
-                  <div className="relative w-16 h-16 border rounded overflow-hidden bg-muted">
-                    <img src={localPreviewUrl} alt="preview" className="object-cover w-full h-full" onError={(e:any) => (e.currentTarget.style.display = 'none')} />
-                  </div>
-                </div>
-              )}
-              {addError && <div className="text-red-600 text-sm ml-2">{addError}</div>}
-            </div>
-          ) : null}
+          {/* Photo upload / camera controls are rendered below receipts when a declaration exists or a draft was created (see below) */}
           {payments.length === 0 ? (
             <div className="text-muted-foreground">{t('declarations.noPaymentReceipts') || 'Aucun reçu de paiement'}</div>
           ) : (
@@ -749,6 +772,30 @@ const CreateRecouvrementDialog: React.FC<Props> = ({ isOpen, onClose }) => {
               ))}
             </div>
           )}
+          {/* When a declaration (existing or draft) is present, show import/camera controls below the receipts
+              Desktop: only import
+              Mobile: import + camera */}
+          {(existingDeclId || draftDeclId) && (
+            <div className="flex items-center gap-2 pt-2">
+              <label htmlFor="recouv-upload-gallery" className="w-16 h-16 flex items-center justify-center border-2 border-dashed rounded cursor-pointer text-2xl text-muted-foreground bg-muted hover:bg-accent transition" title={t('forms.import') || 'Importer une photo'}>
+                +
+                <input id="recouv-upload-gallery" type="file" accept="image/*" className="hidden" onChange={handleFileInputChange} />
+              </label>
+              {isMobile && (
+                <button type="button" onClick={() => setCameraOpen(true)} className="w-16 h-16 flex items-center justify-center border-2 border-dashed rounded text-2xl text-green-600 bg-muted hover:bg-accent transition" title={t('buttons.camera') || 'Prendre une photo'}>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="white"><rect x="3" y="7" width="18" height="13" rx="2" stroke="white" strokeWidth="2" fill="none" /><circle cx="12" cy="13.5" r="3.5" stroke="white" strokeWidth="2" fill="none" /><rect x="8" y="3" width="8" height="4" rx="1" stroke="white" strokeWidth="2" fill="none" /></svg>
+                </button>
+              )}
+              {localPreviewUrl && (
+                <div className="ml-2">
+                  <div className="relative w-16 h-16 border rounded overflow-hidden bg-muted">
+                    <img src={localPreviewUrl} alt="preview" className="object-cover w-full h-full" onError={(e:any) => (e.currentTarget.style.display = 'none')} />
+                  </div>
+                </div>
+              )}
+              {addError && <div className="text-red-600 text-sm ml-2">{addError}</div>}
+            </div>
+          )}
           <div>
             <Label htmlFor="recouv-notes">{t('forms.notes') || 'Notes'}</Label>
             <Input id="recouv-notes" value={notes} onChange={(e) => setNotes(e.target.value)} />
@@ -763,6 +810,9 @@ const CreateRecouvrementDialog: React.FC<Props> = ({ isOpen, onClose }) => {
                 value={chauffeurSearch}
                 onChange={(e) => setChauffeurSearch(e.target.value)}
                 onFocus={() => {
+                  // don't open autocomplete when field is readonly (after save / existing decl)
+                  const isChauffeurReadonly = !!(existingDeclId || draftDeclId);
+                  if (isChauffeurReadonly) return;
                   setShowChauffeurAutocomplete(true);
                   // update position immediately
                   if (chauffeurInputRef.current) setDropdownRect(chauffeurInputRef.current.getBoundingClientRect());
@@ -779,9 +829,12 @@ const CreateRecouvrementDialog: React.FC<Props> = ({ isOpen, onClose }) => {
                 }}
                 placeholder={t('chauffeurs.search') || 'Rechercher par nom, prénom, téléphone...'}
                 className="pr-10"
+                // make readonly when a declaration/draft exists
+                readOnly={!!(existingDeclId || draftDeclId)}
+                disabled={!!(existingDeclId || draftDeclId)}
               />
               {/* Render the dropdown in a portal so it can overflow the dialog and adapt to dark mode */}
-              {showChauffeurAutocomplete && filteredChauffeurs.length > 0 && dropdownRect && createPortal(
+              {showChauffeurAutocomplete && filteredChauffeurs.length > 0 && dropdownRect && !(existingDeclId || draftDeclId) && createPortal(
                 <div
                   ref={dropdownRef}
                   style={{ top: dropdownRect.top + dropdownRect.height + window.scrollY, left: dropdownRect.left + window.scrollX, width: dropdownRect.width, position: 'fixed' as const }}
@@ -826,7 +879,17 @@ const CreateRecouvrementDialog: React.FC<Props> = ({ isOpen, onClose }) => {
             <Button variant="outline" onClick={onClose}>{t('forms.cancel') || 'Annuler'}</Button>
             {/* If an existing declaration or a draft exists, show 'Envoyer' to avoid creating duplicates; otherwise show 'Enregistrer' */}
             {!(existingDeclId || draftDeclId) ? (
-              <Button onClick={handleSaveDraft} disabled={savingDraft || (!noProgramReference && !(programNumber && programNumber.length === 4))}>{savingDraft ? (t('forms.saving') || 'Enregistrement...') : (t('forms.save') || 'Enregistrer')}</Button>
+              <Button
+                onClick={handleSaveDraft}
+                disabled={
+                  savingDraft ||
+                  (!noProgramReference && !(programNumber && programNumber.length === 4)) ||
+                  // require a chauffeur to be selected before allowing save
+                  !selectedChauffeur
+                }
+              >
+                {savingDraft ? (t('forms.saving') || 'Enregistrement...') : (t('forms.save') || 'Enregistrer')}
+              </Button>
             ) : (
               (() => {
                 // If the existing declaration has been marked recouvré, offer Annuler (revoke) instead of Envoyer

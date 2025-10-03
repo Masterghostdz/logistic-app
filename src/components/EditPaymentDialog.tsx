@@ -9,8 +9,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { useTranslation } from '../hooks/useTranslation';
 import { useSharedData } from '../contexts/SharedDataContext';
 import { useAuth } from '../contexts/AuthContext';
+import { useLoading } from '../contexts/LoadingContext';
 import SimpleDeclarationNumberForm from './SimpleDeclarationNumberForm';
 import CameraPreviewModal from './CameraPreviewModal';
+import TraceabilitySection from './TraceabilitySection';
 import * as declarationService from '../services/declarationService';
 import { useIsMobile } from '../hooks/use-mobile';
 import { useSettings } from '../contexts/SettingsContext';
@@ -44,6 +46,7 @@ const EditPaymentDialog: React.FC<EditPaymentDialogProps> = ({ receipt, isOpen, 
   const [month, setMonth] = useState<string>('');
   const [programNumber, setProgramNumber] = useState<string>('');
   const [loading, setLoading] = useState(false);
+  const loadingCtx = useLoading();
 
   useEffect(() => {
     if (!receipt) return;
@@ -144,7 +147,8 @@ const EditPaymentDialog: React.FC<EditPaymentDialogProps> = ({ receipt, isOpen, 
   const handleSave = async (e?: React.FormEvent) => {
     e?.preventDefault();
     if (readOnly) return;
-    setLoading(true);
+  setLoading(true);
+  try { loadingCtx.show(t('forms.saving') || 'Enregistrement...'); } catch (e) {}
     try {
       // Find parent declaration by components
       const declaration = declarations.find(d => String(d.programNumber) === String(programNumber) && String(d.year) === String(year) && String(d.month) === String(month));
@@ -235,6 +239,7 @@ const EditPaymentDialog: React.FC<EditPaymentDialogProps> = ({ receipt, isOpen, 
       console.error(err);
     } finally {
       setLoading(false);
+      try { loadingCtx.hide(); } catch (e) {}
     }
   };
 
@@ -355,26 +360,11 @@ const EditPaymentDialog: React.FC<EditPaymentDialogProps> = ({ receipt, isOpen, 
               <Button type="button" variant="outline" onClick={() => { reset(); onClose(); }}>{readOnly ? (t('forms.close') || 'Fermer') : (t('forms.cancel') || 'Annuler')}</Button>
             </div>
             {readOnly && (
-              <div className="mt-4 border-t pt-3">
-                <div className="text-sm font-semibold">{t('forms.traceability') || 'Historique'}</div>
-                <div className="text-xs text-muted-foreground mt-2">
-                  {receipt.traceability && receipt.traceability.length > 0 ? (
-                    <div className="space-y-1 mt-2">
-                      {receipt.traceability.map((tr: any, i: number) => (
-                        <div key={i} className="text-xs text-muted-foreground">
-                          <span className="font-semibold">{tr.userName || tr.userId || t('traceability.unknownUser') || 'Utilisateur inconnu'}</span>
-                          <span className="mx-2">-</span>
-                          <span>{tr.action}</span>
-                          <span className="mx-2">-</span>
-                          <span className="text-xs">{tr.date ? new Date(tr.date).toLocaleDateString() : ''}</span>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-xs text-muted-foreground mt-2">{t('traceability.none') || 'Aucune trace'}</div>
-                  )}
-                </div>
-              </div>
+              <TraceabilitySection
+                traces={receipt.traceability}
+                label={t('declarations.history') || t('forms.traceability') || 'Historique'}
+                emptyText={t('traceability.none') || 'Aucune trace'}
+              />
             )}
           </form>
         </DialogContent>

@@ -1,5 +1,6 @@
 import { db } from './firebaseClient';
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, onSnapshot, setDoc, DocumentReference, DocumentData, getDoc } from 'firebase/firestore';
+import { User } from '../types';
 
 const paymentsCollection = collection(db, 'payments');
 
@@ -14,6 +15,22 @@ export const listenPayments = (callback: (payments: any[]) => void) => {
 export const getPayments = async () => {
   const snapshot = await getDocs(paymentsCollection);
   return snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+};
+
+export const filterPaymentsForUser = (payments: any[], user: User | null) => {
+  if (!Array.isArray(payments)) return [];
+  if (!user) return [];
+  // admins see everything
+  if (user.role === 'admin') return payments;
+  // caissier internal sees everything
+  if (user.role === 'caissier' && user.employeeType === 'interne') return payments;
+  // external users (caissier or chauffeur) see only payments for their company
+  if ((user.role === 'caissier' || user.role === 'chauffeur') && user.employeeType === 'externe') {
+    if (!user.companyId) return [];
+    return (payments || []).filter(p => String(p.companyId || '') === String(user.companyId));
+  }
+  // default: return payments (conservative fallback)
+  return payments;
 };
 
 export const addPayment = async (payment: any): Promise<DocumentReference<DocumentData>> => {
@@ -75,4 +92,5 @@ export default {
   addPayment,
   updatePayment,
   deletePayment
+  , filterPaymentsForUser
 };

@@ -757,23 +757,28 @@ const PlanificateurDashboard = () => {
           {/* ...existing code for tabs and content... */}
             {activeTab === 'dashboard' && (
               <div className="space-y-6">
-                <div className="mb-4">
-                  <h1 className={`text-2xl font-bold text-foreground ${settings.language === 'ar' ? 'text-right' : 'text-left'}`}>{t('planificateur.dashboardTitle')}</h1>
-                </div>
-                {/* Toujours aligné à gauche pour En Attente, Déclarations récentes prend toute la largeur */}
-                <div className="w-full max-w-xl">
-                  <PlanificateurStats
-                    stats={stats}
-                    onEnAttenteClick={handleEnAttenteClick}
-                    onEnRouteClick={() => {
-                      setFilterStatus('en_route');
-                      setActiveTab('declarations');
-                    }}
-                    onEnPanneClick={() => {
-                      setFilterStatus('en_panne');
-                      setActiveTab('declarations');
-                    }}
-                  />
+                <div className="mb-4 w-full max-w-xl">
+                  <Card className="mb-2">
+                    <CardHeader className="pb-2">
+                      <CardTitle className={`text-lg font-semibold text-foreground ${settings.language === 'ar' ? 'text-right' : 'text-left'}`}>{t('planificateur.statsTitle') || 'Résumé des déclarations'}</CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <div className="w-full">
+                        <PlanificateurStats
+                          stats={stats}
+                          onEnAttenteClick={handleEnAttenteClick}
+                          onEnRouteClick={() => {
+                            setFilterStatus('en_route');
+                            setActiveTab('declarations');
+                          }}
+                          onEnPanneClick={() => {
+                            setFilterStatus('en_panne');
+                            setActiveTab('declarations');
+                          }}
+                        />
+                      </div>
+                    </CardContent>
+                  </Card>
                 </div>
                 <Card className="w-full">
                   <CardHeader>

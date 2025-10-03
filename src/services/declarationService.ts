@@ -56,7 +56,12 @@ export const updateDeclaration = async (id, updates, traceEntry = null) => {
   const declarationRef = doc(db, 'declarations', id);
   let toUpdate = { ...updates };
   if (traceEntry) {
-    toUpdate.traceability = [...(updates.traceability || []), traceEntry];
+    // Read current document to preserve existing traceability and append
+    const { getDoc } = await import('firebase/firestore');
+    const declarationSnap = await getDoc(declarationRef);
+    const currentData: any = declarationSnap.exists() ? declarationSnap.data() : {};
+    const prevTrace: any[] = Array.isArray(currentData?.traceability) ? currentData.traceability : [];
+    toUpdate.traceability = [...prevTrace, ...(updates.traceability || []), traceEntry];
   }
   // Prime de route: calcul automatique si statut passe à 'valide' et chauffeur interne
   if (toUpdate.status === 'valide') {

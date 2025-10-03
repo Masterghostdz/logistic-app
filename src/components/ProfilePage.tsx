@@ -33,6 +33,9 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
 
   // Déstructuration avant tout return
   const { user, changePassword } = auth || {};
+  if (typeof process !== 'undefined' && process.env && process.env.NODE_ENV !== 'production') {
+    try { console.log('[ProfilePage] auth.user =', user); } catch (e) {}
+  }
   const { badgeClass, badgeStyle } = useTableZoom();
   const { t } = useTranslation();
 
@@ -273,6 +276,13 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
                 <Badge size="md" variant={user.employeeType === 'interne' ? 'default' : 'secondary'} style={{ ...badgeStyle }} className={badgeClass}>
                   {user.employeeType === 'interne' ? t('chauffeurs.employeeTypeShort.interne') : t('chauffeurs.employeeTypeShort.externe')}
                 </Badge>
+              </div>
+            )}
+            {/* Show company for caissier role beneath employee type */}
+            {user.role === 'caissier' && (
+              <div>
+                <Label className="text-sm font-medium text-gray-500">Société</Label>
+                <div className="text-lg">{user.companyName || <span className="text-gray-400">Société non renseignée</span>}</div>
               </div>
             )}
           </CardContent>

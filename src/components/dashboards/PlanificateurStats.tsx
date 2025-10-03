@@ -21,29 +21,29 @@ const PlanificateurStats = ({ stats, onEnAttenteClick, onEnRouteClick, onEnPanne
   // Harmonized icon and text size
   // Responsive: force same size on mobile and desktop
   const iconSize = "h-3 w-3 min-w-[0.75rem] min-h-[0.75rem]";
-  // Ultra compact pour mobile
-  const titleClass = "text-[8px] sm:text-base font-semibold flex items-center gap-1 leading-tight w-full whitespace-normal break-words";
-  const numberClass = "text-xs sm:text-2xl font-extrabold";
+  // Mobile: use the same readable sizing as Chauffeur dashboard (larger on mobile)
+  const titleClass = "text-xs sm:text-base font-semibold flex items-center gap-1 leading-tight w-full whitespace-normal break-words";
+  const numberClass = "text-xl sm:text-2xl font-extrabold";
   return (
   <div className="grid grid-cols-3 gap-0.5 sm:grid-cols-3 md:grid-cols-3 md:gap-6 justify-center">
       {/* En Route */}
       <Card
-  className="cursor-pointer hover:shadow-md transition-shadow mx-auto w-full max-w-[75px] sm:max-w-[120px] md:max-w-[400px] border-blue-200 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-800 p-0 sm:p-2"
+      className="cursor-pointer hover:shadow-md transition-shadow mx-auto w-full max-w-[75px] sm:max-w-[120px] md:max-w-[400px] border-blue-200 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-800 p-0 sm:p-2"
         onClick={onEnRouteClick}
       >
-  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0 p-0 sm:p-2 sm:pb-2">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0 p-0 sm:p-2 sm:pb-2">
           <CardTitle className={titleClass + " text-blue-700 dark:text-blue-400"}>
             <span className="truncate w-full block max-w-full whitespace-normal break-words">{t('dashboard.onRoad')}</span>
           </CardTitle>
         </CardHeader>
-  <CardContent className="p-0 sm:p-2">
-          <div className={numberClass + " text-blue-700 dark:text-blue-400"}>{stats.enRoute}</div>
-          <p className="text-xs text-muted-foreground">{t('dashboard.clickToFilter')}</p>
-        </CardContent>
+      <CardContent className="p-0 sm:p-2 text-center md:text-center">
+              <div className={numberClass + " text-blue-700 dark:text-blue-400 mx-auto"}>{stats.enRoute}</div>
+              <p className="text-xs text-muted-foreground md:hidden">{t('dashboard.clickToFilter')}</p>
+            </CardContent>
       </Card>
       {/* En Attente de Validation */}
       <Card
-  className="cursor-pointer hover:shadow-md transition-shadow mx-auto w-full max-w-[60px] sm:max-w-[100px] md:max-w-[400px] border-yellow-200 bg-yellow-50 dark:bg-yellow-900/20 dark:border-yellow-800 p-0 sm:p-2"
+      className="cursor-pointer hover:shadow-md transition-shadow mx-auto w-full max-w-[60px] sm:max-w-[100px] md:max-w-[400px] border-yellow-200 bg-yellow-50 dark:bg-yellow-900/20 dark:border-yellow-800 p-0 sm:p-2"
         onClick={onEnAttenteClick}
       >
   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0 p-0 sm:p-2 sm:pb-2">
@@ -51,9 +51,9 @@ const PlanificateurStats = ({ stats, onEnAttenteClick, onEnRouteClick, onEnPanne
             <span className="truncate w-full block max-w-full whitespace-normal break-words">{t('dashboard.pending')}</span>
           </CardTitle>
         </CardHeader>
-  <CardContent className="p-0 sm:p-2">
-          <div className={numberClass + " text-yellow-700 dark:text-yellow-400"}>{stats.enAttente}</div>
-          <p className="text-xs text-muted-foreground">{t('dashboard.clickToFilter')}</p>
+  <CardContent className="p-0 sm:p-2 text-center md:text-center">
+          <div className={numberClass + " text-yellow-700 dark:text-yellow-400 mx-auto"}>{stats.enAttente}</div>
+          <p className="text-xs text-muted-foreground md:hidden">{t('dashboard.clickToFilter')}</p>
         </CardContent>
       </Card>
       {/* En Panne : n'affiche le cadre que s'il y a des pannes */}
@@ -87,9 +87,9 @@ const PlanificateurStats = ({ stats, onEnAttenteClick, onEnRouteClick, onEnPanne
               <span className="truncate w-full block max-w-full whitespace-normal break-words">{t('dashboard.breakdown')}</span>
             </CardTitle>
           </CardHeader>
-            <CardContent className="p-0 sm:p-2">
-            <div className={numberClass + " text-orange-700 dark:text-orange-400"}>{stats.enPanne}</div>
-            <p className="text-xs text-muted-foreground">{t('dashboard.clickToFilter')}</p>
+            <CardContent className="p-0 sm:p-2 text-center md:text-center">
+            <div className={numberClass + " text-orange-700 dark:text-orange-400 mx-auto"}>{stats.enPanne}</div>
+            <p className="text-xs text-muted-foreground md:hidden">{t('dashboard.clickToFilter')}</p>
           </CardContent>
         </motion.div>
       )}

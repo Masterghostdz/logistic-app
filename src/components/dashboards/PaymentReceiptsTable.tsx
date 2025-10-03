@@ -7,14 +7,18 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '.
 import { Edit, Trash2, Check } from 'lucide-react';
 import useTableZoom from '../../hooks/useTableZoom';
 import { PaymentReceipt } from '../../types';
+import { toast } from '../ui/use-toast';
+import { useAuth } from '../../contexts/AuthContext';
 import SearchAndFilter from '../SearchAndFilter';
 
 interface PaymentReceiptsTableProps {
   receipts: PaymentReceipt[];
-  onDeleteReceipt?: (id: string) => void;
+  onDeleteReceipt?: (id: string, skipConfirmation?: boolean) => void;
   onConsultReceipt?: (receipt: PaymentReceipt) => void;
   onEditReceipt?: (receipt: PaymentReceipt) => void;
   onValidateReceipt?: (receipt: PaymentReceipt) => void;
+  // hide the edit button (for external caissier)
+  hideEditButton?: boolean;
   // Optional selection support to mirror DeclarationsTable
   selectedReceiptIds?: string[];
   setSelectedReceiptIds?: (ids: string[]) => void;
@@ -37,6 +41,7 @@ const PaymentReceiptsTable: React.FC<PaymentReceiptsTableProps> = ({
   initialStatusFilter = 'all',
   initialCompanyFilter = 'all',
   mode = 'default'
+  , hideEditButton = false
 }) => {
   const { t, settings } = useTranslation();
 
@@ -55,6 +60,7 @@ const PaymentReceiptsTable: React.FC<PaymentReceiptsTableProps> = ({
     computedIconPx,
     computedFontPx
   } = useTableZoom(fontSize as any);
+  const auth = useAuth();
 
   const [search, setSearch] = useState('');
   // Only allow search by programReference (numéro de programme)
@@ -116,7 +122,7 @@ const PaymentReceiptsTable: React.FC<PaymentReceiptsTableProps> = ({
   return (
     <div className="w-full px-0">
       {/* Barre recherche / filtre (hors Card) */}
-      <div className="mb-3">
+  <div className="mb-2">
         <SearchAndFilter
           searchValue={search}
           onSearchChange={setSearch}
@@ -143,12 +149,12 @@ const PaymentReceiptsTable: React.FC<PaymentReceiptsTableProps> = ({
         <Card className="w-full min-w-full rounded-lg border border-border bg-card">
           <CardContent className="p-0">
             {/* Header inside the framed card: zoom selector on the right */}
-            <div className="flex items-center justify-end p-3 border-b border-border">
+            <div className="flex items-center justify-end px-3 py-2 border-b border-border">
               <label className="mr-2 text-xs text-muted-foreground">{t('common.zoom') || 'Zoom'} :</label>
               <select
                 value={localFontSize}
                 onChange={e => setLocalFontSize(e.target.value as any)}
-                className="border rounded px-2 py-1 text-xs bg-background"
+                className="border rounded px-2 py-0.5 text-xs bg-background"
                 title={t('common.zoom') || 'Zoom'}
               >
                 <option value="100">100%</option>
@@ -180,7 +186,7 @@ const PaymentReceiptsTable: React.FC<PaymentReceiptsTableProps> = ({
 
                   <TableHead data-rtl={settings.language === 'ar'} className={`${colWidthPhoto} ${cellPaddingClass} whitespace-nowrap`} style={fontSizeStyle}>{t('forms.photo') || 'Photo'}</TableHead>
                   <TableHead data-rtl={settings.language === 'ar'} className={`${colWidthRef} ${cellPaddingClass} whitespace-nowrap`} style={fontSizeStyle}>{t('declarations.programNumber') || 'Référence'}</TableHead>
-                  <TableHead data-rtl={settings.language === 'ar'} className={`${colWidthCompany} ${cellPaddingClass} whitespace-nowrap`} style={fontSizeStyle}>{t('companies.name') || 'Société'}</TableHead>
+                  <TableHead data-rtl={settings.language === 'ar'} className={`${colWidthCompany} ${cellPaddingClass} whitespace-nowrap`} style={fontSizeStyle}>{'Société'}</TableHead>
                   <TableHead data-rtl={settings.language === 'ar'} className={`${colWidthMontant} ${cellPaddingClass} whitespace-nowrap`} style={fontSizeStyle}>{t('financial.amount') || t('forms.amount') || 'Montant'}</TableHead>
                   <TableHead data-rtl={settings.language === 'ar'} className={`${colWidthDate} ${cellPaddingClass} whitespace-nowrap`} style={fontSizeStyle}>{t('declarations.createdDate') || 'Date de création'}</TableHead>
                   <TableHead data-rtl={settings.language === 'ar'} className={`${colWidthStatus} ${cellPaddingClass} whitespace-nowrap`} style={fontSizeStyle}>{t('declarations.status') || 'État'}</TableHead>
@@ -215,7 +221,7 @@ const PaymentReceiptsTable: React.FC<PaymentReceiptsTableProps> = ({
 
                       <TableCell className={`${colWidthPhoto} ${cellPaddingClass}`} style={fontSizeStyle}>
                         {/* Framed photo: border + fixed size scaled with zoom for consistent look */}
-                        <div className="border rounded overflow-hidden">
+                        <div className="border border-border rounded overflow-hidden">
                           <button type="button" onClick={() => onConsultReceipt && onConsultReceipt(receipt)} className="block p-0 m-0">
                             <img
                               src={receipt.photoUrl}
@@ -253,37 +259,88 @@ const PaymentReceiptsTable: React.FC<PaymentReceiptsTableProps> = ({
 
                       <TableCell className={`${colWidthActions} ${cellPaddingClass} whitespace-nowrap`} style={fontSizeStyle}>
                         <div className="flex gap-1 whitespace-nowrap" style={fontSizeStyle}>
-                          {/* If payment is validated, no actions should be shown */}
-                          {!(receipt.status && ['validee', 'validated', 'valid'].includes(String(receipt.status).toLowerCase())) && (
-                            <>
-                              {onEditReceipt ? (
-                                <Button size="sm" variant="outline" className={`flex items-center justify-center rounded-md border border-border`} style={{ width: computedRowPx, height: computedRowPx }} onClick={() => onEditReceipt(receipt)}>
-                                  <Edit style={{ width: computedIconPx, height: computedIconPx }} />
-                                </Button>
-                              ) : onConsultReceipt && (
-                                <Button size="sm" variant="outline" className={`flex items-center justify-center rounded-md border border-border`} style={{ width: computedRowPx, height: computedRowPx }} onClick={() => onConsultReceipt(receipt)}>
-                                  <Edit style={{ width: computedIconPx, height: computedIconPx }} />
-                                </Button>
-                              )}
-                              {onDeleteReceipt && (
-                                <Button size="sm" variant="outline" className={`flex items-center justify-center rounded-md border border-border text-red-600 hover:text-red-700`} style={{ width: computedRowPx, height: computedRowPx }} onClick={() => onDeleteReceipt(receipt.id)}>
-                                  <Trash2 style={{ width: computedIconPx, height: computedIconPx }} />
-                                </Button>
-                              )}
-                              {/* Validate button for cashier flows (parent passes handler) */}
-                              {onValidateReceipt && (
+                          {/* Determine actions depending on status (including new 'annule') */}
+                          {(() => {
+                            const st = String(receipt.status || '').toLowerCase();
+                            const isPending = ['brouillon', 'pending'].includes(st);
+                            const isValidated = ['validee', 'validated', 'valide', 'valid'].includes(st);
+                            const isCancelled = ['annule', 'annulé', 'cancelled'].includes(st);
+                            // Only internal cashiers may perform payment annulment (undo)
+                            const isInternalCaissier = !!(auth.user && auth.user.role === 'caissier' && auth.user.employeeType === 'interne');
+                            // If validated, show Undo (Annuler) button so caissier can revert to brouillon
+                            if (isValidated) {
+                              // If user is not internal cashier, hide undo button
+                              if (!isInternalCaissier) return null;
+
+                              return (
                                 <Button
+                                  key="undo-validated"
+                                  title={t('payments.undo') || 'Annuler'}
                                   size="sm"
-                                  variant="outline"
-                                  className={`flex items-center justify-center rounded-md border border-border text-green-600 hover:text-green-700`}
+                                  variant="ghost"
+                                  className={`flex items-center justify-center rounded-md text-yellow-600 hover:bg-yellow-50 dark:hover:bg-yellow-900`}
                                   style={{ width: computedRowPx, height: computedRowPx }}
-                                  onClick={() => onValidateReceipt(receipt)}
+                                  onClick={async () => {
+                                    try {
+                                      const { updatePayment, getPayments } = await import('../../services/paymentService');
+                                      const traceEntry = { userId: auth.user?.id || null, userName: auth.user?.fullName || null, action: t('traceability.revokedValidation') || 'Annulation validation', date: new Date().toISOString() };
+                                      // Try to append traceability when possible
+                                      try {
+                                        const current: any = (await getPayments()).find((p: any) => p.id === receipt.id) || {};
+                                        const newTrace = [...(current.traceability || []), traceEntry];
+                                        await updatePayment(receipt.id, { status: 'brouillon', traceability: newTrace });
+                                      } catch (e) {
+                                        await updatePayment(receipt.id, { status: 'brouillon' });
+                                      }
+                                      toast({ title: t('payments.undone') || 'Statut annulé' });
+                                    } catch (e) {
+                                      console.error('Undo failed', e);
+                                      toast({ title: t('forms.error') || 'Erreur lors de l\'opération', variant: 'destructive' });
+                                    }
+                                  }}
                                 >
-                                  <Check style={{ width: computedIconPx, height: computedIconPx }} />
+                                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" style={{ width: computedIconPx, height: computedIconPx }}>
+                                    <path d="M21 12a9 9 0 10-9 9" />
+                                    <path d="M21 3v9h-9" />
+                                  </svg>
                                 </Button>
-                              )}
-                            </>
-                          )}
+                              );
+                            }
+                            return (
+                              <>
+                                {/* Edit allowed only when not cancelled and when edit isn't hidden */}
+                                {!isCancelled && !hideEditButton && (onEditReceipt ? (
+                                  <Button size="sm" variant="outline" className={`flex items-center justify-center rounded-md border border-border`} style={{ width: computedRowPx, height: computedRowPx }} onClick={() => onEditReceipt(receipt)}>
+                                    <Edit style={{ width: computedIconPx, height: computedIconPx }} />
+                                  </Button>
+                                ) : onConsultReceipt && (
+                                  <Button size="sm" variant="ghost" className={`flex items-center justify-center rounded-md`} style={{ width: computedRowPx, height: computedRowPx }} onClick={() => onConsultReceipt(receipt)}>
+                                    <Edit style={{ width: computedIconPx, height: computedIconPx }} />
+                                  </Button>
+                                ))}
+
+                                {/* Delete: allowed when parent provided, even for cancelled or pending (service will refuse validated) */}
+                                {onDeleteReceipt && (
+                                  <Button size="sm" variant="ghost" className={`flex items-center justify-center rounded-md text-red-600 hover:text-red-700`} style={{ width: computedRowPx, height: computedRowPx }} onClick={() => onDeleteReceipt(receipt.id)}>
+                                    <Trash2 style={{ width: computedIconPx, height: computedIconPx }} />
+                                  </Button>
+                                )}
+
+                                {/* Validate: allowed when pending (brouillon/pending) and NOT when cancelled */}
+                                {onValidateReceipt && isPending && !isCancelled && (
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className={`flex items-center justify-center rounded-md text-green-600 hover:text-green-700`}
+                                    style={{ width: computedRowPx, height: computedRowPx }}
+                                    onClick={() => onValidateReceipt(receipt)}
+                                  >
+                                    <Check style={{ width: computedIconPx, height: computedIconPx }} />
+                                  </Button>
+                                )}
+                              </>
+                            );
+                          })()}
                         </div>
                       </TableCell>
                     </TableRow>

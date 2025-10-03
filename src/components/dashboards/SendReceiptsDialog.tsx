@@ -19,7 +19,7 @@ interface SendReceiptsDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onValidateReceipt?: (receipt: PaymentReceipt) => void;
-  onDeleteReceipt?: (id: string) => void;
+  onDeleteReceipt?: (id: string, skipConfirmation?: boolean) => void;
   declarationReference?: string;
   declarationId?: string;
   // optional parent handler to open the preview in the global app frame
@@ -245,15 +245,16 @@ const SendReceiptsDialog: React.FC<SendReceiptsDialogProps> = ({ receipts, isOpe
                       const st = String(r.status || '').toLowerCase();
                       const isPending = ['brouillon', 'pending'].includes(st);
                       const isValidated = ['validee', 'validated', 'valide', 'valid'].includes(st);
+                      const isCancelled = ['annule', 'annulé', 'cancelled'].includes(st);
                       return (
                         <>
                           {isPending && (
                             <>
                               {onDeleteReceipt && (
                                 <>
-                                  <button title={t('payments.confirmDeleteReceipt') || 'Confirmez-vous la suppression de ce reçu ?'} onClick={() => { setReceiptToDelete(r.id); setDeleteDialogOpen(true); }} className="p-2 rounded border border-border text-red-600 hover:bg-red-50 dark:hover:bg-red-900">
-                                  <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M1 7h22M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
-                                  </button>
+                                  <Button size="sm" variant="ghost" className="text-red-600" title={t('payments.confirmDeleteReceipt') || 'Confirmez-vous la suppression de ce reçu ?'} onClick={() => { setReceiptToDelete(r.id); setDeleteDialogOpen(true); }}>
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M1 7h22M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                                  </Button>
                                 </>
                               )}
                               {
@@ -379,7 +380,7 @@ const SendReceiptsDialog: React.FC<SendReceiptsDialogProps> = ({ receipts, isOpe
   <CameraPreviewModal isOpen={cameraOpen} onPhotoTaken={handlePhotoTaken} onClose={() => setCameraOpen(false)} />
         {/* Delete confirmation dialog (in-app) */}
         <AlertDialog open={deleteDialogOpen} onOpenChange={(open) => { setDeleteDialogOpen(open); if (!open) setReceiptToDelete(null); }}>
-          <AlertDialogContent>
+                <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>{t('payments.confirmDeleteTitle') || 'Supprimer le reçu'}</AlertDialogTitle>
               <AlertDialogDescription>{t('payments.confirmDeleteReceipt') || 'Confirmez-vous la suppression de ce reçu ?'}</AlertDialogDescription>
@@ -389,7 +390,8 @@ const SendReceiptsDialog: React.FC<SendReceiptsDialogProps> = ({ receipts, isOpe
               <AlertDialogAction onClick={async () => {
                 if (receiptToDelete && onDeleteReceipt) {
                   try {
-                    await onDeleteReceipt(receiptToDelete);
+                    // pass skipConfirmation=true so parent doesn't re-open confirmation
+                    await onDeleteReceipt(receiptToDelete, true as any);
                   } catch (e) {
                     console.error('Delete receipt failed', e);
                     toast({ title: t('forms.error') || 'Erreur lors de la suppression', variant: 'destructive' });

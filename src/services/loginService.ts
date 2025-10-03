@@ -35,6 +35,9 @@ export const loginWithUsername = async (username, password) => {
       avatar: userData.avatar,
       vehicleType: userData.vehicleType,
       employeeType: userData.employeeType
+        ,
+        companyId: userData.companyId || undefined,
+        companyName: userData.companyName || undefined
     };
   }
   return null;

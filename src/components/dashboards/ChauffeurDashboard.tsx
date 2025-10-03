@@ -656,11 +656,14 @@ const ChauffeurDashboard = () => {
           <ChauffeurSidebar activeTab={activeTab} onTabChange={(tab) => setActiveTab(tab as 'dashboard' | 'tracage')} />
           <main className="flex-1">
             {activeTab === 'dashboard' && (
-              <div className="max-w-[430px] mx-auto w-full p-4">
-                <h1 className="text-2xl font-bold text-foreground mb-6">{t('dashboard.chauffeurTitle')}</h1>
-                {/* Résumé au-dessus du formulaire en mobile */}
-                <Card className="bg-card border-border w-full mb-4">
-                  <CardHeader className="pb-3">
+              <div className="max-w-[430px] mx-auto w-full p-2 pt-1">
+                <Card className="mb-2">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-2xl font-bold text-foreground">{t('dashboard.chauffeurTitle')}</CardTitle>
+                  </CardHeader>
+                </Card>
+                <Card className="bg-card border-border w-full mb-3">
+                  <CardHeader className="pb-2">
                     <CardTitle className="flex items-center gap-2 text-card-foreground text-lg">
                       <Clock className="h-4 w-4" />
                       {t('dashboard.myDeclarationsSummary')}

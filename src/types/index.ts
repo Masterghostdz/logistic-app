@@ -59,7 +59,7 @@ export interface PaymentReceipt {
   chauffeurId: string;
   chauffeurName: string;
   montant?: number;
-  status: 'pending' | 'brouillon' | 'validee' | 'valide' | 'validated';
+  status: 'pending' | 'brouillon' | 'validee' | 'valide' | 'validated' | 'annule';
   uploadPending?: boolean;
   declarationId?: string | null;
   createdBy?: string | null;

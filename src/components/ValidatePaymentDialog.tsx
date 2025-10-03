@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { useTranslation } from '../hooks/useTranslation';
 import { useSharedData } from '../contexts/SharedDataContext';
 import { useAuth } from '../contexts/AuthContext';
+import { useLoading } from '../contexts/LoadingContext';
 
 interface ValidatePaymentDialogProps {
   receipt: any | null;
@@ -23,6 +24,7 @@ const ValidatePaymentDialog: React.FC<ValidatePaymentDialogProps> = ({ receipt, 
   const [montant, setMontant] = useState<string>('');
   const [companyId, setCompanyId] = useState<string>('');
   const [loading, setLoading] = useState(false);
+  const loadingCtx = useLoading();
 
   useEffect(() => {
     if (!receipt) return;
@@ -41,6 +43,7 @@ const ValidatePaymentDialog: React.FC<ValidatePaymentDialogProps> = ({ receipt, 
       return;
     }
     setLoading(true);
+    try { loadingCtx.show(t('payments.validating') || 'Validation en cours...'); } catch (e) {}
     try {
       const { updatePayment, getPayments } = await import('../services/paymentService');
       const traceEntry = { userId: auth.user?.id || null, userName: auth.user?.fullName || null, action: t('traceability.validated') || 'Déclaration Validée', date: new Date().toISOString() };
@@ -66,6 +69,7 @@ const ValidatePaymentDialog: React.FC<ValidatePaymentDialogProps> = ({ receipt, 
       alert(e?.message || (t('forms.deleteFailed') || 'Erreur'));
     } finally {
       setLoading(false);
+      try { loadingCtx.hide(); } catch (e) {}
     }
   };
 

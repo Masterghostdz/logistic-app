@@ -3,6 +3,8 @@ import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import ErrorBoundary from './components/ErrorBoundary';
 import { mobileService } from './services/mobileService';
+import { LoadingProvider } from './contexts/LoadingContext';
+import LoadingOverlay from './components/LoadingOverlay';
 import './index.css'
 
 // Ensure proper RTL support
@@ -18,7 +20,10 @@ mobileService.getDeviceInfo().then(info => {
 });
 
 createRoot(document.getElementById("root")!).render(
-		<ErrorBoundary>
-				<App />
-		</ErrorBoundary>
+	<ErrorBoundary>
+		<LoadingProvider>
+			<App />
+			<LoadingOverlay />
+		</LoadingProvider>
+	</ErrorBoundary>
 );

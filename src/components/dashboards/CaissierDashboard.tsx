@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import Header from '../Header';
+import ProfilePage from '../ProfilePage';
 import { Badge, onlineBadgeClass, onlineBadgeInline } from '../ui/badge';
 import CaissierSidebar from './CaissierSidebar';
 import useTableZoom from '../../hooks/useTableZoom';
@@ -17,6 +18,8 @@ import EditPaymentDialog from '../EditPaymentDialog';
 import ValidatePaymentDialog from '../ValidatePaymentDialog';
 import EditDeclarationDialog from '../EditDeclarationDialog';
 import { Button } from '../ui/button';
+import { Card, CardHeader, CardTitle, CardContent } from '../ui/card';
+import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogFooter, AlertDialogTitle, AlertDialogDescription, AlertDialogAction, AlertDialogCancel } from '../ui/alert-dialog';
 import SearchAndFilter from '../SearchAndFilter';
 import { getTranslation } from '../../lib/translations';
 import { Plus } from 'lucide-react';
@@ -49,16 +52,26 @@ const CaissierDashboard = () => {
   React.useEffect(() => {
     let unsub: (() => void) | undefined;
     (async () => {
-      const { listenPayments } = await import('../../services/paymentService');
+      const { listenPayments, filterPaymentsForUser } = await import('../../services/paymentService');
       unsub = listenPayments((items: any[]) => {
-        // Ensure items are of PaymentReceipt shape
-        setPayments(items as PaymentReceipt[]);
+        // filter payments according to current user (external caissier sees only company payments)
+        const visible = filterPaymentsForUser(items || [], auth.user);
+        setPayments(visible as PaymentReceipt[]);
       });
     })();
     return () => { if (unsub) unsub(); };
   }, []);
+  const auth = useAuth();
+  const isExternalCaissier = !!(auth.user && auth.user.role === 'caissier' && auth.user.employeeType === 'externe');
   // Prefer payments listener as the source of truth; fallback to embedded receipts from declarations
-  const receipts = (payments && payments.length > 0) ? payments : declarations.flatMap(d => d.paymentReceipts || []);
+  // receipts should reflect payments visible to the user; if listener has data use it,
+  // otherwise fallback to embedded receipts on declarations but filtered by company when needed
+  const receiptsFromDeclsAll = declarations.flatMap(d => d.paymentReceipts || []);
+  // If user is external cashier/chauffeur, restrict embedded receipts to their company
+  const receiptsFromDecls = (auth.user && (auth.user.role === 'caissier' || auth.user.role === 'chauffeur') && auth.user.employeeType === 'externe')
+    ? (receiptsFromDeclsAll || []).filter(r => String(r.companyId || '') === String(auth.user?.companyId))
+    : receiptsFromDeclsAll;
+  const receipts = (payments && payments.length > 0) ? payments : receiptsFromDecls;
 
   // Dashboard stats for cashier (robust checks)
   // Recouvrements: count declarations that have receipts but are NOT marked recouvré
@@ -91,6 +104,8 @@ const CaissierDashboard = () => {
   const [editReceipt, setEditReceipt] = React.useState<PaymentReceipt | null>(null);
   const [validateReceipt, setValidateReceipt] = React.useState<PaymentReceipt | null>(null);
   const [previewPhotoUrl, setPreviewPhotoUrl] = React.useState<string | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
+  const [receiptToDelete, setReceiptToDelete] = React.useState<string | null>(null);
   // State to consult a declaration (read-only dialog)
   const [consultDeclaration, setConsultDeclaration] = React.useState<any | null>(null);
   const [sendReceiptsFor, setSendReceiptsFor] = React.useState<any | null>(null);
@@ -98,9 +113,14 @@ const CaissierDashboard = () => {
   // Local search/filter state for the recouvrement declarations view (matches Chauffeur layout)
   const [searchTerm, setSearchTerm] = React.useState('');
   const [statusFilter, setStatusFilter] = React.useState('all');
-  const auth = useAuth();
 
-  const handleDeleteReceipt = async (id: string) => {
+  const handleDeleteReceipt = async (id: string, skipConfirmation = false) => {
+    // If caller already confirmed (skipConfirmation), perform deletion. Otherwise open confirmation dialog.
+    if (!skipConfirmation) {
+      setReceiptToDelete(id);
+      setDeleteDialogOpen(true);
+      return;
+    }
     // find receipt
     const receipt = payments.find(p => p.id === id);
     if (!receipt) return;
@@ -116,29 +136,25 @@ const CaissierDashboard = () => {
     try {
       const { safeDeletePayment } = await import('../../services/paymentService');
       await safeDeletePayment(id, auth.user);
-    } catch (e) {
-      alert(e.message || t('forms.deleteFailed') || 'Suppression échouée');
+    } catch (e: any) {
+      alert((e && e.message) || t('forms.deleteFailed') || 'Suppression échouée');
     }
   };
 
   // Gestion du profil (mobile et desktop)
   if (activeTab === 'profile') {
     if (isMobile) {
-      // En mobile, pas de Header global, profil centré
       return (
         <div className="max-w-[430px] mx-auto bg-background min-h-screen flex flex-col">
-          <div className="p-6">
-            <div className="text-center text-muted-foreground">{t('caissier.profileTitle')}</div>
-          </div>
+          <ProfilePage onBack={() => setActiveTab('dashboard')} />
         </div>
       );
     }
-    // Desktop : Header global + contenu profil centré
     return (
       <div>
         <Header onProfileClick={() => setActiveTab('dashboard')} />
         <div className="p-6">
-          <div className="text-center text-muted-foreground">{t('caissier.profileTitle')}</div>
+          <ProfilePage onBack={() => setActiveTab('dashboard')} />
         </div>
       </div>
     );
@@ -181,17 +197,52 @@ const CaissierDashboard = () => {
           {/* Affichage façade selon la tab sélectionnée */}
           {activeTab === 'dashboard' && (
             <div className="space-y-6">
-              <div className="mb-4">
-                <h1 className="text-2xl font-bold">{t('caissier.dashboardTitle') || 'Tableau de bord - Caissier'}</h1>
-              </div>
-              {/* Constrain stats width like Planificateur to avoid occupying too much horizontal space */}
-              <div className="w-full max-w-xl">
-                <CaissierStats
-                  stats={{ recouvrements: recouvrementsCount, paymentsPending: paymentsNotValidatedCount, paymentsNoCompany: paymentsNoCompanyCount }}
-                  onRecouvrementsClick={() => { setStatusFilter('non_recouvre'); setPaymentInitialFilter('all'); setPaymentInitialCompanyFilter('all'); setActiveTab('recouvrement'); }}
-                  onPaymentsPendingClick={() => { setPaymentInitialFilter('brouillon'); setPaymentInitialCompanyFilter('all'); setActiveTab('paiement'); }}
-                  onPaymentsNoCompanyClick={() => { setPaymentInitialFilter('all'); setPaymentInitialCompanyFilter('no-company'); setActiveTab('paiement'); }}
-                />
+              {/* Section title outside Cards, translated */}
+              <div className="w-full p-2 pt-1">
+                <h2 className="text-2xl font-bold mb-2">{t('caissier.dashboardTitle') || 'Tableau de bord - Caissier'}</h2>
+                <div className={isMobile ? "flex flex-col gap-2" : "flex flex-row gap-4"}>
+                  {/* Card 1: Recouvrements en attente (sized like Planificateur summary) */}
+                  <div className="mb-4 w-full max-w-xl">
+                    <Card className="mb-2">
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-lg font-semibold">{t('caissier.recouvrementsTitle') || 'Recouvrements en attente'}</CardTitle>
+                      </CardHeader>
+                      <CardContent className="pt-0">
+                        <CaissierStats
+                          stats={{ recouvrements: recouvrementsCount, paymentsPending: 0, paymentsNoCompany: 0 }}
+                          showRecouvrements={true}
+                          showPaymentsPending={false}
+                          showPaymentsNoCompany={false}
+                          statusLabels={{ recouvrements: t('dashboard.pending') || 'en attente' }}
+                          onRecouvrementsClick={() => { setStatusFilter('non_recouvre'); setPaymentInitialFilter('all'); setPaymentInitialCompanyFilter('all'); setActiveTab('recouvrement'); }}
+                          onPaymentsPendingClick={() => {}}
+                          onPaymentsNoCompanyClick={() => {}}
+                        />
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  {/* Card 2: Paiements non validés & Paiements sans société (sized like Planificateur summary) */}
+                  <div className="mb-4 w-full max-w-xl">
+                    <Card className="mb-2">
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-lg font-semibold">{t('caissier.paymentsStatsTitle') || 'Résumé des paiements'}</CardTitle>
+                      </CardHeader>
+                      <CardContent className="pt-0">
+                        <CaissierStats
+                          stats={{ recouvrements: 0, paymentsPending: paymentsNotValidatedCount, paymentsNoCompany: paymentsNoCompanyCount }}
+                          showRecouvrements={false}
+                          showPaymentsPending={true}
+                          showPaymentsNoCompany={true}
+                          statusLabels={{ paymentsPending: t('dashboard.pending') || 'en attente', paymentsNoCompany: t('caissier.paymentsNoCompanyTitle') || 'sans société' }}
+                          onRecouvrementsClick={() => {}}
+                          onPaymentsPendingClick={() => { setPaymentInitialFilter('brouillon'); setPaymentInitialCompanyFilter('all'); setActiveTab('paiement'); }}
+                          onPaymentsNoCompanyClick={() => { setPaymentInitialFilter('all'); setPaymentInitialCompanyFilter('no-company'); setActiveTab('paiement'); }}
+                        />
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
               </div>
             </div>
           )}
@@ -200,10 +251,13 @@ const CaissierDashboard = () => {
               <div className="flex items-center justify-between mb-2">
                 <h2 className="text-2xl font-bold">{t('caissier.recouvrementTitle') || 'Gestion des Recouvrements'}</h2>
                 <div className="flex items-center gap-2">
-                  <Button onClick={() => setShowCreateRecouvrement(true)} className="flex items-center gap-2">
-                    <Plus className="h-4 w-4" />
-                    {addLabel}
-                  </Button>
+                  {/* External cashiers: simply hide the create button */}
+                  {!isExternalCaissier && (
+                    <Button onClick={() => setShowCreateRecouvrement(true)} className="flex items-center gap-2">
+                      <Plus className="h-4 w-4" />
+                      {addLabel}
+                    </Button>
+                  )}
                 </div>
               </div>
               <div className="space-y-4">
@@ -228,7 +282,7 @@ const CaissierDashboard = () => {
                     { value: 'chauffeurName', label: t('declarations.chauffeurName') }
                   ]}
                 />
-                {(() => {
+                  {(() => {
                   const declIdsWithPayments = new Set<string>();
                   try {
                     for (const p of payments) {
@@ -238,8 +292,18 @@ const CaissierDashboard = () => {
                     // ignore
                   }
                   const receiptsFiltered = (declarations || []).filter(d => {
+                    // If we have live payments for declarations, use that
                     if (declIdsWithPayments.has(d.id)) return true;
-                    if (Array.isArray((d as any).paymentReceipts) && (d as any).paymentReceipts.length > 0) return true;
+                    // Otherwise, consider embedded paymentReceipts on the declaration
+                    if (Array.isArray((d as any).paymentReceipts) && (d as any).paymentReceipts.length > 0) {
+                      // If user is external, only include declaration when at least one embedded receipt
+                      // belongs to the user's company
+                      if (auth.user && (auth.user.role === 'caissier' || auth.user.role === 'chauffeur') && auth.user.employeeType === 'externe') {
+                        const hasMatch = (d as any).paymentReceipts.some((pr: any) => String(pr.companyId || '') === String(auth.user?.companyId));
+                        return !!hasMatch;
+                      }
+                      return true;
+                    }
                     return false;
                   });
 
@@ -266,19 +330,22 @@ const CaissierDashboard = () => {
                     </div>
                   ) : (
                     <div className="w-full overflow-x-auto">
-                      <div className="rounded-md border border-border bg-card min-w-full">
-                              <DeclarationsTable
-                              declarations={finalFiltered}
-                              onValidateDeclaration={(id) => console.log('validate declaration', id)}
-                              onRejectDeclaration={(id) => console.log('reject declaration', id)}
-                              onConsultDeclaration={(declaration) => setConsultDeclaration(declaration)}
-                              onSendReceipts={(declaration) => setSendReceiptsFor(declaration)}
-                              mobile={isMobile}
-                              fontSize={isMobile ? '60' : localFontSize}
-                               // pass payments so the table can compute recouvrement totals
-                               payments={payments}
-                            />
-                      </div>
+          <div className="rounded-md border border-border bg-card min-w-full">
+          <DeclarationsTable
+          declarations={finalFiltered}
+          onValidateDeclaration={(id) => console.log('validate declaration', id)}
+          onRejectDeclaration={(id) => console.log('reject declaration', id)}
+          onConsultDeclaration={(declaration) => setConsultDeclaration(declaration)}
+          onSendReceipts={(declaration) => setSendReceiptsFor(declaration)}
+          mobile={isMobile}
+          fontSize={isMobile ? '60' : localFontSize}
+           // pass payments so the table can compute recouvrement totals
+           payments={payments}
+           hideStatusColumn={isExternalCaissier}
+           hideValidatedColumn={isExternalCaissier}
+           hideSendButton={isExternalCaissier}
+            />
+          </div>
                     </div>
                   );
                 })()}
@@ -287,24 +354,27 @@ const CaissierDashboard = () => {
           )}
           {/* Envoyer dialog: choose receipts related to a declaration and send */}
           {/* We'll show a SendReceiptsDialog when sending */}
-          <SendReceiptsDialog
-            receipts={(() => {
-              if (!sendReceiptsFor) return [];
-              // prefer global payments listener
-              const declId = sendReceiptsFor.id;
-              const related = payments.filter(p => String(p.declarationId || '') === String(declId) || (p.programReference && sendReceiptsFor && (`DCP/${sendReceiptsFor.year}/${sendReceiptsFor.month}/${sendReceiptsFor.programNumber}`) === p.programReference));
-              if (related.length > 0) return related;
-              // fallback to embedded receipts in declaration
-              return Array.isArray((sendReceiptsFor as any).paymentReceipts) ? (sendReceiptsFor as any).paymentReceipts : [];
-            })()}
-            isOpen={!!sendReceiptsFor}
-            declarationReference={sendReceiptsFor ? (sendReceiptsFor.programReference || sendReceiptsFor.number) : undefined}
-            declarationId={sendReceiptsFor ? sendReceiptsFor.id : undefined}
-            onClose={() => setSendReceiptsFor(null)}
-            onDeleteReceipt={(id) => handleDeleteReceipt(id)}
-            onValidateReceipt={(r) => setValidateReceipt(r)}
-            onOpenPreview={(url) => setPreviewPhotoUrl(url)}
-          />
+          {/* SendReceiptsDialog: only open for internal cashiers */}
+          {!isExternalCaissier && (
+            <SendReceiptsDialog
+              receipts={(() => {
+                if (!sendReceiptsFor) return [];
+                // prefer global payments listener
+                const declId = sendReceiptsFor.id;
+                const related = payments.filter(p => String(p.declarationId || '') === String(declId) || (p.programReference && sendReceiptsFor && (`DCP/${sendReceiptsFor.year}/${sendReceiptsFor.month}/${sendReceiptsFor.programNumber}`) === p.programReference));
+                if (related.length > 0) return related;
+                // fallback to embedded receipts in declaration
+                return Array.isArray((sendReceiptsFor as any).paymentReceipts) ? (sendReceiptsFor as any).paymentReceipts : [];
+              })()}
+              isOpen={!!sendReceiptsFor}
+              declarationReference={sendReceiptsFor ? (sendReceiptsFor.programReference || sendReceiptsFor.number) : undefined}
+              declarationId={sendReceiptsFor ? sendReceiptsFor.id : undefined}
+              onClose={() => setSendReceiptsFor(null)}
+              onDeleteReceipt={(id) => handleDeleteReceipt(id)}
+              onValidateReceipt={(r) => setValidateReceipt(r)}
+              onOpenPreview={(url) => setPreviewPhotoUrl(url)}
+            />
+          )}
           <CreateRecouvrementDialog isOpen={showCreateRecouvrement} onClose={() => setShowCreateRecouvrement(false)} />
           {/* Declaration consult dialog (read-only) */}
           <EditDeclarationDialog declaration={consultDeclaration} isOpen={!!consultDeclaration} onClose={() => setConsultDeclaration(null)} readOnly={true} />
@@ -323,20 +393,25 @@ const CaissierDashboard = () => {
                 <h2 className="text-2xl font-bold">{t('caissier.paymentsTitle') || 'Gestion des paiements'}</h2>
                 {/* placeholder for actions (export, add, etc.) if needed in future */}
                 <div className="flex items-center gap-2">
-                    <Button onClick={() => setShowCreatePayment(true)} className="flex items-center gap-2">
-                      <Plus className="h-4 w-4" />
-                      {t('planificateur.add')}
-                    </Button>
+                    {/* External cashiers cannot add payments */}
+                    {!isExternalCaissier ? (
+                      <Button onClick={() => setShowCreatePayment(true)} className="flex items-center gap-2">
+                        <Plus className="h-4 w-4" />
+                        {t('planificateur.add')}
+                      </Button>
+                    ) : null}
                 </div>
               </div>
               <div className={(isMobile ? 'overflow-x-auto ' : '') + 'mb-2'}>
                 <PaymentReceiptsTable
                   receipts={receipts}
                   onConsultReceipt={(r) => setConsultReceipt(r)}
+                  {...( !isExternalCaissier ? { onDeleteReceipt: handleDeleteReceipt, onValidateReceipt: (r) => setValidateReceipt(r) } : {} )}
                   initialStatusFilter={paymentInitialFilter}
                   initialCompanyFilter={paymentInitialCompanyFilter}
                   fontSize={isMobile ? '60' : localFontSize}
                   mobile={isMobile}
+                  hideEditButton={isExternalCaissier}
                 />
               </div>
               <EditPaymentDialog receipt={consultReceipt} isOpen={!!consultReceipt} onClose={() => setConsultReceipt(null)} readOnly={true} />
@@ -346,6 +421,29 @@ const CaissierDashboard = () => {
                 setValidateReceipt(null);
               }} />
               <CreatePaymentDialog isOpen={showCreatePayment} onClose={() => setShowCreatePayment(false)} />
+              {/* Delete confirmation dialog (for payments) */}
+              <AlertDialog open={deleteDialogOpen} onOpenChange={(open) => { setDeleteDialogOpen(open); if (!open) setReceiptToDelete(null); }}>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>{t('payments.confirmDeleteTitle') || 'Supprimer le reçu'}</AlertDialogTitle>
+                    <AlertDialogDescription>{t('payments.confirmDeleteReceipt') || 'Confirmez-vous la suppression de ce reçu ?'}</AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel className="border-0" onClick={() => { setDeleteDialogOpen(false); setReceiptToDelete(null); }}>{t('forms.cancel') || 'Annuler'}</AlertDialogCancel>
+                    <AlertDialogAction onClick={async () => {
+                      if (receiptToDelete) {
+                        try {
+                          await handleDeleteReceipt(receiptToDelete, true);
+                        } catch (e) {
+                          console.error('Delete failed', e);
+                        }
+                      }
+                      setDeleteDialogOpen(false);
+                      setReceiptToDelete(null);
+                    }}>{t('forms.confirm') || 'Supprimer'}</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
           )}
           {activeTab === 'tracage' && (

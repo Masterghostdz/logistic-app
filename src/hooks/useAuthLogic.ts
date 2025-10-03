@@ -37,6 +37,9 @@ export const useAuthLogic = () => {
           avatar: userData.avatar,
           vehicleType: userData.vehicleType,
           employeeType: userData.employeeType
+          ,
+          companyId: userData.companyId || undefined,
+          companyName: userData.companyName || undefined
         });
   try { (window as any).__APP_USER_INTERNAL = { id: userData.id, role: userData.role, fullName: userData.fullName }; } catch (e) {}
         setIsAuthenticated(true);
@@ -94,6 +97,9 @@ export const useAuthLogic = () => {
           avatar: userData.avatar,
           vehicleType: userData.vehicleType,
           employeeType: userData.employeeType
+        ,
+        companyId: userData.companyId || undefined,
+        companyName: userData.companyName || undefined
         });
         try { (window as any).__APP_USER_INTERNAL = { id: userData.id, role: userData.role, fullName: userData.fullName }; } catch (e) {}
         setIsAuthenticated(true);

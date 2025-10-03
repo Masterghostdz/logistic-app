@@ -27,6 +27,12 @@ interface DeclarationsTableProps {
   payments?: PaymentReceipt[];
   // hide the recouvrement-specific columns (used by Caissier recouvrement view)
   hideRecouvrementFields?: boolean;
+  // hide status column (for external cashier)
+  hideStatusColumn?: boolean;
+  // hide validated/validatedAt column (for external cashier)
+  hideValidatedColumn?: boolean;
+  // hide the send (Envoyer) action/button (for external cashier)
+  hideSendButton?: boolean;
 }
 
 const DeclarationsTable = ({ 
@@ -43,7 +49,10 @@ const DeclarationsTable = ({
   onSendReceipts,
   chauffeurTypes,
   payments,
-  hideRecouvrementFields = false
+  hideRecouvrementFields = false,
+  hideStatusColumn = false,
+  hideValidatedColumn = false
+  , hideSendButton = false
 }: DeclarationsTableProps) => {
   const {
     localFontSize,
@@ -133,7 +142,9 @@ const DeclarationsTable = ({
                 {/* Affiche Prime de route pour interne et planificateur */}
                 <TableHead data-rtl={settings.language === 'ar'} className={`${colWidth} whitespace-nowrap ${cellPaddingClass}`} style={fontSizeStyle}>{t('declarations.primeDeRoute') === 'declarations.primeDeRoute' ? 'Prime de route' : t('declarations.primeDeRoute')}</TableHead>
                 <TableHead data-rtl={settings.language === 'ar'} className={`${getMinWidthForChars(12)} whitespace-nowrap ${cellPaddingClass}`} style={fontSizeStyle}>{t('declarations.createdDate')}</TableHead>
-                  <TableHead data-rtl={settings.language === 'ar'} className={`${getMinWidthForChars(12)} whitespace-nowrap ${cellPaddingClass}`} style={fontSizeStyle}>{t('declarations.validated') || t('declarations.validated') /* fallback handled by translations */}</TableHead>
+                  {!hideValidatedColumn && (
+                    <TableHead data-rtl={settings.language === 'ar'} className={`${getMinWidthForChars(12)} whitespace-nowrap ${cellPaddingClass}`} style={fontSizeStyle}>{t('declarations.validated') || t('declarations.validated') /* fallback handled by translations */}</TableHead>
+                  )}
                   {/* Recouvrement columns (can be hidden in Caissier Recouvrement view) */}
                   {!hideRecouvrementFields && (
                     <TableHead data-rtl={settings.language === 'ar'} className={`${colWidthSmall} whitespace-nowrap ${cellPaddingClass}`} style={fontSizeStyle}>{t('declarations.payments') || 'Paiements'}</TableHead>
@@ -141,7 +152,9 @@ const DeclarationsTable = ({
                   {!hideRecouvrementFields && (
                     <TableHead data-rtl={settings.language === 'ar'} className={`${colWidthSmall} whitespace-nowrap ${cellPaddingClass}`} style={fontSizeStyle}>{t('declarations.recoveredAmount') || 'Montant Recouvré'}</TableHead>
                   )}
-                <TableHead data-rtl={settings.language === 'ar'} className={`${colWidthEtat} whitespace-nowrap ${cellPaddingClass}`} style={fontSizeStyle}>{t('declarations.status')}</TableHead>
+                {!hideStatusColumn && (
+                  <TableHead data-rtl={settings.language === 'ar'} className={`${colWidthEtat} whitespace-nowrap ${cellPaddingClass}`} style={fontSizeStyle}>{t('declarations.status')}</TableHead>
+                )}
                 <TableHead data-rtl={settings.language === 'ar'} className={`${getMinWidthForChars(12)} whitespace-nowrap ${cellPaddingClass}`} style={fontSizeStyle}>{t('declarations.actions')}</TableHead>
               </TableRow>
             </TableHeader>
@@ -201,15 +214,17 @@ const DeclarationsTable = ({
                       year: 'numeric'
                     })}</span>
                   </TableCell>
-                  <TableCell data-rtl={settings.language === 'ar'} className={`whitespace-nowrap ${cellPaddingClass}`} style={fontSizeStyle}>
-                    <span className={`whitespace-nowrap`} style={fontSizeStyle}>{declaration.validatedAt 
-                      ? new Date(declaration.validatedAt).toLocaleDateString('fr-FR', {
-                          day: '2-digit',
-                          month: '2-digit',
-                          year: 'numeric'
-                        })
-                      : '-'}</span>
-                  </TableCell>
+                  {!hideValidatedColumn && (
+                    <TableCell data-rtl={settings.language === 'ar'} className={`whitespace-nowrap ${cellPaddingClass}`} style={fontSizeStyle}>
+                      <span className={`whitespace-nowrap`} style={fontSizeStyle}>{declaration.validatedAt 
+                        ? new Date(declaration.validatedAt).toLocaleDateString('fr-FR', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric'
+                          })
+                        : '-'}</span>
+                    </TableCell>
+                  )}
                   {/* Recouvrement columns */}
                   {!hideRecouvrementFields && (() => {
                     // determine payments related to this declaration
@@ -239,16 +254,18 @@ const DeclarationsTable = ({
                       </>
                     );
                   })()}
-                  <TableCell data-rtl={settings.language === 'ar'} className={`whitespace-nowrap text-center ${cellPaddingClass}`} style={fontSizeStyle}>
-                    {getStatusBadge(declaration.status)}
-                  </TableCell>
+                  {!hideStatusColumn && (
+                    <TableCell data-rtl={settings.language === 'ar'} className={`whitespace-nowrap text-center ${cellPaddingClass}`} style={fontSizeStyle}>
+                      {getStatusBadge(declaration.status)}
+                    </TableCell>
+                  )}
                   <TableCell className={`whitespace-nowrap ${cellPaddingClass}`} style={fontSizeStyle}>
                     <div className="flex gap-1 whitespace-nowrap" style={fontSizeStyle}>
                       {onEditDeclaration && (
                         <Button
                           size="sm"
-                          variant="outline"
-                          className={`flex items-center justify-center rounded-md border border-border`}
+                          variant="ghost"
+                          className={`flex items-center justify-center rounded-md`}
                           style={{ width: computedRowPx, height: computedRowPx }}
                           onClick={() => onEditDeclaration(declaration)}
                         >
@@ -258,41 +275,49 @@ const DeclarationsTable = ({
                       {onDeleteDeclaration && (
                         <Button
                           size="sm"
-                          variant="outline"
-                          className={`flex items-center justify-center rounded-md border border-border text-red-600 hover:text-red-700`}
+                          variant="ghost"
+                          className={`flex items-center justify-center rounded-md text-red-600 hover:text-red-700`}
                           style={{ width: computedRowPx, height: computedRowPx }}
                           onClick={() => onDeleteDeclaration(declaration.id)}
                         >
                           <Trash2 style={{ width: computedIconPx, height: computedIconPx }} />
                         </Button>
                       )}
-                      {onSendReceipts && (
+                      {onSendReceipts && !hideSendButton && (
                         (() => {
                           const declPaymentState = String((declaration as any).paymentState || '').toLowerCase();
                           const isRecouvre = declPaymentState.startsWith('recouv');
                           if (isRecouvre) {
                             // show Annuler button (undo) to revert recouvrement
                             return (
-                              <button key="cancel-recouv" title={t('payments.undo') || 'Annuler'} onClick={async () => {
-                                try {
-                                  const { updateDeclaration } = await import('../../services/declarationService');
-                                  const traceEntry = { userId: null, userName: null, action: t('traceability.revokedRecouvrement') || 'Annulation recouvrement', date: new Date().toISOString() };
-                                  await updateDeclaration(declaration.id, { paymentState: '', paymentRecoveredAt: null }, traceEntry);
-                                } catch (e) {
-                                  console.error('Cancel recouvrement failed', e);
-                                  toast({
-                                    title: t('forms.error') || 'Erreur',
-                                    description: (e as any)?.message || undefined,
-                                    variant: 'destructive'
-                                  });
-                                }
-                              }} className="p-2 rounded border-0 text-yellow-600 hover:bg-yellow-50 dark:hover:bg-yellow-900 flex items-center justify-center" style={{ width: computedRowPx, height: computedRowPx }}>
+                              <Button
+                                key="cancel-recouv"
+                                title={t('payments.undo') || 'Annuler'}
+                                size="sm"
+                                variant="ghost"
+                                className={`flex items-center justify-center rounded-md text-yellow-600 hover:bg-yellow-50 dark:hover:bg-yellow-900`}
+                                style={{ width: computedRowPx, height: computedRowPx }}
+                                onClick={async () => {
+                                  try {
+                                    const { updateDeclaration } = await import('../../services/declarationService');
+                                    const traceEntry = { userId: null, userName: null, action: t('traceability.revokedRecouvrement') || 'Annulation recouvrement', date: new Date().toISOString() };
+                                    await updateDeclaration(declaration.id, { paymentState: '', paymentRecoveredAt: null }, traceEntry);
+                                  } catch (e) {
+                                    console.error('Cancel recouvrement failed', e);
+                                    toast({
+                                      title: t('forms.error') || 'Erreur',
+                                      description: (e as any)?.message || undefined,
+                                      variant: 'destructive'
+                                    });
+                                  }
+                                }}
+                              >
                                 {/* Undo icon */}
-                                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" style={{ width: computedIconPx, height: computedIconPx }}>
                                   <path d="M21 12a9 9 0 10-9 9" />
                                   <path d="M21 3v9h-9" />
                                 </svg>
-                              </button>
+                              </Button>
                             );
                           }
                           return (
