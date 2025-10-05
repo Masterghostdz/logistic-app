@@ -60,9 +60,14 @@ const PlanificateurDashboard = () => {
   const [editingDeclaration, setEditingDeclaration] = useState<Declaration | null>(null);
   // Utilise le mode d'affichage global depuis les settings
   const { settings, updateSettings } = useSettings();
+  // Table font-size state (used across tables in this dashboard). Keep it near the top so
+  // computed badge classes/styles are available for helper renderers defined below.
+  const [tableFontSize, setTableFontSize] = useState<'40' | '50' | '60' | '70' | '80' | '90' | '100'>(settings.tableFontSize || '80');
+  // Compute badge classes/styles using the current tableFontSize so badges rendered
+  // in small widgets (recent declarations, tracage) match exactly the table badges.
+  const { badgeClass, badgeStyle } = useTableZoom(tableFontSize as any);
   // Use hook-based translation to respect current language (including Arabic)
   const addLabel = t('planificateur.add') || t('buttons.add');
-  const { badgeClass, badgeStyle } = useTableZoom();
   // Le style est sélectionné selon le paramètre settings.viewMode
   const viewMode = settings.viewMode || 'desktop';
   // Synchronisation temps réel des entrepôts depuis Firestore
@@ -154,6 +159,8 @@ const PlanificateurDashboard = () => {
     };
   }, []);
   const [activeTab, setActiveTab] = useState('dashboard');
+  // Track how the user navigated to a section so we can reset filters on sidebar navigation
+  const [lastNavSource, setLastNavSource] = useState<'none'|'nav'|'indicator'>('none');
 
   // --- Clients state ---
   const [clients, setClients] = useState([]);
@@ -275,7 +282,6 @@ const PlanificateurDashboard = () => {
   const [searchValue, setSearchValue] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [searchColumn, setSearchColumn] = useState<'number' | 'chauffeurName'>('number');
-  const [tableFontSize, setTableFontSize] = useState<'40' | '50' | '60' | '70' | '80' | '90' | '100'>(settings.tableFontSize || '80');
   const [showCreateChauffeur, setShowCreateChauffeur] = useState(false);
   const [consultingDeclaration, setConsultingDeclaration] = useState<Declaration | null>(null);
   // Export dialog state
@@ -342,8 +348,33 @@ const PlanificateurDashboard = () => {
     };
   }, [declarations]);
 
+  // Reuse DeclarationsTable status badge logic for consistency
+  const getStatusBadge = (status: string) => {
+    const pad = 'px-[10px]';
+    switch (String(status || '').toLowerCase()) {
+      case 'en_route':
+        return <Badge className={`bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 ${badgeClass} ${pad}`}>{t('dashboard.onRoad')}</Badge>;
+      case 'en_panne':
+        return <Badge className={`bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200 ${badgeClass} ${pad}`}>{t('declarations.breakdown')}</Badge>;
+      case 'en_cours':
+        return <Badge className={`bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 ${badgeClass} ${pad}`}>{t('dashboard.pending')}</Badge>;
+      case 'valide':
+        return <Badge className={`bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 ${badgeClass} ${pad}`}>{t('dashboard.validated')}</Badge>;
+      case 'refuse':
+        return <Badge className={`bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 ${badgeClass} ${pad}`}>{t('dashboard.refused')}</Badge>;
+      default:
+        return <Badge variant="outline" className={`${badgeClass} ${pad}`}>{status}</Badge>;
+    }
+  };
+
   const filteredDeclarations = useMemo(() => {
     return declarations.filter(declaration => {
+      // Do not show draft/brouillon declarations to planificateur
+      if (user?.role === 'planificateur') {
+        const st = String(declaration.status || '').toLowerCase();
+        if (st === 'brouillon' || st === 'draft') return false;
+      }
+
       if (searchValue) {
         const searchLower = searchValue.toLowerCase();
         if (!declaration.number.toLowerCase().includes(searchLower) &&
@@ -357,7 +388,7 @@ const PlanificateurDashboard = () => {
       }
       return true;
     });
-  }, [declarations, searchValue, filterStatus]);
+  }, [declarations, searchValue, filterStatus, user?.role]);
 
   const handleCreateChauffeur = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -505,6 +536,8 @@ const PlanificateurDashboard = () => {
   };
 
   const handleEnAttenteClick = () => {
+    // Indicator-driven navigation: preserve the filter the indicator sets
+    setLastNavSource('indicator');
     setFilterStatus('en_cours');
     setActiveTab('declarations');
   };
@@ -637,7 +670,7 @@ const PlanificateurDashboard = () => {
                 {isOnline ? t('dashboard.online') : t('dashboard.offline')}
               </Badge>
             </span>
-            <PlanificateurSidebar activeTab={activeTab} onTabChange={setActiveTab} hasPendingClients={hasPendingClients} />
+            <PlanificateurSidebar activeTab={activeTab} onTabChange={tab => { setLastNavSource('nav'); setActiveTab(tab); }} hasPendingClients={hasPendingClients} />
             <div className="flex-1 p-6 pt-16 overflow-auto">
               <h2 className="text-2xl font-bold mb-4">{t('tracage.title')}</h2>
               <TracageSection 
@@ -661,7 +694,7 @@ const PlanificateurDashboard = () => {
               {isOnline ? t('dashboard.online') : t('dashboard.offline')}
             </Badge>
           </div>
-          <PlanificateurSidebar activeTab={activeTab} onTabChange={setActiveTab} hasPendingClients={hasPendingClients} />
+          <PlanificateurSidebar activeTab={activeTab} onTabChange={tab => { setLastNavSource('nav'); setActiveTab(tab); }} hasPendingClients={hasPendingClients} />
           <div className="p-6">
             <h2 className="text-2xl font-bold mb-4">{t('tracage.title')}</h2>
             {/* Carte (map) en premier */}
@@ -735,8 +768,8 @@ const PlanificateurDashboard = () => {
         </div>
       ) : null}
       <div className={viewMode === 'mobile' ? 'flex flex-col h-auto gap-2' : 'flex flex-row min-h-[calc(100vh-4rem)] relative'}>
-        <PlanificateurSidebar activeTab={activeTab} onTabChange={setActiveTab} hasPendingClients={hasPendingClients} />
-        <div className="flex-1 p-6 pt-16 overflow-auto relative">
+        <PlanificateurSidebar activeTab={activeTab} onTabChange={tab => { setLastNavSource('nav'); setActiveTab(tab); }} hasPendingClients={hasPendingClients} />
+        <div className={`flex-1 p-6 ${viewMode === 'mobile' ? 'pt-3' : 'pt-16'} overflow-auto relative`}>
           {/* Badge En ligne en haut à droite du bloc content, sous le header, à l'intérieur mais hors de la sidebar (desktop uniquement) */}
           {viewMode !== 'mobile' && (
             <div className={`absolute top-0 ${settings.language === 'ar' ? 'left-0' : 'right-0'} m-2 z-10`}>
@@ -757,6 +790,10 @@ const PlanificateurDashboard = () => {
           {/* ...existing code for tabs and content... */}
             {activeTab === 'dashboard' && (
               <div className="space-y-6">
+                {/* Dashboard title (same pattern as Caissier) */}
+                <div className="w-full p-2">
+                  <h2 className={`text-2xl font-bold ${viewMode === 'mobile' ? 'mb-2' : 'mb-4'}`}>{t('planificateur.dashboardTitle') || 'Tableau de bord - Planificateur'}</h2>
+                </div>
                 <div className="mb-4 w-full max-w-xl">
                   <Card className="mb-2">
                     <CardHeader className="pb-2">
@@ -767,14 +804,8 @@ const PlanificateurDashboard = () => {
                         <PlanificateurStats
                           stats={stats}
                           onEnAttenteClick={handleEnAttenteClick}
-                          onEnRouteClick={() => {
-                            setFilterStatus('en_route');
-                            setActiveTab('declarations');
-                          }}
-                          onEnPanneClick={() => {
-                            setFilterStatus('en_panne');
-                            setActiveTab('declarations');
-                          }}
+                          onEnRouteClick={() => { setLastNavSource('indicator'); setFilterStatus('en_route'); setActiveTab('declarations'); }}
+                          onEnPanneClick={() => { setLastNavSource('indicator'); setFilterStatus('en_panne'); setActiveTab('declarations'); }}
                         />
                       </div>
                     </CardContent>
@@ -786,19 +817,39 @@ const PlanificateurDashboard = () => {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
-                      {declarations.slice(0, 5).map((declaration) => (
-                        <div key={declaration.id} className="flex items-center justify-between p-3 border rounded-lg cursor-pointer hover:bg-accent" onClick={() => setConsultingDeclaration(declaration)}>
-                          <div>
-                            <div className="font-medium">{declaration.number}</div>
-                            <div className="text-sm text-gray-500">
-                              {declaration.chauffeurName} - {declaration.month}/{declaration.year}
+                      {filteredDeclarations.slice(0,5).map((declaration) => {
+                        const badgePosStyle: React.CSSProperties = settings.language === 'ar' ? { position: 'absolute', top: 8, left: 8 } : { position: 'absolute', top: 8, right: 8 };
+                        return (
+                          <div key={declaration.id} className="relative flex items-center justify-between p-3 border rounded-lg cursor-pointer hover:bg-accent" onClick={() => setConsultingDeclaration(declaration)}>
+                            <div>
+                              <div className="font-medium">{declaration.number}</div>
+                              <div className="text-sm text-gray-500">
+                                {declaration.chauffeurName} - {declaration.month}/{declaration.year}
+                              </div>
+                            </div>
+                            <div style={badgePosStyle}>
+                              {(() => {
+                                // Use the exact same badge classes/structure as DeclarationsTable to ensure identical size
+                                const pad = 'px-[10px]';
+                                switch (String(declaration.status || '').toLowerCase()) {
+                                  case 'en_route':
+                                    return <Badge style={{ ...badgeStyle }} className={`bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 ${badgeClass} ${pad}`}>{t('dashboard.onRoad')}</Badge>;
+                                  case 'en_panne':
+                                    return <Badge style={{ ...badgeStyle }} className={`bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200 ${badgeClass} ${pad}`}>{t('declarations.breakdown')}</Badge>;
+                                  case 'en_cours':
+                                    return <Badge style={{ ...badgeStyle }} className={`bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 ${badgeClass} ${pad}`}>{t('dashboard.pending')}</Badge>;
+                                  case 'valide':
+                                    return <Badge style={{ ...badgeStyle }} className={`bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 ${badgeClass} ${pad}`}>{t('dashboard.validated')}</Badge>;
+                                  case 'refuse':
+                                    return <Badge style={{ ...badgeStyle }} className={`bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 ${badgeClass} ${pad}`}>{t('dashboard.refused')}</Badge>;
+                                  default:
+                                    return <Badge style={{ ...badgeStyle }} variant="outline" className={`${badgeClass} ${pad}`}>{declaration.status}</Badge>;
+                                }
+                              })()}
                             </div>
                           </div>
-                          <div className="flex items-center gap-2">
-                            {/* Status badge logic moved to DeclarationsTable */}
-                          </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </CardContent>
                 </Card>
@@ -808,7 +859,7 @@ const PlanificateurDashboard = () => {
               <div className="space-y-6">
                 {/* Titre au-dessus de la barre de recherche */}
                 <div className="flex items-center justify-between mb-2">
-                  <h2 className="text-2xl font-bold">{t('planificateur.declarationsTitle')}</h2>
+                  <h2 className={`text-2xl font-bold ${viewMode === 'mobile' ? 'mb-2' : 'mb-4'}`}>{t('planificateur.declarationsTitle')}</h2>
                 </div>
                 <SearchAndFilter
                   searchValue={searchValue}

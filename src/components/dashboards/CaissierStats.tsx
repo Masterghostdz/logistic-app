@@ -44,7 +44,7 @@ const CaissierStats: React.FC<CashierStatsProps> = ({
         >
           <div className="p-3 bg-gray-50 dark:bg-gray-900/20 rounded-lg border border-gray-200 dark:border-gray-700 flex flex-col items-center justify-center">
             <div className={`${numberClass} text-gray-700 dark:text-gray-200`}>{stats.recouvrements}</div>
-            <div className={`${statusClass} text-gray-700 dark:text-gray-200`}>{statusLabels.recouvrements ?? t('dashboard.pending') ?? 'en attente'}</div>
+            <div className={`${statusClass} whitespace-nowrap text-gray-700 dark:text-gray-200`}>{statusLabels.recouvrements ?? t('dashboard.pending') ?? 'en attente'}</div>
           </div>
         </div>
       )}
@@ -56,7 +56,7 @@ const CaissierStats: React.FC<CashierStatsProps> = ({
         >
           <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800 flex flex-col items-center justify-center">
             <div className={`${numberClass} text-yellow-700 dark:text-yellow-400`}>{stats.paymentsPending}</div>
-            <div className={`${statusClass} text-yellow-700 dark:text-yellow-400`}>{statusLabels.paymentsPending ?? t('dashboard.pending') ?? 'en attente'}</div>
+            <div className={`${statusClass} whitespace-nowrap text-yellow-700 dark:text-yellow-400`}>{statusLabels.paymentsPending ?? t('dashboard.pending') ?? 'en attente'}</div>
           </div>
         </div>
       )}
@@ -69,7 +69,7 @@ const CaissierStats: React.FC<CashierStatsProps> = ({
         >
           <div className="p-3 bg-violet-50 dark:bg-violet-900/20 rounded-lg border border-violet-200 dark:border-violet-800 flex flex-col items-center justify-center">
             <div className={`${numberClass} text-violet-700 dark:text-violet-400`}>{stats.paymentsNoCompany}</div>
-            <div className={`${statusClass} text-violet-700 dark:text-violet-400`}>{statusLabels.paymentsNoCompany ?? t('caissier.paymentsNoCompanyTitle') ?? 'sans société'}</div>
+            <div className={`${statusClass} whitespace-nowrap text-violet-700 dark:text-violet-400`}>{statusLabels.paymentsNoCompany ?? t('caissier.paymentsNoCompanyTitle') ?? 'sans société'}</div>
           </div>
         </div>
       )}

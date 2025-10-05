@@ -9,6 +9,7 @@ export const translations = {
   profileTitle: "Profil Caissier",
       paymentsTitle: "Gestion des paiements",
       recouvrementTitle: "Gestion des Recouvrements",
+      recentRecouvrements: "Recouvrements récents",
       // Created for CreateRecouvrementDialog
       createRecouvrement: "Créer un recouvrement",
       emptyDashboard: "Espace Caissier (façade, aucun contenu)",
@@ -34,6 +35,7 @@ export const translations = {
     },
     planificateur: {
       statsTitle: "Résumé des déclarations",
+      add: "Ajouter",
       paymentsStatsTitle: "Payments summary",
       clientsTitle: "Gestion des Clients",
       dashboardTitle: "Tableau de bord - Planificateur",
@@ -247,8 +249,9 @@ export const translations = {
   en: {
     caissier: {
       statsTitle: "Collections and payments summary",
-      paymentsStatsTitle: "Payments indicators",
       recouvrementsTitle: "Collections indicators",
+      recentRecouvrements: "Recent collections",
+      paymentsStatsTitle: "Payments indicators",
       paymentsNoCompanyTitle: "No company",
       dashboardTitle: "Cashier Dashboard",
       createPaymentTitle: "Add payment receipt",
@@ -262,12 +265,16 @@ export const translations = {
       tracageEmpty: "Trace section (placeholder, no content)"
     },
     planificateur: {
+      add: "Add",
       statsTitle: "Declarations summary",
       paymentsStatsTitle: "Payments summary"
     },
   },
   ar: {
     // planificateur moved to final `ar` block to avoid duplication
+    planificateur: {
+      add: "إضافة",
+    },
     roles: {
       admin: "مسؤول",
       planificateur: "مخطط",
@@ -281,12 +288,19 @@ export const translations = {
       statsTitle: "مؤشرات التحصيلات والمدفوعات",
       dashboardTitle: "لوحة القيادة - أمين الصندوق",
       recouvrementsTitle: "مؤشرات التحصيلات",
+      recentRecouvrements: "التحصيلات الأخيرة",
       paymentsPendingTitle: "حالات المدفوعات غير المعتمدة",
       paymentsNoCompanyTitle: "بدون شركة"
     },
     // Recouvrement labels (Arabic)
     recouvrement: {
-      noProgramReference: "بدون مرجع البرنامج"
+      noProgramReference: "بدون مرجع البرنامج",
+      // Notices / toasts used in recouvrement flows
+      sent: "تم إرسال التحصيل",
+      created: "تم إنشاء التحصيل",
+  revoked: "تم إلغاء التحصيل",
+      cancel: "إلغاء التحصيل",
+      return: "إرجاع"
     },
     common: {
       searchPlaceholder: "ابحث...",
@@ -561,12 +575,16 @@ export const translations = {
   },
   en: {
     caissier: {
+      statsTitle: "Collections and payments summary",
+      recouvrementsTitle: "Collections indicators",
+      recentRecouvrements: "Recent collections",
+      paymentsStatsTitle: "Payments indicators",
+      paymentsNoCompanyTitle: "No company",
+      dashboardTitle: "Cashier Dashboard",
+      createPaymentTitle: "Add payment receipt",
+      createPaymentDesc: "Fill the form to add a payment receipt.",
       viewPaymentTitle: "View receipt",
       viewPaymentDesc: "Receipt consultation (read-only)",
-      createPaymentTitle: "Add a payment receipt",
-      createPaymentDesc: "Fill out the form to add a payment receipt.",
-      profileTitle: "Cashier Profile",
-      paymentsStatsTitle: "Payments summary",
       paymentsTitle: "Payments management",
       recouvrementTitle: "Collections management",
       emptyDashboard: "Cashier area (placeholder, no content)",
@@ -630,16 +648,14 @@ export const translations = {
       createWarehouse: "Create warehouse"
     },
     planificateur: {
+      add: "Add",
       statsTitle: "ملخص التصريحات",
       clientsTitle: "Clients Management",
       dashboardTitle: "Planner Dashboard",
       recentDeclarations: "Recent Declarations",
       declarationsTitle: "Declarations Management",
       warehousesTitle: "Warehouses Management",
-      add: "Add",
-      company: "Company",
-      phoneNumbers: "Phone Numbers",
-      status: "Status"
+      paymentsStatsTitle: "Payments summary"
     },
     // planificateur duplicate removed
     header: {
@@ -1022,6 +1038,7 @@ export const translations = {
       paymentsTitle: "إدارة المدفوعات",
       
       recouvrementTitle: "إدارة التحصيل",
+      recentRecouvrements: "التحصيلات الأخيرة",
       emptyDashboard: "مساحة أمين الصندوق (نموذج، لا يوجد محتوى)",
       recouvrementEmpty: "قسم التحصيل (نموذج، لا يوجد محتوى)",
       tracageEmpty: "قسم التتبع (نموذج، لا يوجد محتوى)",
@@ -1308,8 +1325,8 @@ export const translations = {
   firstName: "الاسم الأول",
   mobile: "الهاتف المحمول",
   phonePlaceholder: "رقم الهاتف",
-      amount: "المبلغ",
-      saving: "جارٍ الحفظ...",
+    amount: "المبلغ",
+    saving: "جارٍ الحفظ...",
   // generic form placeholders
   phoneIndexedPlaceholder: "الهاتف {index}",
   latitude: "خط العرض",

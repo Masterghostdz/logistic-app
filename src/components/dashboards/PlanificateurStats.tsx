@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useTranslation } from '../../hooks/useTranslation';
 import { motion } from 'framer-motion';
@@ -31,29 +30,21 @@ const PlanificateurStats = ({ stats, onEnAttenteClick, onEnRouteClick, onEnPanne
       className="cursor-pointer hover:shadow-md transition-shadow mx-auto w-full max-w-[75px] sm:max-w-[120px] md:max-w-[400px] border-blue-200 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-800 p-0 sm:p-2"
         onClick={onEnRouteClick}
       >
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0 p-0 sm:p-2 sm:pb-2">
-          <CardTitle className={titleClass + " text-blue-700 dark:text-blue-400"}>
-            <span className="truncate w-full block max-w-full whitespace-normal break-words">{t('dashboard.onRoad')}</span>
-          </CardTitle>
-        </CardHeader>
-      <CardContent className="p-0 sm:p-2 text-center md:text-center">
-              <div className={numberClass + " text-blue-700 dark:text-blue-400 mx-auto"}>{stats.enRoute}</div>
-              <p className="text-xs text-muted-foreground md:hidden">{t('dashboard.clickToFilter')}</p>
-            </CardContent>
+        <CardContent className="p-2 text-center md:text-center">
+          <div className={numberClass + " text-blue-700 dark:text-blue-400 mx-auto"} aria-hidden>{stats.enRoute}</div>
+          <div className={"text-sm mt-1 whitespace-nowrap " + "text-blue-700 dark:text-blue-400"}>{t('dashboard.onRoad')}</div>
+          <p className="text-xs text-muted-foreground md:hidden mt-1">{t('dashboard.clickToFilter')}</p>
+        </CardContent>
       </Card>
       {/* En Attente de Validation */}
       <Card
       className="cursor-pointer hover:shadow-md transition-shadow mx-auto w-full max-w-[60px] sm:max-w-[100px] md:max-w-[400px] border-yellow-200 bg-yellow-50 dark:bg-yellow-900/20 dark:border-yellow-800 p-0 sm:p-2"
         onClick={onEnAttenteClick}
       >
-  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0 p-0 sm:p-2 sm:pb-2">
-          <CardTitle className={titleClass + " text-yellow-700 dark:text-yellow-400"}>
-            <span className="truncate w-full block max-w-full whitespace-normal break-words">{t('dashboard.pending')}</span>
-          </CardTitle>
-        </CardHeader>
-  <CardContent className="p-0 sm:p-2 text-center md:text-center">
-          <div className={numberClass + " text-yellow-700 dark:text-yellow-400 mx-auto"}>{stats.enAttente}</div>
-          <p className="text-xs text-muted-foreground md:hidden">{t('dashboard.clickToFilter')}</p>
+        <CardContent className="p-2 text-center md:text-center">
+          <div className={numberClass + " text-yellow-700 dark:text-yellow-400 mx-auto"} aria-hidden>{stats.enAttente}</div>
+          <div className={"text-sm mt-1 whitespace-nowrap " + "text-yellow-700 dark:text-yellow-400"}>{t('dashboard.pending')}</div>
+          <p className="text-xs text-muted-foreground md:hidden mt-1">{t('dashboard.clickToFilter')}</p>
         </CardContent>
       </Card>
       {/* En Panne : n'affiche le cadre que s'il y a des pannes */}
@@ -82,14 +73,10 @@ const PlanificateurStats = ({ stats, onEnAttenteClick, onEnRouteClick, onEnPanne
             ease: "easeInOut"
           }}
         >
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0 p-0 sm:p-2 sm:pb-2">
-            <CardTitle className={titleClass + " text-orange-700 dark:text-orange-400"}>
-              <span className="truncate w-full block max-w-full whitespace-normal break-words">{t('dashboard.breakdown')}</span>
-            </CardTitle>
-          </CardHeader>
-            <CardContent className="p-0 sm:p-2 text-center md:text-center">
-            <div className={numberClass + " text-orange-700 dark:text-orange-400 mx-auto"}>{stats.enPanne}</div>
-            <p className="text-xs text-muted-foreground md:hidden">{t('dashboard.clickToFilter')}</p>
+          <CardContent className="p-2 text-center md:text-center">
+            <div className={numberClass + " text-orange-700 dark:text-orange-400 mx-auto"} aria-hidden>{stats.enPanne}</div>
+            <div className={"text-sm mt-1 whitespace-nowrap " + "text-orange-700 dark:text-orange-400"}>{t('dashboard.breakdown')}</div>
+            <p className="text-xs text-muted-foreground md:hidden mt-1">{t('dashboard.clickToFilter')}</p>
           </CardContent>
         </motion.div>
       )}

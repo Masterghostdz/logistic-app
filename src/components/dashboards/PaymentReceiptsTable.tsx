@@ -27,6 +27,8 @@ interface PaymentReceiptsTableProps {
   initialStatusFilter?: 'all' | 'brouillon' | 'validee';
   initialCompanyFilter?: 'all' | 'no-company';
   mode?: 'default' | 'recouvrement';
+  // Optional reset key: when this number changes, the component will reapply initial* filters.
+  resetKey?: number;
 }
 
 const PaymentReceiptsTable: React.FC<PaymentReceiptsTableProps> = ({
@@ -41,7 +43,8 @@ const PaymentReceiptsTable: React.FC<PaymentReceiptsTableProps> = ({
   initialStatusFilter = 'all',
   initialCompanyFilter = 'all',
   mode = 'default'
-  , hideEditButton = false
+  , hideEditButton = false,
+  resetKey
 }) => {
   const { t, settings } = useTranslation();
 
@@ -67,12 +70,12 @@ const PaymentReceiptsTable: React.FC<PaymentReceiptsTableProps> = ({
   const [searchColumn, setSearchColumn] = useState<'programReference'>('programReference');
   const [statusFilter, setStatusFilter] = useState<'all' | 'brouillon' | 'validee'>(initialStatusFilter || 'all');
   const [companyFilter, setCompanyFilter] = useState<'all' | 'no-company'>(initialCompanyFilter || 'all');
+  // Apply initial filters on mount and whenever resetKey changes.
+  // This avoids overwriting user changes when parent updates initial* values for other reasons.
   React.useEffect(() => {
     setStatusFilter(initialStatusFilter || 'all');
-  }, [initialStatusFilter]);
-  React.useEffect(() => {
     setCompanyFilter(initialCompanyFilter || 'all');
-  }, [initialCompanyFilter]);
+  }, [resetKey]);
 
   // If in recouvrement mode, statusFilter is not payment status but recouvrement filter.
   // We don't change internal state here; the parent should set initialStatusFilter appropriately when switching modes.

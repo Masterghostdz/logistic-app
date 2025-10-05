@@ -91,7 +91,6 @@ const ChauffeurDashboard = () => {
   const [gpsActive, setGpsActive] = useState(false);
   const [gpsPosition, setGpsPosition] = useState<{ lat: number; lng: number; accuracy?: number } | null>(null);
   // Hooks d'état GPS doivent être déclarés en tout premier
-  // ...existing code...
   // Demande d'activation GPS au démarrage si paramètre admin activé
   useEffect(() => {
     // Utiliser settings directement, ne pas appeler useTranslation ici
@@ -657,11 +656,9 @@ const ChauffeurDashboard = () => {
           <main className="flex-1">
             {activeTab === 'dashboard' && (
               <div className="max-w-[430px] mx-auto w-full p-2 pt-1">
-                <Card className="mb-2">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-2xl font-bold text-foreground">{t('dashboard.chauffeurTitle')}</CardTitle>
-                  </CardHeader>
-                </Card>
+                <div className="w-full p-2">
+                  <h2 className={`text-2xl font-bold text-foreground ${isMobile ? 'mb-0' : 'mb-4'}`}>{t('dashboard.chauffeurTitle') || 'Tableau de bord - Chauffeur'}</h2>
+                </div>
                 <Card className="bg-card border-border w-full mb-3">
                   <CardHeader className="pb-2">
                     <CardTitle className="flex items-center gap-2 text-card-foreground text-lg">
@@ -1411,7 +1408,7 @@ const ChauffeurDashboard = () => {
   </div>
 )}
           <ChauffeurSidebar activeTab={activeTab} onTabChange={(tab) => setActiveTab(tab as 'dashboard' | 'tracage')} />
-          <div className="flex-1 p-6 pt-16 overflow-auto">
+          <div className="flex-1 p-6 pt-3 overflow-auto">
             {/* ...existing code for dashboard/tracage/content... */}
             {activeTab === 'dashboard' && (
               <>
@@ -1512,7 +1509,7 @@ const ChauffeurDashboard = () => {
                             <div className="flex items-center gap-2 px-4 py-2 bg-red-100 border-b-2 border-red-500 text-red-700 font-semibold rounded-t-md mb-2">
                               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636l-1.414 1.414A7.975 7.975 0 0012 6c-2.21 0-4.21.896-5.95 2.364l-1.414-1.414A9.969 9.969 0 0112 4c2.761 0 5.261 1.12 7.071 2.929zM4.222 19.778A9.969 9.969 0 0112 20c2.761 0 5.261-1.12 7.071-2.929l-1.414-1.414A7.975 7.975 0 0112 18c-2.21 0-4.21-.896-5.95-2.364l-1.414 1.414z" />
-                            </svg>
+                              </svg>
                               <span>{t('declarations.breakdown')}</span>
                             </div>
                           )}
