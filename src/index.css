@@ -53,8 +53,9 @@ All colors MUST be HSL.
     --sidebar-border: 220 13% 91%;
 
     --sidebar-ring: 217.2 91.2% 59.8%;
-    /* default native top offset (used together with env(safe-area-inset-top)) */
-    --native-top-offset: 10px;
+   /* default native top offset (used together with env(safe-area-inset-top))
+     Set to 0 for web so there's no extra gap under the header by default. */
+   --native-top-offset: 0px;
   }
 
   .dark {
@@ -106,23 +107,33 @@ All colors MUST be HSL.
   }
 
   /* Respect safe-area insets on mobile devices (notch/status bar).
-     Use a CSS variable so web, native and Android can adjust the additional offset.
-     --native-top-offset is set to a sensible default and overridden for native builds. */
+     For the web build we do not add extra top padding so the header sits flush
+     with the top of the viewport. Only apply the safe-area padding when the
+     document root has the `native-app` class (set by the native bootstrap).
+     --native-top-offset is kept for native builds to allow fine tuning. */
+
+  /* Default for web: no extra top offset so header is flush */
   #root, .app-root {
-    padding-top: calc(env(safe-area-inset-top, 0px) + var(--native-top-offset));
+    padding-top: 0px;
     padding-left: env(safe-area-inset-left);
     padding-right: env(safe-area-inset-right);
     padding-bottom: env(safe-area-inset-bottom);
   }
 
-  /* Native builds get a slightly larger default offset. main.tsx will add the `native-app` class. */
-  :root.native-app {
-    --native-top-offset: 16px;
+  /* When running as a native app, let CSS use safe-area-inset and native offset */
+  :root.native-app #root,
+  :root.native-app .app-root,
+  :root.android-native #root,
+  :root.android-native .app-root {
+    padding-top: calc(env(safe-area-inset-top, 0px) + var(--native-top-offset));
   }
 
-  /* Some Android WebViews still need more breathing room; mobileService will add `android-native` and
-     set a larger value if detected. */
+  /* For native Android we let the system handle top insets; do not add extra offset. */
+  :root.native-app {
+    --native-top-offset: 0px;
+  }
+
   :root.android-native {
-    --native-top-offset: 22px;
+    --native-top-offset: 0px;
   }
 }

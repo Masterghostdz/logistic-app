@@ -196,7 +196,7 @@ const CaissierDashboard = () => {
   if (activeTab === 'profile') {
     if (isMobile) {
       return (
-        <div className="max-w-[430px] mx-auto bg-background min-h-screen flex flex-col">
+  <div className="max-w-[430px] mx-auto bg-gray-100 dark:bg-background min-h-screen flex flex-col">
           <ProfilePage onBack={() => setActiveTab('dashboard')} />
         </div>
       );
@@ -212,7 +212,7 @@ const CaissierDashboard = () => {
   }
 
   return (
-    <div className={isMobile ? 'max-w-[430px] mx-auto bg-background min-h-screen flex flex-col' : 'min-h-screen bg-background w-full overflow-x-hidden'}>
+  <div className={isMobile ? 'max-w-[430px] mx-auto bg-gray-100 dark:bg-background min-h-screen flex flex-col' : 'min-h-screen bg-gray-100 dark:bg-background w-full overflow-x-hidden'}>
       <Header onProfileClick={() => setActiveTab('profile')} />
       {/* Badge en ligne : mobile affiché sous le Header, desktop positionné en absolute dans le conteneur principal (évite bande/floating) */}
       {isMobile && (

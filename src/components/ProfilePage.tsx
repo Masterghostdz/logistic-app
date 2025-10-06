@@ -41,7 +41,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
 
   // Gestion absence de contexte ou d'utilisateur
   if (!auth || !user) {
-  return <div>{t('profile.userNotFound') || 'Utilisateur non trouvé'}</div>;
+    return <div>{t('profile.userNotFound') || 'Utilisateur non trouvé'}</div>;
   }
 
   const handlePasswordChange = async (e: React.FormEvent) => {
@@ -72,7 +72,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
   return isMobile ? (
     <div className="space-y-4 px-2 py-2 max-w-md mx-auto w-full">
       <div className="flex items-center gap-2 sticky top-0 z-20 bg-background/90 py-2">
-        <Button variant="ghost" size="icon" className="rounded-full" onClick={onBack}>
+        <Button variant="ghost" size="icon" className="rounded-full" onClick={onBack} aria-label={t('buttons.back') || 'Retour'} title={t('buttons.back') || 'Retour'}>
           <ArrowLeft className="h-6 w-6" />
         </Button>
         <h1 className="text-xl font-bold flex-1 text-center">{t('profile.title') || 'Mon Profil'}</h1>
@@ -94,11 +94,11 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
             <p className="text-base">{user.lastName}</p>
           </div>
           <div>
-            <Label className="text-xs font-medium text-gray-500">Nom d'utilisateur</Label>
+            <Label className="text-xs font-medium text-gray-500">{t('auth.username') || 'Nom d\'utilisateur'}</Label>
             <p className="text-base">{user.username}</p>
           </div>
           <div>
-            <Label className="text-xs font-medium text-gray-500">Rôle</Label>
+            <Label className="text-xs font-medium text-gray-500">{t('admin.role') || 'Rôle'}</Label>
             <Badge size="md" variant="outline" style={{ ...badgeStyle }} className={`${badgeClass} ml-2`}>
               {t(`roles.${user.role}`) || user.role}
             </Badge>
@@ -108,8 +108,8 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
             <p className="text-base">{user.phone || <span className="text-gray-400">{t('profile.notProvided') || 'Non renseigné'}</span>}</p>
           </div>
           <div>
-            <Label className="text-xs font-medium text-gray-500">Email</Label>
-            <p className="text-base">{user.email || <span className="text-gray-400">Non renseigné</span>}</p>
+            <Label className="text-xs font-medium text-gray-500">{t('profile.email') || 'Email'}</Label>
+            <p className="text-base">{user.email || <span className="text-gray-400">{t('profile.notProvided') || 'Non renseigné'}</span>}</p>
           </div>
           {user.role !== 'planificateur' && (
             <div>
@@ -135,21 +135,21 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2 text-base">
             <Shield className="h-5 w-5" />
-            Sécurité
+            {t('profile.securityTitle') || 'Sécurité'}
           </CardTitle>
           <CardDescription className="text-xs">
-            Modifiez votre mot de passe pour sécuriser votre compte
+            {t('profile.securityDescription') || 'Modifiez votre mot de passe pour sécuriser votre compte'}
           </CardDescription>
         </CardHeader>
         <CardContent className="px-4 pb-4">
           {!isChangingPassword ? (
             <Button className="w-full" onClick={() => setIsChangingPassword(true)}>
-              Changer le mot de passe
+              {t('profile.changePassword') || 'Changer le mot de passe'}
             </Button>
           ) : (
             <form onSubmit={handlePasswordChange} className="space-y-3">
               <div>
-                <Label htmlFor="currentPassword">Mot de passe actuel</Label>
+                <Label htmlFor="currentPassword">{t('forms.currentPassword') || 'Mot de passe actuel'}</Label>
                 <Input
                   id="currentPassword"
                   type="password"
@@ -159,7 +159,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
                 />
               </div>
               <div>
-                <Label htmlFor="newPassword">Nouveau mot de passe</Label>
+                <Label htmlFor="newPassword">{t('forms.newPassword') || 'Nouveau mot de passe'}</Label>
                 <Input
                   id="newPassword"
                   type="password"
@@ -170,7 +170,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
                 />
               </div>
               <div>
-                <Label htmlFor="confirmPassword">Confirmer le nouveau mot de passe</Label>
+                <Label htmlFor="confirmPassword">{t('forms.confirmPassword') || 'Confirmer le nouveau mot de passe'}</Label>
                 <Input
                   id="confirmPassword"
                   type="password"
@@ -181,7 +181,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
                 />
               </div>
               <div className="flex gap-2">
-                <Button className="flex-1" type="submit">Confirmer</Button>
+                <Button className="flex-1" type="submit">{t('forms.confirm') || 'Confirmer'}</Button>
                 <Button 
                   type="button" 
                   variant="outline" 
@@ -191,7 +191,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
                     setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
                   }}
                 >
-                  Annuler
+                  {t('forms.cancel') || 'Annuler'}
                 </Button>
               </div>
             </form>
@@ -202,11 +202,10 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
   ) : (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
-        <Button variant="ghost" onClick={onBack}>
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Retour
+        <Button variant="ghost" size="icon" onClick={onBack} aria-label={t('buttons.back') || 'Retour'} title={t('buttons.back') || 'Retour'}>
+          <ArrowLeft className="h-4 w-4" />
         </Button>
-        <h1 className="text-2xl font-bold">Mon Profil</h1>
+        <h1 className="text-2xl font-bold">{t('profile.title') || 'Mon Profil'}</h1>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -228,11 +227,11 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
               <p className="text-lg">{user.lastName}</p>
             </div>
             <div>
-              <Label className="text-sm font-medium text-gray-500">Nom d'utilisateur</Label>
+              <Label className="text-sm font-medium text-gray-500">{t('auth.username') || "Nom d'utilisateur"}</Label>
               <p className="text-lg">{user.username}</p>
             </div>
             <div>
-              <Label className="text-sm font-medium text-gray-500">Rôle</Label>
+              <Label className="text-sm font-medium text-gray-500">{t('admin.role') || 'Rôle'}</Label>
               <Badge size="md" variant="outline" style={{ ...badgeStyle }} className={`${badgeClass} mt-1`}>
                 {t(`roles.${user.role}`) || user.role}
               </Badge>
@@ -294,21 +293,21 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Shield className="h-5 w-5" />
-            Sécurité
+            {t('profile.securityTitle') || 'Sécurité'}
           </CardTitle>
           <CardDescription>
-            Modifiez votre mot de passe pour sécuriser votre compte
+            {t('profile.securityDescription') || 'Modifiez votre mot de passe pour sécuriser votre compte'}
           </CardDescription>
         </CardHeader>
         <CardContent>
           {!isChangingPassword ? (
             <Button onClick={() => setIsChangingPassword(true)}>
-              Changer le mot de passe
+              {t('profile.changePassword') || 'Changer le mot de passe'}
             </Button>
           ) : (
             <form onSubmit={handlePasswordChange} className="space-y-4">
               <div>
-                <Label htmlFor="currentPassword">Mot de passe actuel</Label>
+                <Label htmlFor="currentPassword">{t('forms.currentPassword') || 'Mot de passe actuel'}</Label>
                 <Input
                   id="currentPassword"
                   type="password"
@@ -318,7 +317,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
                 />
               </div>
               <div>
-                <Label htmlFor="newPassword">Nouveau mot de passe</Label>
+                <Label htmlFor="newPassword">{t('forms.newPassword') || 'Nouveau mot de passe'}</Label>
                 <Input
                   id="newPassword"
                   type="password"
@@ -329,7 +328,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
                 />
               </div>
               <div>
-                <Label htmlFor="confirmPassword">Confirmer le nouveau mot de passe</Label>
+                <Label htmlFor="confirmPassword">{t('forms.confirmPassword') || 'Confirmer le nouveau mot de passe'}</Label>
                 <Input
                   id="confirmPassword"
                   type="password"
@@ -340,7 +339,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
                 />
               </div>
               <div className="flex gap-2">
-                <Button type="submit">Confirmer</Button>
+                <Button type="submit">{t('forms.confirm') || 'Confirmer'}</Button>
                 <Button 
                   type="button" 
                   variant="outline" 
@@ -349,7 +348,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
                     setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
                   }}
                 >
-                  Annuler
+                  {t('forms.cancel') || 'Annuler'}
                 </Button>
               </div>
             </form>

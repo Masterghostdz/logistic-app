@@ -34,7 +34,7 @@ export const translations = {
       revoked: "Recouvrement annulé"
     },
     planificateur: {
-      statsTitle: "Résumé des déclarations",
+      statsTitle: "Indicateurs des déclarations",
       add: "Ajouter",
       paymentsStatsTitle: "Payments summary",
       clientsTitle: "Gestion des Clients",
@@ -63,6 +63,7 @@ export const translations = {
     caissier: "Caissier",
     },
     buttons: {
+      back: "Retour",
       myClients: "Mes clients",
       add: "Ajouter",
       settings: "Paramètres",
@@ -81,6 +82,9 @@ export const translations = {
       searchPlaceholder: "Rechercher...",
       filterPlaceholder: "Filtrer...",
       zoom: "Zoom"
+    },
+    loading: {
+      default: "Chargement..."
     },
     filters: {
       all: "Tous"
@@ -269,6 +273,24 @@ export const translations = {
       statsTitle: "Declarations summary",
       paymentsStatsTitle: "Payments summary"
     },
+    buttons: {
+      back: "Back"
+    },
+    profile: {
+      title: "My Profile",
+      personalInfo: "Personal Information",
+      contactAndVehicle: "Contact & Vehicle",
+      notProvided: "Not provided",
+      userNotFound: "User not found",
+      securityTitle: "Security",
+      securityDescription: "Change your password to secure your account",
+      changePassword: "Change password"
+    },
+    forms: {
+      currentPassword: "Current Password",
+      newPassword: "New Password",
+      confirmPassword: "Confirm Password"
+    },
   },
   ar: {
     // planificateur moved to final `ar` block to avoid duplication
@@ -292,6 +314,23 @@ export const translations = {
       paymentsPendingTitle: "حالات المدفوعات غير المعتمدة",
       paymentsNoCompanyTitle: "بدون شركة"
     },
+    profile: {
+      title: "الملف الشخصي",
+      personalInfo: "المعلومات الشخصية",
+      contactAndVehicle: "جهات الاتصال والمركبة",
+      notProvided: "غير متوفر",
+      userNotFound: "المستخدم غير موجود",
+      securityTitle: "الأمان",
+      securityDescription: "قم بتغيير كلمة المرور الخاصة بك لتأمين حسابك",
+      changePassword: "تغيير كلمة المرور"
+    },
+    forms: {
+      currentPassword: "كلمة المرور الحالية",
+      newPassword: "كلمة المرور الجديدة",
+      confirmPassword: "تأكيد كلمة المرور",
+      cancel: "إلغاء",
+      confirm: "تأكيد"
+    },
     // Recouvrement labels (Arabic)
     recouvrement: {
       noProgramReference: "بدون مرجع البرنامج",
@@ -306,6 +345,9 @@ export const translations = {
       searchPlaceholder: "ابحث...",
       filterPlaceholder: "تصفية...",
       zoom: "تكبير"
+    },
+    loading: {
+      default: "جارٍ التحميل..."
     },
     filters: {
       all: "الكل"
@@ -524,7 +566,12 @@ export const translations = {
       contactAndVehicle: "Contact & Véhicule",
       notProvided: "Non renseigné",
       userNotFound: "Utilisateur non trouvé"
+      ,
+      securityTitle: "Sécurité",
+      securityDescription: "Modifiez votre mot de passe pour sécuriser votre compte",
+      changePassword: "Changer le mot de passe"
     },
+    // buttons already defined earlier in this language block; avoid duplicate
     // Settings
     settings: {
       title: "Paramètres",
@@ -626,6 +673,9 @@ export const translations = {
       filterPlaceholder: "Filter..."
     ,  zoom: "Zoom"
     },
+    loading: {
+      default: "Loading..."
+    },
     filters: {
       all: "All"
     },
@@ -649,7 +699,7 @@ export const translations = {
     },
     planificateur: {
       add: "Add",
-      statsTitle: "ملخص التصريحات",
+      statsTitle: "Declarations indicators",
       clientsTitle: "Clients Management",
       dashboardTitle: "Planner Dashboard",
       recentDeclarations: "Recent Declarations",
@@ -1085,6 +1135,7 @@ export const translations = {
       declarationsTitle: "إدارة التصريحات",
       warehousesTitle: "إدارة المستودعات",
       add: "إضافة",
+      statsTitle: "مؤشرات التصريحات",
       company: "الشركة",
       phoneNumbers: "أرقام الهاتف",
       status: "الحالة"
@@ -1359,6 +1410,10 @@ export const translations = {
       contactAndVehicle: "الاتصال والمركبة",
       notProvided: "غير متوفر",
       userNotFound: "المستخدم غير موجود"
+      ,
+      securityTitle: "الأمان",
+      securityDescription: "قم بتغيير كلمة المرور الخاصة بك لتأمين حسابك",
+      changePassword: "تغيير كلمة المرور"
     },
     // Settings
     settings: {
@@ -1444,6 +1499,25 @@ try {
 } catch (e) {
   // non-fatal, leave translations as-is if the helper fails
   // console.warn('fillMissingTranslations failed', e);
+}
+
+// Safety: ensure English translations explicitly contain profile/security and forms password keys
+// This avoids cases where duplicate blocks or object ordering cause a fallback to French/other languages
+try {
+  const en = (translations as any).en = (translations as any).en || {};
+  en.profile = en.profile || {};
+  en.profile.securityTitle = en.profile.securityTitle || 'Security';
+  en.profile.securityDescription = en.profile.securityDescription || 'Change your password to secure your account';
+  en.profile.changePassword = en.profile.changePassword || 'Change password';
+
+  en.forms = en.forms || {};
+  en.forms.currentPassword = en.forms.currentPassword || 'Current Password';
+  en.forms.newPassword = en.forms.newPassword || 'New Password';
+  en.forms.confirmPassword = en.forms.confirmPassword || 'Confirm Password';
+  en.forms.confirm = en.forms.confirm || 'Confirm';
+  en.forms.cancel = en.forms.cancel || 'Cancel';
+} catch (e) {
+  // ignore, not fatal
 }
 
 export const getTranslation = (key: string, language: string) => {

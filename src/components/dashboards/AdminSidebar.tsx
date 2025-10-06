@@ -39,8 +39,8 @@ const AdminSidebar = ({ activeTab, onTabChange, viewMode = 'desktop' }: AdminSid
 		);
 	}
 	// Desktop : sidebar verticale, identique aux autres sidebars
-	return (
-		<div className="w-64 flex-shrink-0 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 p-4 z-50 relative">
+	 return (
+	 		<div className="w-64 flex-shrink-0 bg-gray-50 dark:bg-gray-900 border-r border-gray-300 dark:border-gray-700 p-4 z-50 relative">
 			<nav className="space-y-2">
 				<Button
 					variant={activeTab === 'dashboard' ? 'default' : 'ghost'}

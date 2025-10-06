@@ -1,5 +1,4 @@
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
-
 buildscript {
     
     repositories {
@@ -26,4 +25,28 @@ allprojects {
 
 task clean(type: Delete) {
     delete rootProject.buildDir
+}
+
+// Ensure Java/Kotlin compile compatibility across all subprojects.
+// This helps when the host JDK is newer (e.g. Java 21) while modules target Java 8
+// — we set a modern target (17) to avoid deprecation warnings and improve compatibility.
+subprojects {
+    afterEvaluate { proj ->
+        // Configure Java compile tasks if present
+        proj.tasks.withType(org.gradle.api.tasks.compile.JavaCompile).configureEach {
+            sourceCompatibility = '17'
+            targetCompatibility = '17'
+        }
+
+        // Configure Kotlin compile tasks if the Kotlin plugin is applied
+        try {
+            proj.tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+                kotlinOptions {
+                    jvmTarget = '17'
+                }
+            }
+        } catch (ignored) {
+            // kotlin plugin not applied in this project
+        }
+    }
 }

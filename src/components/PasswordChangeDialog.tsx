@@ -6,6 +6,7 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'sonner';
+import { useTranslation } from '../hooks/useTranslation';
 import { Lock } from 'lucide-react';
 
 interface PasswordChangeDialogProps {
@@ -14,6 +15,7 @@ interface PasswordChangeDialogProps {
 
 const PasswordChangeDialog = ({ trigger }: PasswordChangeDialogProps) => {
   const { changePassword } = useAuth();
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState({
     currentPassword: '',
@@ -51,13 +53,13 @@ const PasswordChangeDialog = ({ trigger }: PasswordChangeDialogProps) => {
         {trigger || (
           <Button variant="outline" className="flex items-center gap-2">
             <Lock className="h-4 w-4" />
-            Changer le mot de passe
+            {t('profile.changePassword') || 'Changer le mot de passe'}
           </Button>
         )}
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Changer le mot de passe</DialogTitle>
+          <DialogTitle>{t('profile.changePassword') || 'Changer le mot de passe'}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -94,10 +96,10 @@ const PasswordChangeDialog = ({ trigger }: PasswordChangeDialogProps) => {
           </div>
           <div className="flex justify-end space-x-2">
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-              Annuler
+              {t('forms.cancel') || 'Annuler'}
             </Button>
             <Button type="submit">
-              Changer le mot de passe
+              {t('profile.changePassword') || 'Changer le mot de passe'}
             </Button>
           </div>
         </form>

@@ -566,7 +566,7 @@ const ChauffeurDashboard = () => {
   // (supprimé, déjà géré plus haut avec 'profile')
 
   return (
-    <div className={isMobile ? 'max-w-[430px] mx-auto bg-background min-h-screen flex flex-col' : 'min-h-screen bg-background w-full overflow-x-hidden'}>
+  <div className={isMobile ? 'max-w-[430px] mx-auto bg-gray-100 dark:bg-background min-h-screen flex flex-col' : 'min-h-screen bg-gray-100 dark:bg-background w-full overflow-x-hidden'}>
       <Header onProfileClick={() => setActiveTab('profile')} />
       {/* Badge En ligne + GPS : mobile sous le header, desktop en haut à droite (absolute, hors sidebar) */}
       {isMobile ? (

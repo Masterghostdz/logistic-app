@@ -91,18 +91,8 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
 
   const [settings, setSettings] = useState<Settings>(initialSettings);
 
-  // Met à jour le mode d'affichage à chaque entrée ou changement de taille d'écran
-  useEffect(() => {
-    function handleResizeOrAgent() {
-      const newMode = detectViewMode();
-      setSettings(prev => ({ ...prev, viewMode: newMode }));
-    }
-    window.addEventListener('resize', handleResizeOrAgent);
-    handleResizeOrAgent(); // recalcul immédiat à l'entrée
-    return () => {
-      window.removeEventListener('resize', handleResizeOrAgent);
-    };
-  }, []);
+  // Suppression de la détection automatique du mode d'affichage après le choix utilisateur
+  // Le mode reste celui choisi par l'utilisateur (via updateSettings)
   const setHeartbeatOnlineEnabled = (value: boolean) => updateSettings({ heartbeatOnlineEnabled: value });
   const setHeartbeatOnlineImmediate = (value: boolean) => updateSettings({ heartbeatOnlineImmediate: value });
   const setHeartbeatGpsEnabled = (value: boolean) => updateSettings({ heartbeatGpsEnabled: value });
@@ -111,11 +101,7 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
   const setHeartbeatPositionImmediate = (value: boolean) => updateSettings({ heartbeatPositionImmediate: value });
   const setGpsActivationRequestEnabled = (value: boolean) => updateSettings({ gpsActivationRequestEnabled: value });
 
-  // Empêche la modification manuelle du mode d'affichage
-  useEffect(() => {
-    const autoMode = detectViewMode();
-    setSettings(prev => ({ ...prev, viewMode: autoMode }));
-  }, [userAgent, window.innerWidth]);
+  // Suppression de l'effet qui écrasait le mode choisi
 
   useEffect(() => {
     // Charger les paramètres depuis Firestore puis localStorage

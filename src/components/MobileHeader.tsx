@@ -18,7 +18,7 @@ const MobileHeader = () => {
   };
 
   return (
-    <header className="bg-background border-b border-border p-4 md:hidden">
+  <header className="bg-gray-100 border-b border-gray-300 dark:bg-card dark:border-border p-4 md:hidden">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold text-primary">Logigrine</h1>
         
@@ -44,7 +44,7 @@ const MobileHeader = () => {
             </SheetTrigger>
             <SheetContent side="right" className="w-80">
               <div className="py-4">
-                <div className="flex items-center gap-3 pb-4 border-b border-border">
+                <div className="flex items-center gap-3 pb-4 border-b border-gray-300 dark:border-border">
                   <div className="bg-primary text-primary-foreground w-10 h-10 rounded-full flex items-center justify-center">
                     <User className="h-5 w-5" />
                   </div>

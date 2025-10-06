@@ -527,7 +527,7 @@ const AdminDashboard = () => {
   }
 
   return (
-    <div className={viewMode === 'mobile' ? 'max-w-[430px] mx-auto bg-background min-h-screen flex flex-col' : 'min-h-screen bg-background w-full overflow-x-hidden'}>
+  <div className={viewMode === 'mobile' ? 'max-w-[430px] mx-auto bg-gray-100 dark:bg-background min-h-screen flex flex-col' : 'min-h-screen bg-gray-100 dark:bg-background w-full overflow-x-hidden'}>
     <style>{viewMode === 'mobile' ? `
       html, body, .max-w-[430px] {
         font-size: 15px !important;
@@ -742,7 +742,7 @@ const AdminDashboard = () => {
                   </DialogHeader>
                   <form onSubmit={handleChangePassword} className="space-y-4">
                     <div>
-                      <Label htmlFor="newPassword">Nouveau mot de passe *</Label>
+                      <Label htmlFor="newPassword">{t('forms.newPassword') || 'Nouveau mot de passe *'}</Label>
                       <Input
                         id="newPassword"
                         type="password"
@@ -753,7 +753,7 @@ const AdminDashboard = () => {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="confirmPassword">Confirmer le mot de passe *</Label>
+                      <Label htmlFor="confirmPassword">{t('forms.confirmPassword') || 'Confirmer le mot de passe *'}</Label>
                       <Input
                         id="confirmPassword"
                         type="password"
@@ -765,14 +765,14 @@ const AdminDashboard = () => {
                     </div>
                     <div className="flex gap-2 pt-4">
                       <Button type="submit" className="flex-1">
-                        Changer le mot de passe
+                        {t('profile.changePassword') || 'Changer le mot de passe'}
                       </Button>
                       <Button type="button" variant="outline" onClick={() => {
                         setShowChangePassword(false);
                         setSelectedUserForPassword(null);
                         setPasswordData({ newPassword: '', confirmPassword: '' });
                       }}>
-                        Annuler
+                        {t('forms.cancel') || 'Annuler'}
                       </Button>
                     </div>
                   </form>

@@ -162,6 +162,16 @@ const PlanificateurDashboard = () => {
   // Track how the user navigated to a section so we can reset filters on sidebar navigation
   const [lastNavSource, setLastNavSource] = useState<'none'|'nav'|'indicator'>('none');
 
+  // If the user navigates to the Declarations tab via the sidebar (nav), clear
+  // any indicator-applied filters so the table shows the default view.
+  useEffect(() => {
+    if (activeTab === 'declarations' && lastNavSource === 'nav') {
+      setFilterStatus('all');
+      // Reset source so this runs only once per explicit nav action
+      setLastNavSource('none');
+    }
+  }, [activeTab, lastNavSource]);
+
   // --- Clients state ---
   const [clients, setClients] = useState([]);
   // Indique s'il y a au moins un client en attente de validation
@@ -657,7 +667,7 @@ const PlanificateurDashboard = () => {
   if (activeTab === 'tracage') {
     if (viewMode === 'desktop') {
       return (
-        <div className="bg-background min-h-screen flex flex-col">
+          <div className="bg-gray-100 dark:bg-background min-h-screen flex flex-col">
           <Header onProfileClick={handleProfileClick} />
           <div className="flex min-h-[calc(100vh-4rem)] relative">
             {/* Badge en ligne en haut à droite, desktop uniquement */}
@@ -685,7 +695,7 @@ const PlanificateurDashboard = () => {
       );
     } else {
       return (
-        <div className="max-w-[430px] mx-auto bg-background min-h-screen flex flex-col">
+          <div className="max-w-[430px] mx-auto bg-background min-h-screen flex flex-col">
           <Header onProfileClick={handleProfileClick} />
           {/* Badge en ligne mobile : juste sous le header */}
           <div className="flex px-2 pt-3 mb-2">
@@ -756,7 +766,7 @@ const PlanificateurDashboard = () => {
     : filteredDeclarations;
 
   return (
-  <div className={viewMode === 'mobile' ? 'max-w-[430px] mx-auto bg-background min-h-screen flex flex-col' : 'bg-background min-h-screen flex flex-col'}>
+  <div className={viewMode === 'mobile' ? 'max-w-[430px] mx-auto bg-gray-100 dark:bg-background min-h-screen flex flex-col' : 'bg-gray-100 dark:bg-background min-h-screen flex flex-col'}>
       <Header onProfileClick={handleProfileClick} />
       {/* Badge en ligne : mobile sous le header, desktop à droite de la sidebar, sous le header */}
       {viewMode === 'mobile' ? (

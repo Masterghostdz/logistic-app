@@ -145,7 +145,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle, showMenuButton = false, o
 
   return (
     <>
-    <header dir="ltr" className="border-b border-border bg-card shadow-sm">
+  <header dir="ltr" className="border-b border-gray-300 dark:border-border bg-gray-100 dark:bg-card shadow-sm">
   <div className={`flex ${settings.viewMode === 'mobile' ? 'h-12' : 'h-16'} items-center justify-between pl-1 pr-4 lg:pl-3 lg:pr-6`}>
           {/* Logo à gauche */}
           <div className={`flex items-center gap-2 flex-1 ${settings.viewMode === 'mobile' ? 'pr-12' : 'pr-6 lg:pr-10'} min-w-0`}>
@@ -256,16 +256,17 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle, showMenuButton = false, o
               </DropdownMenu>
             )}
             <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  className={`relative ${settings.viewMode === 'mobile' ? 'h-7 w-7' : 'h-8 w-8'} rounded-full hover:bg-accent`}
-                  onClick={() => {
-                    if (openMenu === 'notifications') setOpenMenu('avatar');
-                    else setOpenMenu(openMenu === 'avatar' ? 'none' : 'avatar');
-                  }}
-                >
-                  {user?.role === 'chauffeur' && user?.employeeType === 'interne' && (
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className={`relative p-0 overflow-visible ${settings.viewMode === 'mobile' ? 'h-7 w-7' : 'h-8 w-8'} rounded-full hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring shadow-[0_0_0_1px_hsl(var(--input))] hover:shadow-[0_0_0_2px_hsl(var(--input))] active:shadow-[0_0_0_2px_hsl(var(--input))] focus-visible:shadow-[0_0_0_2px_hsl(var(--input))] transition-shadow duration-150`}
+                    onClick={() => {
+                      if (openMenu === 'notifications') setOpenMenu('avatar');
+                      else setOpenMenu(openMenu === 'avatar' ? 'none' : 'avatar');
+                    }}
+                  >
+                  {(user?.role === 'chauffeur' || user?.role === 'caissier') && user?.employeeType === 'interne' && (
                     // Centered circular glow sized to the avatar to match shape on mobile
                     <span
                       className="absolute pointer-events-none"
@@ -285,7 +286,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle, showMenuButton = false, o
                   )}
                   <Avatar className={`${settings.viewMode === 'mobile' ? 'h-7 w-7' : 'h-8 w-8'} relative z-30`}>
                     <AvatarImage src={user?.avatar} alt={user?.firstName} />
-                    <AvatarFallback className="bg-muted text-muted-foreground">
+                    <AvatarFallback className={`bg-muted text-muted-foreground ${settings.viewMode === 'mobile' ? 'text-sm' : 'text-base'} font-medium`}> 
                       {getInitials(user?.firstName || '', user?.lastName || '')}
                     </AvatarFallback>
                   </Avatar>

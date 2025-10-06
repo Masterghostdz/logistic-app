@@ -21,36 +21,36 @@ const CaissierSidebar: React.FC<CaissierSidebarProps> = ({ activeTab, onTabChang
   const labelPayment = t('tabs.payment');
   const labelTracage = t('tabs.tracage');
 
-  if (isMobile) {
+    if (isMobile) {
     return (
-      <nav className="flex flex-row justify-center items-center gap-8 py-3 px-4 bg-white dark:bg-gray-900 rounded-full shadow-lg w-full border-2 border-blue-400 dark:border-blue-600 overflow-x-auto">
+  <nav className="flex flex-row justify-center items-center gap-6 py-2 px-3 bg-white dark:bg-gray-900 rounded-full shadow-lg w-full border-2 border-blue-400 dark:border-blue-600 overflow-hidden">
         <button
           aria-label={labelDashboard}
           onClick={() => onTabChange('dashboard')}
-          className={`rounded-full p-2 transition-all ${activeTab === 'dashboard' ? 'bg-blue-600 text-white shadow-lg scale-110' : 'bg-gray-100 text-gray-600'} flex items-center justify-center h-10 w-10`}
+          className={`rounded-full p-2 transition-all ${activeTab === 'dashboard' ? 'bg-blue-600 text-white shadow-lg scale-110' : 'bg-gray-100 text-gray-600'} flex items-center justify-center h-9 w-9`}
         >
-          <ClipboardList className="h-[22px] w-[22px]" />
+          <ClipboardList className="h-5 w-5" />
         </button>
         <button
           aria-label={labelRecouvrement}
           onClick={() => onTabChange('recouvrement')}
-          className={`rounded-full p-2 transition-all ${activeTab === 'recouvrement' ? 'bg-blue-600 text-white shadow-lg scale-110' : 'bg-gray-100 text-gray-600'} flex items-center justify-center h-10 w-10`}
+          className={`rounded-full p-2 transition-all ${activeTab === 'recouvrement' ? 'bg-blue-600 text-white shadow-lg scale-110' : 'bg-gray-100 text-gray-600'} flex items-center justify-center h-9 w-9`}
         >
-          <Banknote className="h-[22px] w-[22px]" />
+          <Banknote className="h-5 w-5" />
         </button>
         <button
           aria-label={labelPayment}
           onClick={() => onTabChange('paiement')}
-          className={`rounded-full p-2 transition-all ${activeTab === 'paiement' ? 'bg-blue-600 text-white shadow-lg scale-110' : 'bg-gray-100 text-gray-600'} flex items-center justify-center h-10 w-10`}
+          className={`rounded-full p-2 transition-all ${activeTab === 'paiement' ? 'bg-blue-600 text-white shadow-lg scale-110' : 'bg-gray-100 text-gray-600'} flex items-center justify-center h-9 w-9`}
         >
-          <CreditCard className="h-[22px] w-[22px]" />
+          <CreditCard className="h-5 w-5" />
         </button>
         <button
           aria-label={labelTracage}
           onClick={() => onTabChange('tracage')}
-          className={`rounded-full p-2 transition-all ${activeTab === 'tracage' ? 'bg-blue-600 text-white shadow-lg scale-110' : 'bg-gray-100 text-gray-600'} flex items-center justify-center h-10 w-10`}
+          className={`rounded-full p-2 transition-all ${activeTab === 'tracage' ? 'bg-blue-600 text-white shadow-lg scale-110' : 'bg-gray-100 text-gray-600'} flex items-center justify-center h-9 w-9`}
         >
-          <MapPin className="h-[22px] w-[22px]" />
+          <MapPin className="h-5 w-5" />
         </button>
       </nav>
     );
@@ -58,7 +58,7 @@ const CaissierSidebar: React.FC<CaissierSidebarProps> = ({ activeTab, onTabChang
 
   // Desktop
   return (
-    <div className="w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 p-4">
+  <div className="w-64 flex-shrink-0 bg-gray-50 dark:bg-gray-900 border-r border-gray-300 dark:border-gray-700 p-4 z-50 relative">
       <nav className="space-y-2">
         <Button
           variant={activeTab === 'dashboard' ? 'default' : 'ghost'}

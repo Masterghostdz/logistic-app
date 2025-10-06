@@ -31,7 +31,7 @@ const Index = () => {
 
   return (
     <SharedDataProvider>
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 w-full overflow-x-hidden">
+  <div className="min-h-screen bg-gray-200 dark:bg-gray-900 w-full overflow-x-hidden border border-black dark:border-gray-900">
         <main className="flex-1 w-full">
           {renderDashboard()}
         </main>

@@ -4,6 +4,7 @@ import { Geolocation } from '@capacitor/geolocation';
 import { Device } from '@capacitor/device';
 import { SplashScreen } from '@capacitor/splash-screen';
 import { StatusBar, Style } from '@capacitor/status-bar';
+import { pushService } from './pushService';
 
 export interface DeviceInfo {
   isNative: boolean;
@@ -28,17 +29,19 @@ class MobileService {
       // Get device info
       this.deviceInfo = await this.getDeviceInfo();
       
-      // Configure status bar
+      // Configure status bar: prefer native/system defaults and allow the WebView to draw
+      // behind the system bars so the web layer can use safe-area insets. Avoid forcing
+      // a white background or text style from the web layer; let the OS choose the best
+      // contrast and appearance for each device.
       if (this.deviceInfo.isAndroid || this.deviceInfo.isIOS) {
         try {
-          // Ensure the status bar does not overlay the WebView content
-          // so the app UI is positioned below the OS status bar (avatar will be tappable).
-          await StatusBar.setOverlaysWebView({ overlay: false });
+          // Allow the status bar to overlay the WebView so CSS env(safe-area-inset-*)
+          // values can be used without the web layer needing to add extra top padding.
+          await StatusBar.setOverlaysWebView({ overlay: true });
         } catch (e) {
           console.warn('StatusBar.setOverlaysWebView not supported on this platform', e);
         }
-        await StatusBar.setStyle({ style: Style.Default });
-        await StatusBar.setBackgroundColor({ color: '#ffffff' });
+        // Do not set style or background color here; prefer the system default.
       }
 
       // Add classes to the document root so CSS can apply native-specific layout adjustments
@@ -47,8 +50,8 @@ class MobileService {
           document.documentElement.classList.add('native-app');
           if (this.deviceInfo.isAndroid) {
             document.documentElement.classList.add('android-native');
-            // also set a CSS variable for a larger offset on Android devices
-            document.documentElement.style.setProperty('--native-top-offset', '22px');
+            // Do not override --native-top-offset here; native insets are handled
+            // by CSS env(safe-area-inset-*) and by the native window edge-to-edge config.
           }
         }
       } catch (e) {
@@ -59,6 +62,12 @@ class MobileService {
       setTimeout(async () => {
         await SplashScreen.hide();
       }, 2000);
+      // Register for push notifications on native platforms
+      try {
+        await pushService.register();
+      } catch (e) {
+        console.warn('Push service registration failed', e);
+      }
     }
   }
 

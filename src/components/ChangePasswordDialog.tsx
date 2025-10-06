@@ -51,16 +51,16 @@ const ChangePasswordDialog = () => {
       <DialogTrigger asChild>
         <Button variant="ghost" className="w-full justify-start">
           <KeyRound className="mr-2 h-4 w-4" />
-          Changer le mot de passe
+          {t('profile.changePassword') || 'Changer le mot de passe'}
         </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Changer le mot de passe</DialogTitle>
+          <DialogTitle>{t('profile.changePassword') || 'Changer le mot de passe'}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label htmlFor="current">Mot de passe actuel</Label>
+            <Label htmlFor="current">{t('forms.currentPassword') || 'Mot de passe actuel'}</Label>
             <Input
               id="current"
               type="password"
@@ -70,7 +70,7 @@ const ChangePasswordDialog = () => {
             />
           </div>
           <div>
-            <Label htmlFor="new">Nouveau mot de passe</Label>
+            <Label htmlFor="new">{t('forms.newPassword') || 'Nouveau mot de passe'}</Label>
             <Input
               id="new"
               type="password"
@@ -81,7 +81,7 @@ const ChangePasswordDialog = () => {
             />
           </div>
           <div>
-            <Label htmlFor="confirm">Confirmer le nouveau mot de passe</Label>
+            <Label htmlFor="confirm">{t('forms.confirmPassword') || 'Confirmer le nouveau mot de passe'}</Label>
             <Input
               id="confirm"
               type="password"
@@ -93,10 +93,10 @@ const ChangePasswordDialog = () => {
           </div>
           <div className="flex justify-end space-x-2">
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-              Annuler
+              {t('forms.cancel') || 'Annuler'}
             </Button>
             <Button type="submit">
-              Modifier
+              {t('forms.confirm') || 'Modifier'}
             </Button>
           </div>
         </form>

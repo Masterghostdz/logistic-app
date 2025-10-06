@@ -18,33 +18,33 @@ interface PlanificateurStatsProps {
 const PlanificateurStats = ({ stats, onEnAttenteClick, onEnRouteClick, onEnPanneClick }: PlanificateurStatsProps & { onEnRouteClick?: () => void; onEnPanneClick?: () => void }) => {
   const { t } = useTranslation();
   // Harmonized icon and text size
-  // Responsive: force same size on mobile and desktop
   const iconSize = "h-3 w-3 min-w-[0.75rem] min-h-[0.75rem]";
-  // Mobile: use the same readable sizing as Chauffeur dashboard (larger on mobile)
-  const titleClass = "text-xs sm:text-base font-semibold flex items-center gap-1 leading-tight w-full whitespace-normal break-words";
-  const numberClass = "text-xl sm:text-2xl font-extrabold";
+  // Title (label) classes: allow wrapping and keep it compact on small screens
+  const titleClass = "text-xs sm:text-sm font-semibold leading-tight w-full whitespace-normal break-words";
+  // Numbers: slightly smaller on very small screens so they don't overflow
+  const numberClass = "text-lg sm:text-xl md:text-2xl font-extrabold";
   return (
-  <div className="grid grid-cols-3 gap-0.5 sm:grid-cols-3 md:grid-cols-3 md:gap-6 justify-center">
+  <div className="grid grid-cols-3 gap-3 md:gap-6 justify-center">
       {/* En Route */}
       <Card
-      className="cursor-pointer hover:shadow-md transition-shadow mx-auto w-full max-w-[75px] sm:max-w-[120px] md:max-w-[400px] border-blue-200 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-800 p-0 sm:p-2"
+      className="cursor-pointer hover:shadow-md transition-shadow mx-auto w-full max-w-[110px] sm:max-w-[140px] md:max-w-[400px] border-blue-200 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-800 p-0 sm:p-1"
         onClick={onEnRouteClick}
       >
-        <CardContent className="p-2 text-center md:text-center">
+        <CardContent className="p-1 text-center md:text-center min-w-0">
           <div className={numberClass + " text-blue-700 dark:text-blue-400 mx-auto"} aria-hidden>{stats.enRoute}</div>
-          <div className={"text-sm mt-1 whitespace-nowrap " + "text-blue-700 dark:text-blue-400"}>{t('dashboard.onRoad')}</div>
-          <p className="text-xs text-muted-foreground md:hidden mt-1">{t('dashboard.clickToFilter')}</p>
+          <div className={titleClass + " mt-0.5 text-blue-700 dark:text-blue-400"}>{t('dashboard.onRoad')}</div>
+          {/* helper text removed on mobile as requested */}
         </CardContent>
       </Card>
       {/* En Attente de Validation */}
       <Card
-      className="cursor-pointer hover:shadow-md transition-shadow mx-auto w-full max-w-[60px] sm:max-w-[100px] md:max-w-[400px] border-yellow-200 bg-yellow-50 dark:bg-yellow-900/20 dark:border-yellow-800 p-0 sm:p-2"
+      className="cursor-pointer hover:shadow-md transition-shadow mx-auto w-full max-w-[110px] sm:max-w-[140px] md:max-w-[400px] border-yellow-200 bg-yellow-50 dark:bg-yellow-900/20 dark:border-yellow-800 p-0 sm:p-1"
         onClick={onEnAttenteClick}
       >
-        <CardContent className="p-2 text-center md:text-center">
+        <CardContent className="p-1 text-center md:text-center min-w-0">
           <div className={numberClass + " text-yellow-700 dark:text-yellow-400 mx-auto"} aria-hidden>{stats.enAttente}</div>
-          <div className={"text-sm mt-1 whitespace-nowrap " + "text-yellow-700 dark:text-yellow-400"}>{t('dashboard.pending')}</div>
-          <p className="text-xs text-muted-foreground md:hidden mt-1">{t('dashboard.clickToFilter')}</p>
+          <div className={titleClass + " mt-0.5 text-yellow-700 dark:text-yellow-400"}>{t('dashboard.pending')}</div>
+          {/* helper text removed on mobile as requested */}
         </CardContent>
       </Card>
       {/* En Panne : n'affiche le cadre que s'il y a des pannes */}
@@ -73,10 +73,10 @@ const PlanificateurStats = ({ stats, onEnAttenteClick, onEnRouteClick, onEnPanne
             ease: "easeInOut"
           }}
         >
-          <CardContent className="p-2 text-center md:text-center">
-            <div className={numberClass + " text-orange-700 dark:text-orange-400 mx-auto"} aria-hidden>{stats.enPanne}</div>
-            <div className={"text-sm mt-1 whitespace-nowrap " + "text-orange-700 dark:text-orange-400"}>{t('dashboard.breakdown')}</div>
-            <p className="text-xs text-muted-foreground md:hidden mt-1">{t('dashboard.clickToFilter')}</p>
+    <CardContent className="p-1 text-center md:text-center min-w-0">
+      <div className={numberClass + " text-orange-700 dark:text-orange-400 mx-auto"} aria-hidden>{stats.enPanne}</div>
+      <div className={titleClass + " mt-0.5 text-orange-700 dark:text-orange-400"}>{t('dashboard.breakdown')}</div>
+            {/* helper text removed on mobile as requested */}
           </CardContent>
         </motion.div>
       )}
