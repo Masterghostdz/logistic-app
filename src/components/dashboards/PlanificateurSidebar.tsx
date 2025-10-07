@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useTranslation } from '../../hooks/useTranslation';
 import { useSettings } from '../../contexts/SettingsContext';
@@ -7,7 +6,8 @@ import {
   ClipboardList,
   FileText,
   User,
-  MapPin
+  MapPin,
+  Warehouse
 } from 'lucide-react';
 
 interface PlanificateurSidebarProps {
@@ -44,8 +44,7 @@ const PlanificateurSidebar = ({ activeTab, onTabChange, hasPendingClients }: Pla
           onClick={() => onTabChange('entrepots')}
           className={`rounded-full p-2 transition-all ${activeTab === 'entrepots' ? 'bg-blue-600 text-white shadow-lg scale-110' : 'bg-gray-100 text-gray-600'} flex items-center justify-center h-9 w-9`}
         >
-          {/* Icone d'entrepot (warehouse) Lucide: Package */}
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><rect x="3" y="7" width="18" height="13" rx="2" strokeWidth="2" /><path d="M3 7l9-4 9 4" strokeWidth="2" /></svg>
+          <Warehouse className="h-5 w-5" />
         </button>
         <button
           aria-label={t('tabs.chauffeurs')}
@@ -100,8 +99,7 @@ const PlanificateurSidebar = ({ activeTab, onTabChange, hasPendingClients }: Pla
           className="w-full justify-start"
           onClick={() => onTabChange('entrepots')}
         >
-          {/* Icone d'entrepot (warehouse) Lucide: Package */}
-          <svg xmlns="http://www.w3.org/2000/svg" className="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><rect x="3" y="7" width="18" height="13" rx="2" strokeWidth="2" /><path d="M3 7l9-4 9 4" strokeWidth="2" /></svg>
+          <Warehouse className="mr-2 h-4 w-4" />
           {t('tabs.warehouses')}
         </Button>
         <Button

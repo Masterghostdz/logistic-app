@@ -1,8 +1,7 @@
-
 import React from 'react';
 import { Button } from './ui/button';
 import { Copy } from 'lucide-react';
-import { toast } from 'sonner';
+import { success, error } from './ui/use-toast';
 
 interface CopyButtonProps {
   value: string;
@@ -12,10 +11,10 @@ const CopyButton = ({ value }: CopyButtonProps) => {
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(value);
-      toast.success('Valeur copiée dans le presse-papiers');
+      success('Valeur copiée dans le presse-papiers');
     } catch (err) {
       console.error('Erreur lors de la copie:', err);
-      toast.error('Erreur lors de la copie');
+      error('Erreur lors de la copie');
     }
   };
 

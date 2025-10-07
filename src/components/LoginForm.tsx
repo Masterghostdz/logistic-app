@@ -7,7 +7,7 @@ import { Label } from './ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from '../hooks/useTranslation';
-import { toast } from 'sonner';
+import { success, warning, error, info } from './ui/use-toast';
 import { LogIn, User, Lock } from 'lucide-react';
 import { useSettings } from '../contexts/SettingsContext';
 import { useLoading } from '../contexts/LoadingContext';
@@ -53,10 +53,10 @@ const LoginForm = () => {
     try {
       const success = await login(username, password);
       if (!success) {
-        toast.error(t('auth.invalidCredentials'));
+        error(t('auth.invalidCredentials'));
       }
     } catch (error) {
-      toast.error(t('forms.error'));
+      error(t('forms.error'));
     } finally {
       setIsLoading(false);
       try { loadingCtx.hide(); } catch (e) {}
@@ -75,8 +75,8 @@ const LoginForm = () => {
     }}
   >
         <div>
-          <span className="font-semibold">Mode détecté :</span>
-          <span className={settings.viewMode === 'mobile' ? 'text-orange-600 font-bold ml-1' : 'text-blue-600 font-bold ml-1'}>{settings.viewMode === 'mobile' ? 'Mobile' : 'Desktop'}</span>
+          <span className="font-semibold">{t('auth.detectedMode')}</span>
+          <span className={settings.viewMode === 'mobile' ? 'text-orange-600 font-bold ml-1' : 'text-blue-600 font-bold ml-1'}>{settings.viewMode === 'mobile' ? t('common.mobile') : t('common.desktop')}</span>
         </div>
       </div>
       <Card className="w-full max-w-md relative overflow-visible">
@@ -146,7 +146,7 @@ const LoginForm = () => {
           
           <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
             <h4 className="text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
-              Comptes de démonstration :
+              {t('auth.demoAccounts')}
             </h4>
             <div className="space-y-1 text-xs text-gray-600 dark:text-gray-400">
               <div><strong>{t('roles.chauffeur') || 'chauffeur'}</strong> - Mot de passe: demo123</div>
@@ -156,7 +156,7 @@ const LoginForm = () => {
               <div><strong>{t('roles.admin') || 'admin'}</strong> - Mot de passe: admin123</div>
             </div>
             <div className="mt-2 text-xs text-gray-500 italic">
-              Note: Ces mots de passe sont sécurisés et hachés côté serveur
+              {t('auth.demoNote')}
             </div>
           </div>
         </CardContent>

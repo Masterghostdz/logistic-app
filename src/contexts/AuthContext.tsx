@@ -9,24 +9,26 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { user, isAuthenticated, login, changePassword, logout, restoreSession } = useAuthLogic();
   const [sessionChecked, setSessionChecked] = React.useState(false);
-  const { updateSettings } = useSettings();
+  const { settings, updateSettings } = useSettings();
 
-  // Ajout: force la détection du viewMode à chaque login/logout/restauration de session
+  // Ajout: détecte le viewMode au login mais NE l'écrase pas si l'utilisateur a déjà choisi un mode
   React.useEffect(() => {
     if (user) {
-      // Redétecte le mode d'affichage à chaque changement d'utilisateur
-      const ua = navigator.userAgent;
-      let mode: 'mobile' | 'desktop' = 'desktop';
-      if (/Windows|Macintosh|Linux/i.test(ua)) {
-        mode = 'desktop';
-      } else if (/Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua)) {
-        mode = 'mobile';
-      } else if (typeof window !== 'undefined' && window.innerWidth < 800) {
-        mode = 'mobile';
+      // Only auto-detect and set viewMode when there is no explicit user choice
+      if (!settings || settings.viewMode === undefined) {
+        const ua = navigator.userAgent;
+        let mode: 'mobile' | 'desktop' = 'desktop';
+        if (/Windows|Macintosh|Linux/i.test(ua)) {
+          mode = 'desktop';
+        } else if (/Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua)) {
+          mode = 'mobile';
+        } else if (typeof window !== 'undefined' && window.innerWidth < 800) {
+          mode = 'mobile';
+        }
+        updateSettings({ viewMode: mode });
       }
-      updateSettings({ viewMode: mode });
     }
-  }, [user, updateSettings]);
+  }, [user, updateSettings, settings]);
 
   React.useEffect(() => {
     if (!sessionChecked) {

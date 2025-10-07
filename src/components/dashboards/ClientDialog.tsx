@@ -9,7 +9,7 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
-import { toast } from 'sonner';
+import { success, error, info } from '../ui/use-toast';
 import { Client } from '../../types/client';
 import PositionPickerModal from './PositionPickerModal';
 
@@ -72,7 +72,7 @@ const ClientDialog = ({ isOpen, onClose, onSubmit, editingClient, readOnly = fal
         const [photoUrl] = await import('../../services/declarationService').then(s => s.uploadDeclarationPhotos([file]));
         setClient((prev: any) => ({ ...prev, photoUrl }));
       } catch {
-        toast.error('Erreur lors de l\'upload de la photo');
+        error('Erreur lors de l\'upload de la photo');
       }
       setUploading(false);
     }
@@ -90,7 +90,7 @@ const ClientDialog = ({ isOpen, onClose, onSubmit, editingClient, readOnly = fal
       const [photoUrl] = await import('../../services/declarationService').then(s => s.uploadDeclarationPhotos([file]));
       setClient((prev: any) => ({ ...prev, photoUrl }));
     } catch {
-      toast.error('Erreur lors de l\'upload de la photo');
+      error('Erreur lors de l\'upload de la photo');
     }
     setUploading(false);
   };
@@ -98,7 +98,7 @@ const ClientDialog = ({ isOpen, onClose, onSubmit, editingClient, readOnly = fal
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!client.name || client.coordinates.lat === '' || client.coordinates.lng === '') {
-      toast.error('Veuillez remplir tous les champs obligatoires');
+      error('Veuillez remplir tous les champs obligatoires');
       return;
     }
     onSubmit(

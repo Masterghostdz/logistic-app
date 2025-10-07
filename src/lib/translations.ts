@@ -14,7 +14,7 @@ export const translations = {
       createRecouvrement: "Créer un recouvrement",
       emptyDashboard: "Espace Caissier (façade, aucun contenu)",
       recouvrementEmpty: "Section Recouvrement (façade, aucun contenu)",
-      tracageEmpty: "Section Tracage (façade, aucun contenu)",
+      tracageEmpty: "Section Traçage (façade, aucun contenu)",
       // Dashboard / stats
       dashboardTitle: "Tableau de bord - Caissier",
   // French labels for Caissier dashboard stats
@@ -81,7 +81,9 @@ export const translations = {
     common: {
       searchPlaceholder: "Rechercher...",
       filterPlaceholder: "Filtrer...",
-      zoom: "Zoom"
+      zoom: "Zoom",
+      mobile: "Mobile",
+      desktop: "Desktop"
     },
     loading: {
       default: "Chargement..."
@@ -161,8 +163,12 @@ export const translations = {
       password: "Mot de passe",
       loginButton: "Se connecter",
       invalidCredentials: "Identifiants invalides",
+      loggingIn: "Connexion en cours...",
       welcome: "Bienvenue sur Logigrine",
-      subtitle: "Système de gestion logistique"
+      subtitle: "Système de gestion logistique",
+      demoAccounts: "Comptes de démonstration :",
+      demoNote: "Note : Ces mots de passe sont sécurisés et hachés côté serveur",
+      detectedMode: "Mode détecté :"
     },
     // Login status band
     login: {
@@ -291,6 +297,9 @@ export const translations = {
       newPassword: "New Password",
       confirmPassword: "Confirm Password"
     },
+    tabs: {
+      tracage: "Tracking"
+    },
   },
   ar: {
     // planificateur moved to final `ar` block to avoid duplication
@@ -375,7 +384,7 @@ export const translations = {
   recouvrement: "التحصيل",
   payment: "الدفع",
   declarations: "التصريحات",
-  tracage: "التتبع",
+  tracage: "تتبع",
   warehouses: "المستودعات",
   clients: "العملاء",
       chauffeurs: "السائقين"
@@ -617,7 +626,7 @@ export const translations = {
       none: "Aucune trace"
     },
     tracage: {
-      title: "Suivi des Chauffeurs et Déclarations"
+      title: "Traçage"
     }
   },
   en: {
@@ -740,7 +749,11 @@ export const translations = {
       loginButton: "Sign In",
       invalidCredentials: "Invalid credentials",
       welcome: "Welcome to Logigrine",
-      subtitle: "Logistics Management System"
+      subtitle: "Logistics Management System",
+      loggingIn: "Logging in...",
+      demoAccounts: "Demo accounts:",
+      demoNote: "Note: These passwords are securely hashed on the server",
+      detectedMode: "Detected mode:"
     },
     // Admin table headers
     admin: {
@@ -1015,7 +1028,7 @@ export const translations = {
   recouvrement: "Collection",
   payment: "Payment",
   declarations: "Declarations",
-  tracage: "Traceability",
+  tracage: "Tracking",
   warehouses: "Warehouses",
   clients: "Clients",
       chauffeurs: "Drivers"
@@ -1054,7 +1067,7 @@ export const translations = {
       none: "No trace"
     },
     tracage: {
-      title: "Chauffeurs & Declarations Tracking"
+      title: "Tracking"
     }
   },
   ar: {
@@ -1122,7 +1135,7 @@ export const translations = {
       recouvrement: "التحصيل",
       payment: "الدفع",
       declarations: "التصريحات",
-      tracage: "التتبع",
+      tracage: "تتبع",
       warehouses: "المستودعات",
       clients: "العملاء",
       chauffeurs: "السائقين"
@@ -1166,7 +1179,11 @@ export const translations = {
       loginButton: "دخول",
       invalidCredentials: "بيانات اعتماد غير صحيحة",
       welcome: "مرحبا بك في لوجيجرين",
-      subtitle: "نظام إدارة اللوجستيات"
+      subtitle: "نظام إدارة اللوجستيات",
+      loggingIn: "تسجيل الدخول...",
+      demoAccounts: "حسابات تجريبية:",
+      demoNote: "ملاحظة: هذه كلمات المرور مؤمنة ومشفرة على الخادم",
+      detectedMode: "الوضع المكتشف:"
     },
     // Admin table headers
     admin: {
@@ -1463,7 +1480,7 @@ export const translations = {
       none: "لا توجد أي آثار"
     },
     tracage: {
-      title: "تتبع السائقين والتصريحات"
+      title: "تتبع"
     }
   }
 };

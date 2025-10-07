@@ -14,7 +14,7 @@ import { Label } from './ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Badge } from './ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { toast } from 'sonner';
+import { info, warning, success } from '../components/ui/use-toast';
 import { MapPin, Truck, Plus, Building2, Layers } from 'lucide-react';
 import ClientDialog from './dashboards/ClientDialog';
 import { addClient } from '../services/clientService';
@@ -69,11 +69,11 @@ const TracageSection = ({ gpsActive, setGpsActive, userPosition, setUserPosition
             setGpsActive(false);
             setUserPosition(null);
             if (err.code === 1) {
-              toast.error("Accès à la position refusé. Veuillez autoriser la géolocalisation.");
+              warning("Accès à la position refusé. Veuillez autoriser la géolocalisation.");
             } else if (err.code === 2) {
-              toast.error("Position non disponible.");
+              warning("Position non disponible.");
             } else {
-              toast.error("Erreur lors de la récupération de la position.");
+              warning("Erreur lors de la récupération de la position.");
             }
           },
           { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
@@ -112,7 +112,7 @@ const TracageSection = ({ gpsActive, setGpsActive, userPosition, setUserPosition
       if (isEdit && editingClient) {
         const { updateClient } = await import('../services/clientService');
   await updateClient(editingClient.id, client, auth.user);
-        toast.success('Client modifié');
+        success('Client modifié');
       } else {
         // Détecte le rôle utilisateur pour le statut
         const userName = auth?.user?.fullName && auth.user.fullName.trim() !== ''
@@ -132,7 +132,7 @@ const TracageSection = ({ gpsActive, setGpsActive, userPosition, setUserPosition
           createur: userName,
         };
   await addClient(newClient, auth.user);
-        toast.success(
+        success(
           (auth?.user?.role === 'planificateur')
             ? 'Client validé'
             : 'Client en attente de validation'
@@ -141,7 +141,7 @@ const TracageSection = ({ gpsActive, setGpsActive, userPosition, setUserPosition
       setShowEditClient(false);
       setEditingClient(null);
     } catch {
-      toast.error("Erreur lors de l'enregistrement du client");
+      warning("Erreur lors de l'enregistrement du client");
     }
   };
   // Seuls les clients validés sont affichés
@@ -171,7 +171,7 @@ const TracageSection = ({ gpsActive, setGpsActive, userPosition, setUserPosition
   // Affiche un toast si le calque Traffic est sélectionné (non adapté dark/clair)
   useEffect(() => {
     if (layerType === 'traffic') {
-      toast.warning('Le mode Traffic peut ne pas être adapté au thème clair/sombre de l\'application.');
+      warning('Le mode Traffic peut ne pas être adapté au thème clair/sombre de l\'application.');
     }
   }, [layerType]);
   const mapRef = React.useRef<any>(null);
@@ -212,11 +212,11 @@ const TracageSection = ({ gpsActive, setGpsActive, userPosition, setUserPosition
         return;
       } else {
         if (!mapInstance) {
-          toast.error("La carte n'est pas encore prête.");
+          warning("La carte n'est pas encore prête.");
           return;
         }
         if (!navigator.geolocation) {
-          toast.error("La géolocalisation n'est pas supportée par ce navigateur.");
+          warning("La géolocalisation n'est pas supportée par ce navigateur.");
           return;
         }
         setFocusedWarehouseId(null);
@@ -228,11 +228,11 @@ const TracageSection = ({ gpsActive, setGpsActive, userPosition, setUserPosition
           },
           err => {
             if (err.code === 1) {
-              toast.error("Accès à la position refusé. Veuillez autoriser la géolocalisation.");
+              warning("Accès à la position refusé. Veuillez autoriser la géolocalisation.");
             } else if (err.code === 2) {
-              toast.error("Position non disponible.");
+              warning("Position non disponible.");
             } else {
-              toast.error("Erreur lors de la récupération de la position.");
+              warning("Erreur lors de la récupération de la position.");
             }
           },
           { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
@@ -245,11 +245,11 @@ const TracageSection = ({ gpsActive, setGpsActive, userPosition, setUserPosition
         // Ne pas désactiver le GPS global ici
       } else {
         if (!mapInstance) {
-          toast.error("La carte n'est pas encore prête.");
+          warning("La carte n'est pas encore prête.");
           return;
         }
         if (!navigator.geolocation) {
-          toast.error("La géolocalisation n'est pas supportée par ce navigateur.");
+          warning("La géolocalisation n'est pas supportée par ce navigateur.");
           return;
         }
         setFocusedWarehouseId(null);
@@ -261,11 +261,11 @@ const TracageSection = ({ gpsActive, setGpsActive, userPosition, setUserPosition
           },
           err => {
             if (err.code === 1) {
-              toast.error("Accès à la position refusé. Veuillez autoriser la géolocalisation.");
+              warning("Accès à la position refusé. Veuillez autoriser la géolocalisation.");
             } else if (err.code === 2) {
-              toast.error("Position non disponible.");
+              warning("Position non disponible.");
             } else {
-              toast.error("Erreur lors de la récupération de la position.");
+              warning("Erreur lors de la récupération de la position.");
             }
           },
           { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
@@ -375,12 +375,12 @@ const TracageSection = ({ gpsActive, setGpsActive, userPosition, setUserPosition
   const handleCreateWarehouse = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newWarehouse.name || !newWarehouse.companyId || !newWarehouse.address || !newWarehouse.lat || !newWarehouse.lng) {
-      toast.error('Veuillez remplir tous les champs');
+      warning('Veuillez remplir tous les champs');
       return;
     }
     const selectedCompany = companies.find(c => c.id === newWarehouse.companyId);
     if (!selectedCompany) {
-      toast.error('Veuillez sélectionner une société');
+      warning('Veuillez sélectionner une société');
       return;
     }
     const warehouse: Warehouse = {
@@ -399,7 +399,7 @@ const TracageSection = ({ gpsActive, setGpsActive, userPosition, setUserPosition
     // TODO: Ajouter l'entrepôt à Firebase ici
     setNewWarehouse({ name: '', companyId: '', companyName: '', phone: [], address: '', lat: '', lng: '' });
     setShowCreateWarehouse(false);
-    toast.success('Entrepôt créé avec succès (Firebase)');
+    success('Entrepôt créé avec succès (Firebase)');
   };
 
   const handleCompanyChange = (companyId: string) => {
@@ -476,10 +476,10 @@ const TracageSection = ({ gpsActive, setGpsActive, userPosition, setUserPosition
             {/* Overlay boutons flottants */}
             <div className="absolute z-20 top-4 left-4 flex flex-col gap-2">
               <div className="bg-white/80 dark:bg-muted/80 rounded-lg shadow p-1 flex flex-row gap-1">
-                <Button size="icon" variant="ghost" className="text-primary" title="Mode liste" onClick={() => toast.info('Mode liste à implémenter')}> 
+                <Button size="icon" variant="ghost" className="text-primary" title="Mode liste" onClick={() => info('Mode liste à implémenter')}> 
                   <span className="material-icons">list_alt</span>
                 </Button>
-                <Button size="icon" variant="ghost" className="text-dark dark:text-white" title="Mode carte" onClick={() => toast.info('Mode carte à implémenter')}> 
+                <Button size="icon" variant="ghost" className="text-dark dark:text-white" title="Mode carte" onClick={() => info('Mode carte à implémenter')}> 
                   <span className="material-icons">map</span>
                 </Button>
                 <Button size="icon" variant="ghost" className="text-dark dark:text-white" title="Zoom avant" onClick={handleZoomIn}>
@@ -888,9 +888,9 @@ const TracageSection = ({ gpsActive, setGpsActive, userPosition, setUserPosition
                                     if (bounds.length > 0) {
                                       mapInstance.fitBounds(bounds, { animate: true, padding: [40, 40] });
                                     }
-                                    toast.success('Itinéraire affiché sur la carte');
+                                    success('Itinéraire affiché sur la carte');
                                   } else {
-                                    toast.info('Aucun point enregistré pour cette déclaration');
+                                    info('Aucun point enregistré pour cette déclaration');
                                   }
                                 }
                               }}

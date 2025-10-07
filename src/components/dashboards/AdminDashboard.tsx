@@ -13,7 +13,7 @@ import { Label } from '../ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import { toast } from 'sonner';
+import { success, error, info } from '../ui/use-toast';
 import { 
   Users, 
   Building2, 
@@ -201,7 +201,7 @@ const AdminDashboard = () => {
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newUser.username || !newUser.firstName || !newUser.lastName) {
-      toast.error('Veuillez remplir tous les champs obligatoires');
+      error('Veuillez remplir tous les champs obligatoires');
       return;
     }
 
@@ -251,11 +251,11 @@ const AdminDashboard = () => {
       if (editingUser) {
         // Modification utilisateur existant
         await updateUser(editingUser.id, userToSave);
-        toast.success('Utilisateur modifié dans le cloud');
+        success('Utilisateur modifié dans le cloud');
       } else {
         // Création nouvel utilisateur
         const userDoc = await addUser(userToSave);
-        toast.success('Utilisateur créé dans le cloud');
+        success('Utilisateur créé dans le cloud');
 
         // Synchronisation dans la collection chauffeurs si role chauffeur
         if (userToSave.role === 'chauffeur') {
@@ -291,14 +291,14 @@ const AdminDashboard = () => {
       });
     } catch (err) {
       console.error(err);
-      toast.error('Erreur lors de la synchronisation avec le cloud');
+      error('Erreur lors de la synchronisation avec le cloud');
     }
   };
 
   const handleCreateCompany = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newCompany.name) {
-      toast.error('Le nom de la société est obligatoire');
+      error('Le nom de la société est obligatoire');
       return;
     }
     const { addCompany, updateCompany } = await import('../../services/companyService');
@@ -312,7 +312,7 @@ const AdminDashboard = () => {
       };
       await updateCompany(editingCompany.id, updatedCompany);
       setEditingCompany(null);
-      toast.success('Société modifiée et synchronisée');
+      success('Société modifiée et synchronisée');
     } else {
       const company = {
         name: newCompany.name,
@@ -322,7 +322,7 @@ const AdminDashboard = () => {
         createdAt: new Date().toISOString()
       };
       await addCompany(company);
-      toast.success('Société créée et synchronisée');
+      success('Société créée et synchronisée');
     }
     setNewCompany({ name: '', address: '', phone: [], email: '' });
     setShowCreateCompany(false);
@@ -331,11 +331,11 @@ const AdminDashboard = () => {
   const handleCreateVehicleType = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newVehicleType.name) {
-      toast.error('Le nom du type de véhicule est obligatoire');
+      error('Le nom du type de véhicule est obligatoire');
       return;
     }
     if (newVehicleType.primeKilometrique === '' || isNaN(Number(newVehicleType.primeKilometrique))) {
-      toast.error('La prime kilométrique est obligatoire et doit être un nombre');
+      error('La prime kilométrique est obligatoire et doit être un nombre');
       return;
     }
     const { addVehicleType, updateVehicleType } = await import('../../services/vehicleTypeService');
@@ -347,7 +347,7 @@ const AdminDashboard = () => {
       };
       await updateVehicleType(editingVehicleType.id, updatedVehicleType);
       setEditingVehicleType(null);
-      toast.success('Type de véhicule modifié et synchronisé');
+      success('Type de véhicule modifié et synchronisé');
     } else {
       const vehicleType = {
         name: newVehicleType.name,
@@ -355,7 +355,7 @@ const AdminDashboard = () => {
         createdAt: new Date().toISOString()
       };
       await addVehicleType(vehicleType);
-      toast.success('Type de véhicule créé et synchronisé');
+      success('Type de véhicule créé et synchronisé');
     }
     setNewVehicleType({ name: '', primeKilometrique: '' });
     setShowCreateVehicleType(false);
@@ -365,12 +365,12 @@ const AdminDashboard = () => {
     e.preventDefault();
     
     if (passwordData.newPassword !== passwordData.confirmPassword) {
-      toast.error('Les mots de passe ne correspondent pas');
+      error('Les mots de passe ne correspondent pas');
       return;
     }
 
     if (passwordData.newPassword.length < 6) {
-      toast.error('Le mot de passe doit contenir au moins 6 caractères');
+      error('Le mot de passe doit contenir au moins 6 caractères');
       return;
     }
 
@@ -382,7 +382,7 @@ const AdminDashboard = () => {
       );
       
       setUsers(updatedUsers);
-      toast.success('Mot de passe modifié avec succès');
+      success('Mot de passe modifié avec succès');
       
       setPasswordData({ newPassword: '', confirmPassword: '' });
       setSelectedUserForPassword(null);
@@ -434,9 +434,9 @@ const AdminDashboard = () => {
     try {
       const { deleteUser } = await import('../../services/userService');
       await deleteUser(userToDelete);
-      toast.success('Utilisateur supprimé du cloud');
+      success('Utilisateur supprimé du cloud');
     } catch (err) {
-      toast.error('Erreur lors de la suppression sur le cloud');
+      error('Erreur lors de la suppression sur le cloud');
     }
     setUserToDelete(null);
   };
@@ -444,13 +444,13 @@ const AdminDashboard = () => {
   const handleDeleteCompany = async (id: string) => {
     const { deleteCompany } = await import('../../services/companyService');
     await deleteCompany(id);
-    toast.success('Société supprimée et synchronisée');
+    success('Société supprimée et synchronisée');
   };
 
   const handleDeleteVehicleType = async (id: string) => {
     const { deleteVehicleType } = await import('../../services/vehicleTypeService');
     await deleteVehicleType(id);
-    toast.success('Type de véhicule supprimé et synchronisé');
+    success('Type de véhicule supprimé et synchronisé');
   };
 
   const handleProfileClick = () => {

@@ -28,7 +28,7 @@ import {
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
-import { Badge, onlineBadgeClass, onlineBadgeInline } from '../ui/badge';
+import { Badge, onlineBadgeClass, onlineBadgeInline, offlineBadgeClass, offlineBadgeInline } from '../ui/badge';
 import { Separator } from '../ui/separator';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { MapPin, Plus, Clock, Search, Edit, Trash2 } from 'lucide-react';
@@ -579,8 +579,8 @@ const ChauffeurDashboard = () => {
             }}
           >
             {/* standardized compact online badge */}
-            <Badge style={{ ...badgeStyle, ...onlineBadgeInline }} className={`${badgeClass} items-center gap-2 ${onlineBadgeClass}`} title={isOnline ? t('dashboard.online') : t('dashboard.offline')}>
-              <span className="inline-block w-2 h-2 rounded-full bg-green-500"></span>
+            <Badge style={{ ...badgeStyle, ...(isOnline ? onlineBadgeInline : offlineBadgeInline) }} className={`${badgeClass} items-center gap-2 ${isOnline ? onlineBadgeClass : offlineBadgeClass}`} title={isOnline ? t('dashboard.online') : t('dashboard.offline')}>
+              <span className={`inline-block w-2 h-2 rounded-full ${isOnline ? 'bg-green-500' : 'bg-red-500'}`}></span>
               {isOnline ? t('dashboard.online') : t('dashboard.offline')}
             </Badge>
             {/* GPS Button (mobile, à côté du badge) */}
@@ -1239,7 +1239,7 @@ const ChauffeurDashboard = () => {
                                     )}
                                     {/* Affiche Prime de route uniquement si chauffeur interne */}
                                     {auth?.user?.employeeType === 'interne' && (
-                                      <TableHead className="text-foreground text-xs sm:text-sm whitespace-nowrap">{t('declarations.primeDeRoute') === 'declarations.primeDeRoute' ? 'Prime de route (DZD)' : t('declarations.primeDeRoute')}</TableHead>
+                                      <TableHead className="text-foreground text-xs sm:text-sm whitespace-nowrap">{t('declarations.primeDeRoute') === 'declarations.primeDeRoute' ? 'Prime de route' : t('declarations.primeDeRoute')}</TableHead>
                                     )}
                                     <TableHead className="text-foreground text-xs sm:text-sm whitespace-nowrap">{t('declarations.status')}</TableHead>
                                     <TableHead className="text-foreground text-xs sm:text-sm whitespace-nowrap">{t('declarations.createdDate')}</TableHead>
@@ -1359,8 +1359,8 @@ const ChauffeurDashboard = () => {
           {!isMobile && (
   <div className={`absolute top-0 ${settings.language === 'ar' ? 'left-0' : 'right-0'} m-2 z-10 flex items-center gap-2`}>
           {/* standardized compact online badge */}
-          <Badge style={{ ...badgeStyle, ...onlineBadgeInline }} className={`${badgeClass} items-center gap-1 ${onlineBadgeClass}`} title={isOnline ? t('dashboard.online') : t('dashboard.offline')}>
-      <span className="inline-block w-1.5 h-1.5 rounded-full bg-green-500"></span>
+          <Badge style={{ ...badgeStyle, ...(isOnline ? onlineBadgeInline : offlineBadgeInline) }} className={`${badgeClass} items-center gap-1 ${isOnline ? onlineBadgeClass : offlineBadgeClass}`} title={isOnline ? t('dashboard.online') : t('dashboard.offline')}>
+      <span className={`inline-block w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-green-500' : 'bg-red-500'}`}></span>
       {isOnline ? t('dashboard.online') : t('dashboard.offline')}
     </Badge>
     <Button
@@ -1509,7 +1509,7 @@ const ChauffeurDashboard = () => {
                             <div className="flex items-center gap-2 px-4 py-2 bg-red-100 border-b-2 border-red-500 text-red-700 font-semibold rounded-t-md mb-2">
                               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636l-1.414 1.414A7.975 7.975 0 0012 6c-2.21 0-4.21.896-5.95 2.364l-1.414-1.414A9.969 9.969 0 0112 4c2.761 0 5.261 1.12 7.071 2.929zM4.222 19.778A9.969 9.969 0 0112 20c2.761 0 5.261-1.12 7.071-2.929l-1.414-1.414A7.975 7.975 0 0112 18c-2.21 0-4.21-.896-5.95-2.364l-1.414 1.414z" />
-                              </svg>
+                            </svg>
                               <span>{t('declarations.breakdown')}</span>
                             </div>
                           )}

@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import { useSettings } from '../contexts/SettingsContext';
 import { useTranslation } from '../hooks/useTranslation';
 import { Languages, Palette, Sun, Moon } from 'lucide-react';
-import { toast } from 'sonner';
+import { success, error, info } from './ui/use-toast';
 
 interface SettingsDialogProps {
   open: boolean;
@@ -20,19 +20,19 @@ interface SettingsDialogProps {
 const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onOpenChange }) => {
   const handleViewModeChange = (viewMode: 'desktop' | 'mobile') => {
     updateSettings({ viewMode });
-    toast.success(t('forms.success'));
+    success(t('forms.success'));
   };
   const { settings, updateSettings } = useSettings();
   const { t } = useTranslation();
 
   const handleLanguageChange = (language: 'fr' | 'en' | 'ar') => {
     updateSettings({ language });
-    toast.success(t('forms.success'));
+    success(t('forms.success'));
   };
 
   const handleThemeChange = (theme: 'light' | 'dark') => {
     updateSettings({ theme });
-    toast.success(t('forms.success'));
+    success(t('forms.success'));
   };
 
   const languages = [

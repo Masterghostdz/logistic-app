@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import Header from '../Header';
 import ProfilePage from '../ProfilePage';
-import { Badge, onlineBadgeClass, onlineBadgeInline } from '../ui/badge';
+import { Badge, onlineBadgeClass, onlineBadgeInline, offlineBadgeClass, offlineBadgeInline } from '../ui/badge';
 import CaissierSidebar from './CaissierSidebar';
 import useTableZoom from '../../hooks/useTableZoom';
 import { useOnlineStatus } from '../../contexts/OnlineStatusContext';
@@ -235,7 +235,6 @@ const CaissierDashboard = () => {
         {!isMobile && (
           <div className={`absolute top-0 ${settings.language === 'ar' ? 'left-0' : 'right-0'} m-2 z-10`}>
             <Badge size="md" style={{ ...badgeStyle, ...onlineBadgeInline }} className={`${badgeClass} items-center gap-2 font-semibold ${onlineBadgeClass} shadow`} title={isOnline ? t('dashboard.online') : t('dashboard.offline')}>
-              <span className="inline-block w-1.5 h-1.5 rounded-full bg-green-500"></span>
               {isOnline ? t('dashboard.online') : t('dashboard.offline')}
             </Badge>
           </div>

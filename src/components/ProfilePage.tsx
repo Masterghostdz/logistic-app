@@ -11,7 +11,7 @@ import { Badge } from './ui/badge';
 import useTableZoom from '../hooks/useTableZoom';
 import { useAuth } from '../contexts/AuthContext';
 import { ArrowLeft, User, Phone, Car, Shield } from 'lucide-react';
-import { toast } from 'sonner';
+import { success, error, info } from './ui/use-toast';
 
 interface ProfilePageProps {
   onBack: () => void;
@@ -47,24 +47,24 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      toast.error('Les nouveaux mots de passe ne correspondent pas');
+      error('Les nouveaux mots de passe ne correspondent pas');
       return;
     }
     if (passwordForm.newPassword.length < 6) {
-      toast.error('Le nouveau mot de passe doit contenir au moins 6 caractères');
+      error('Le nouveau mot de passe doit contenir au moins 6 caractères');
       return;
     }
     try {
-      const success = await changePassword(passwordForm.currentPassword, passwordForm.newPassword);
-      if (success) {
-        toast.success('Mot de passe modifié avec succès');
+      const successFlag = await changePassword(passwordForm.currentPassword, passwordForm.newPassword);
+      if (successFlag) {
+        success('Mot de passe modifié avec succès');
         setIsChangingPassword(false);
         setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
       } else {
-        toast.error('Mot de passe actuel incorrect');
+        error('Mot de passe actuel incorrect');
       }
     } catch (error) {
-      toast.error('Erreur lors de la modification du mot de passe');
+      error('Erreur lors de la modification du mot de passe');
     }
   };
 

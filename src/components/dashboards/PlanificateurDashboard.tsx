@@ -12,7 +12,7 @@ import { Input } from '../ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Textarea } from '../ui/textarea';
 import PhoneNumbersField from '../PhoneNumbersField';
-import { toast } from 'sonner';
+import { success, warning, error, info } from '../ui/use-toast';
 import { Plus } from 'lucide-react';
 import { Declaration, Chauffeur } from '../../types';
 import { doc, updateDoc } from 'firebase/firestore';
@@ -20,7 +20,7 @@ import { db as firestore } from '../../services/firebaseClient';
 import { useSharedData } from '../../contexts/SharedDataContext';
 import SearchAndFilter from '../SearchAndFilter';
 import ProfilePage from '../ProfilePage';
-import { Badge, onlineBadgeClass, onlineBadgeInline } from '../ui/badge';
+import { Badge, onlineBadgeClass, onlineBadgeInline, offlineBadgeClass, offlineBadgeInline } from '../ui/badge';
 import TracageSection from '../TracageSection';
 import WarehouseTable from './WarehouseTable';
 import Header from '../Header';
@@ -127,7 +127,7 @@ const PlanificateurDashboard = () => {
         createdAt: new Date().toISOString(),
         read: false
       });
-      toast.success('Déclaration refusée');
+      success('Déclaration refusée');
     }
     setRefusalDialogOpen(false);
     setRefusalDeclarationId(null);
@@ -202,9 +202,9 @@ const PlanificateurDashboard = () => {
     try {
       const { updateClient } = await import('../../services/clientService');
       await updateClient(client.id, { status: 'validated' }, user);
-      toast.success('Client validé');
+      success('Client validé');
     } catch {
-      toast.error('Erreur lors de la validation du client');
+      error('Erreur lors de la validation du client');
     }
   };
 
@@ -214,16 +214,16 @@ const PlanificateurDashboard = () => {
       if (isEdit && editingClient) {
         const { updateClient } = await import('../../services/clientService');
         await updateClient(editingClient.id, client, user);
-        toast.success('Client modifié');
+        success('Client modifié');
       } else {
         const { addClient } = await import('../../services/clientService');
         await addClient({ ...client, createdAt: new Date().toISOString() }, user);
-        toast.success('Client ajouté');
+        success('Client ajouté');
       }
       setShowEditClient(false);
       setEditingClient(null);
     } catch {
-      toast.error('Erreur lors de l\'enregistrement du client');
+      error('Erreur lors de l\'enregistrement du client');
     }
   };
   const handleDeleteClient = (id) => setClientToDelete(id);
@@ -232,9 +232,9 @@ const PlanificateurDashboard = () => {
     try {
       const { deleteClient } = await import('../../services/clientService');
       await deleteClient(clientToDelete);
-      toast.success('Client supprimé');
+      success('Client supprimé');
     } catch {
-      toast.error('Erreur lors de la suppression');
+      error('Erreur lors de la suppression');
     }
     setClientToDelete(null);
   };
@@ -404,7 +404,7 @@ const PlanificateurDashboard = () => {
     e.preventDefault();
     
     if (!newChauffeur.fullName || !newChauffeur.username || !newChauffeur.password) {
-      toast.error('Veuillez remplir tous les champs obligatoires');
+      error('Veuillez remplir tous les champs obligatoires');
       return;
     }
 
@@ -438,7 +438,7 @@ const PlanificateurDashboard = () => {
       await updateChauffeur(editingChauffeur.id, updatedChauffeur);
       await updateUser(editingChauffeur.id, { passwordHash, salt });
       setEditingChauffeur(null);
-      toast.success('Chauffeur modifié avec succès');
+      success('Chauffeur modifié avec succès');
     } else {
       // Création d'un nouveau chauffeur (Firestore)
       const chauffeur: Omit<Chauffeur, 'id'> = {
@@ -487,7 +487,7 @@ const PlanificateurDashboard = () => {
         isActive: true,
         createdAt: new Date().toISOString()
       });
-      toast.success('Chauffeur créé avec succès');
+      success('Chauffeur créé avec succès');
     }
 
     setNewChauffeur({
@@ -541,7 +541,7 @@ const PlanificateurDashboard = () => {
   createdAt: new Date().toISOString(),
   read: false
     });
-    toast.success('Déclaration validée');
+    success('Déclaration validée');
     }
   };
 
@@ -589,7 +589,7 @@ const PlanificateurDashboard = () => {
     }
 
     setEditingDeclaration(null);
-    toast.success('Déclaration mise à jour');
+    success('Déclaration mise à jour');
   };
 
   // Gestion suppression programme (déclaration) avec confirmation
@@ -602,9 +602,9 @@ const PlanificateurDashboard = () => {
     try {
       const { deleteDeclaration } = await import('../../services/declarationService');
       await deleteDeclaration(declarationToDelete);
-      toast.success('Déclaration supprimée');
+      success('Déclaration supprimée');
     } catch (err) {
-      toast.error('Erreur lors de la suppression');
+      error('Erreur lors de la suppression');
     }
     setDeclarationToDelete(null);
   };
@@ -632,14 +632,14 @@ const PlanificateurDashboard = () => {
         }
       }
       if (chauffeurDeleted && userDeleted) {
-        toast.success('Chauffeur et utilisateur supprimés');
+        success('Chauffeur et utilisateur supprimés');
       } else if (chauffeurDeleted) {
-        toast.success('Chauffeur supprimé (utilisateur non trouvé)');
+        success('Chauffeur supprimé (utilisateur non trouvé)');
       } else {
-        toast.error('Erreur lors de la suppression du chauffeur');
+        error('Erreur lors de la suppression du chauffeur');
       }
     } catch (err) {
-      toast.error('Erreur lors de la suppression');
+      error('Erreur lors de la suppression');
     }
     setChauffeurToDelete(null);
   };
@@ -675,8 +675,8 @@ const PlanificateurDashboard = () => {
               className={`absolute top-0 ${settings.language === 'ar' ? 'left-0' : 'right-0'} m-2 z-10`}
               title={isOnline ? t('dashboard.online') : t('dashboard.offline')}
             >
-              <Badge size="md" style={{ ...badgeStyle, ...onlineBadgeInline }} className={`${badgeClass} items-center gap-2 ${onlineBadgeClass}`}> 
-                <span className="inline-block w-2 h-2 rounded-full bg-green-500"></span>
+              <Badge size="md" style={{ ...badgeStyle, ...(isOnline ? onlineBadgeInline : offlineBadgeInline) }} className={`${badgeClass} items-center gap-2 ${isOnline ? onlineBadgeClass : offlineBadgeClass}`}> 
+                <span className={`inline-block w-2 h-2 rounded-full ${isOnline ? 'bg-green-500' : 'bg-red-500'}`}></span>
                 {isOnline ? t('dashboard.online') : t('dashboard.offline')}
               </Badge>
             </span>
@@ -699,8 +699,8 @@ const PlanificateurDashboard = () => {
           <Header onProfileClick={handleProfileClick} />
           {/* Badge en ligne mobile : juste sous le header */}
           <div className="flex px-2 pt-3 mb-2">
-            <Badge size="md" style={{ ...badgeStyle, ...onlineBadgeInline }} className={`${badgeClass} items-center gap-2 ${onlineBadgeClass}`} title={isOnline ? t('dashboard.online') : t('dashboard.offline')}>
-              <span className="inline-block w-2 h-2 rounded-full bg-green-500"></span>
+            <Badge style={{...badgeStyle, ...(isOnline ? onlineBadgeInline : offlineBadgeInline)}} className={`${badgeClass} items-center gap-2 ${isOnline ? onlineBadgeClass : offlineBadgeClass}`} title={isOnline ? t('dashboard.online') : t('dashboard.offline')}>
+              <span className={`inline-block w-2 h-2 rounded-full ${isOnline ? 'bg-green-500' : 'bg-red-500'}`}></span>
               {isOnline ? t('dashboard.online') : t('dashboard.offline')}
             </Badge>
           </div>
@@ -771,8 +771,8 @@ const PlanificateurDashboard = () => {
       {/* Badge en ligne : mobile sous le header, desktop à droite de la sidebar, sous le header */}
       {viewMode === 'mobile' ? (
         <div className="flex px-2 pt-3 mb-2">
-            <Badge style={{...badgeStyle}} className={`${badgeClass} items-center gap-1 bg-green-100 text-green-700`} title={isOnline ? t('dashboard.online') : t('dashboard.offline')}>
-            <span className="inline-block w-1.5 h-1.5 rounded-full bg-green-500"></span>
+            <Badge style={{...badgeStyle, ...(isOnline ? onlineBadgeInline : offlineBadgeInline)}} className={`${badgeClass} items-center gap-1 ${isOnline ? onlineBadgeClass : offlineBadgeClass}`} title={isOnline ? t('dashboard.online') : t('dashboard.offline')}>
+            <span className={`inline-block w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-green-500' : 'bg-red-500'}`}></span>
             {isOnline ? t('dashboard.online') : t('dashboard.offline')}
           </Badge>
         </div>
@@ -783,16 +783,16 @@ const PlanificateurDashboard = () => {
           {/* Badge En ligne en haut à droite du bloc content, sous le header, à l'intérieur mais hors de la sidebar (desktop uniquement) */}
           {viewMode !== 'mobile' && (
             <div className={`absolute top-0 ${settings.language === 'ar' ? 'left-0' : 'right-0'} m-2 z-10`}>
-              <Badge size="md" style={{ ...badgeStyle, ...onlineBadgeInline }} className={`${badgeClass} items-center gap-2 ${onlineBadgeClass}`} title={isOnline ? t('dashboard.online') : t('dashboard.offline')}>
-                    <span className="inline-block w-2 h-2 rounded-full bg-green-500"></span>
+              <Badge size="md" style={{ ...badgeStyle, ...(isOnline ? onlineBadgeInline : offlineBadgeInline) }} className={`${badgeClass} items-center gap-2 ${isOnline ? onlineBadgeClass : offlineBadgeClass}`} title={isOnline ? t('dashboard.online') : t('dashboard.offline')}>
+                    <span className={`inline-block w-2 h-2 rounded-full ${isOnline ? 'bg-green-500' : 'bg-red-500'}`}></span>
                     {isOnline ? t('dashboard.online') : t('dashboard.offline')}
                   </Badge>
             </div>
           )}
           {activeTab === 'tracage' && viewMode === 'desktop' && (
   <div className={`absolute top-0 ${settings.language === 'ar' ? 'left-0' : 'right-0'} m-2 z-10`}>
-    <Badge size="md" style={{...badgeStyle, fontSize: '12px', padding: '4px 8px', minWidth: '0', lineHeight: '14px', borderRadius: '9999px'}} className={`${badgeClass} items-center gap-2 bg-green-100 text-green-700`} title={isOnline ? t('dashboard.online') : t('dashboard.offline')}>
-      <span className="inline-block w-2 h-2 rounded-full bg-green-500"></span>
+    <Badge size="md" style={{...badgeStyle, ...(isOnline ? onlineBadgeInline : offlineBadgeInline)}} className={`${badgeClass} items-center gap-2 ${isOnline ? onlineBadgeClass : offlineBadgeClass}`} title={isOnline ? t('dashboard.online') : t('dashboard.offline')}>
+      <span className={`inline-block w-2 h-2 rounded-full ${isOnline ? 'bg-green-500' : 'bg-red-500'}`}></span>
       {isOnline ? t('dashboard.online') : t('dashboard.offline')}
     </Badge>
   </div>

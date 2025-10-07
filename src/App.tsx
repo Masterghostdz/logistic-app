@@ -12,6 +12,7 @@ import PlanificateurDashboard from './components/dashboards/PlanificateurDashboa
 import CaissierDashboard from './components/dashboards/CaissierDashboard';
 import AdminDashboard from './components/dashboards/AdminDashboard';
 import { mobileService } from './services/mobileService';
+import { OnlineStatusProvider } from './contexts/OnlineStatusContext';
 
 const AppContent = () => {
   const { user, isAuthenticated } = useAuth();
@@ -42,9 +43,11 @@ const AppContent = () => {
 
   return (
     <SharedDataProvider>
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        {renderDashboard()}
-      </div>
+      <OnlineStatusProvider>
+        <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+          {renderDashboard()}
+        </div>
+      </OnlineStatusProvider>
     </SharedDataProvider>
   );
 };

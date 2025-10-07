@@ -45,11 +45,18 @@ export { Badge, badgeVariants }
 // Consumers can import `onlineBadgeClass` and apply alongside `badgeStyle` from useTableZoom.
 export const onlineBadgeClass = `bg-green-100 text-green-700 border border-green-300 shadow font-semibold`;
 
-/**
- * Utility to return a standardized inline style for compact online badges.
- * This is useful where components previously applied small custom inline styles.
- */
+/** Offline badge style for 'Hors Ligne' state */
+export const offlineBadgeClass = `bg-red-100 text-red-700 border border-red-300 shadow font-semibold`;
+
 export const onlineBadgeInline = {
+  fontSize: '12px',
+  padding: '4px 8px',
+  minWidth: 0,
+  lineHeight: '14px',
+  borderRadius: '9999px'
+} as React.CSSProperties;
+
+export const offlineBadgeInline = {
   fontSize: '12px',
   padding: '4px 8px',
   minWidth: 0,

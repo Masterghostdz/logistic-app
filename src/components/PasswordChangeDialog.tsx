@@ -1,11 +1,10 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { useAuth } from '../contexts/AuthContext';
-import { toast } from 'sonner';
+import { success, error } from './ui/use-toast';
 import { useTranslation } from '../hooks/useTranslation';
 import { Lock } from 'lucide-react';
 
@@ -27,23 +26,23 @@ const PasswordChangeDialog = ({ trigger }: PasswordChangeDialogProps) => {
     e.preventDefault();
     
     if (formData.newPassword !== formData.confirmPassword) {
-      toast.error('Les nouveaux mots de passe ne correspondent pas');
+      error('Les nouveaux mots de passe ne correspondent pas');
       return;
     }
 
     if (formData.newPassword.length < 6) {
-      toast.error('Le mot de passe doit contenir au moins 6 caractères');
+      error('Le mot de passe doit contenir au moins 6 caractères');
       return;
     }
 
-    const success = await changePassword(formData.currentPassword, formData.newPassword);
+    const successFlag = await changePassword(formData.currentPassword, formData.newPassword);
     
-    if (success) {
-      toast.success('Mot de passe modifié avec succès');
+    if (successFlag) {
+      success('Mot de passe modifié avec succès');
       setFormData({ currentPassword: '', newPassword: '', confirmPassword: '' });
       setOpen(false);
     } else {
-      toast.error('Mot de passe actuel incorrect');
+      error('Mot de passe actuel incorrect');
     }
   };
 
