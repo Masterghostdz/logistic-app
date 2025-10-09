@@ -114,7 +114,7 @@ const ChauffeursTable = ({ chauffeurs, onEditChauffeur, onDeleteChauffeur, fontS
                     <Badge
                       size="md"
                       variant={chauffeur.employeeType === 'interne' ? 'default' : 'secondary'}
-                      className={`${badgeClass}`}
+                      className={`border border-border ${badgeClass}`}
                       style={{ ...badgeStyle }}
                     >
                       {chauffeur.employeeType === 'interne' ? t('chauffeurs.employeeTypeShort.interne') : t('chauffeurs.employeeTypeShort.externe')}

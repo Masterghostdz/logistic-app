@@ -618,9 +618,9 @@ const TracageSection = ({ gpsActive, setGpsActive, userPosition, setUserPosition
                           <div className="flex items-center justify-between whitespace-nowrap">
                             <span className="text-xs md:text-sm font-extrabold bg-blue-100 text-blue-500 rounded px-2 py-0.5 border border-blue-200 shadow-sm leading-tight">{wh.name}</span>
                             {wh.isActive ? (
-                              <Badge size="md" style={{...badgeStyle}} className={`${badgeClass} font-semibold bg-green-100 text-green-700 border border-green-300 shadow`}>{t('warehouses.active') || t('chauffeurs.active') || 'Actif'}</Badge>
+                              <Badge size="md" style={{...badgeStyle}} className={`${badgeClass} font-semibold bg-green-100 text-green-800 border border-green-300 dark:bg-green-900 dark:text-green-200`}>{t('warehouses.active') || t('chauffeurs.active') || 'Actif'}</Badge>
                             ) : (
-                              <Badge size="md" style={{...badgeStyle}} className={`${badgeClass} font-semibold bg-red-100 text-red-700 border border-red-300 shadow`}>{t('warehouses.inactive') || t('chauffeurs.inactive') || 'Inactif'}</Badge>
+                              <Badge size="md" style={{...badgeStyle}} className={`${badgeClass} font-semibold bg-red-100 text-red-800 border border-red-300 dark:bg-red-900 dark:text-red-200`}>{t('warehouses.inactive') || t('chauffeurs.inactive') || 'Inactif'}</Badge>
                             )}
                           </div>
                           <div className="flex gap-2 text-xs items-center mt-1">
@@ -851,22 +851,22 @@ const TracageSection = ({ gpsActive, setGpsActive, userPosition, setUserPosition
                           <div className="flex items-center justify-between whitespace-nowrap">
                             <span className="text-xs md:text-sm font-extrabold bg-purple-100 text-purple-500 rounded px-2 py-0.5 border border-purple-200 shadow-sm leading-tight">{decl.number}</span>
                             {/* Badge état cohérent avec la table des déclarations */}
-                            {(() => {
-                              switch (decl.status) {
-                                case 'en_route':
-                                  return <Badge size="md" style={{ ...badgeStyle, textAlign: 'center' }} className={`${badgeClass} bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200`}>En route</Badge>;
-                                case 'en_panne':
-                                  return <Badge size="md" style={{ ...badgeStyle, textAlign: 'center' }} className={`${badgeClass} bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200`}>{t('declarations.breakdown') || t('chauffeurs.enPanne') || 'En panne'}</Badge>;
-                                case 'en_cours':
-                                  return <Badge size="md" style={{ ...badgeStyle, textAlign: 'center' }} className={`${badgeClass} bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200`}>En cours</Badge>;
-                                case 'valide':
-                                  return <Badge size="md" style={{ ...badgeStyle, textAlign: 'center' }} className={`${badgeClass} bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200`}>Validé</Badge>;
-                                case 'refuse':
-                                  return <Badge size="md" style={{ ...badgeStyle, textAlign: 'center' }} className={`${badgeClass} bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200`}>Refusé</Badge>;
-                                default:
-                                  return <Badge size="md" style={{ ...badgeStyle, textAlign: 'center' }} className={`${badgeClass}`}>{decl.status}</Badge>;
-                              }
-                            })()}
+                              {(() => {
+                                switch (decl.status) {
+                                  case 'en_route':
+                                    return <Badge size="md" style={{ ...badgeStyle, textAlign: 'center' }} className={`${badgeClass} bg-blue-100 text-blue-800 border border-blue-300 dark:bg-blue-900 dark:text-blue-200`}>{t('dashboard.onRoad')}</Badge>;
+                                  case 'en_panne':
+                                    return <Badge size="md" style={{ ...badgeStyle, textAlign: 'center' }} className={`${badgeClass} bg-orange-100 text-orange-800 border border-orange-300 dark:bg-orange-900 dark:text-orange-200`}>{t('declarations.breakdown') || t('chauffeurs.enPanne') || 'En panne'}</Badge>;
+                                  case 'en_cours':
+                                    return <Badge size="md" style={{ ...badgeStyle, textAlign: 'center' }} className={`${badgeClass} bg-yellow-100 text-yellow-800 border border-yellow-300 dark:bg-yellow-900 dark:text-yellow-200`}>{t('declarations.inProgress') || 'En cours'}</Badge>;
+                                  case 'valide':
+                                    return <Badge size="md" style={{ ...badgeStyle, textAlign: 'center' }} className={`${badgeClass} bg-green-100 text-green-800 border border-green-300 dark:bg-green-900 dark:text-green-200`}>{t('declarations.validated') || 'Validé'}</Badge>;
+                                  case 'refuse':
+                                    return <Badge size="md" style={{ ...badgeStyle, textAlign: 'center' }} className={`${badgeClass} bg-red-100 text-red-800 border border-red-300 dark:bg-red-900 dark:text-red-200`}>{t('declarations.refused') || 'Refusé'}</Badge>;
+                                  default:
+                                    return <Badge size="md" style={{ ...badgeStyle, textAlign: 'center' }} className={`${badgeClass}`}>{t(`declarations.${decl.status}`) || decl.status}</Badge>;
+                                }
+                              })()}
                           </div>
                           <div className="flex gap-2 text-xs items-center mt-1">
                             <span className="font-bold text-gray-900 dark:text-white">{decl.chauffeurName}</span>

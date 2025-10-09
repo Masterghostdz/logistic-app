@@ -91,6 +91,7 @@ export interface Declaration {
   paymentReceipts?: PaymentReceipt[];
   createdAt: string;
   validatedAt?: string;
+  declaredAt?: string;
   validatedBy?: string;
   refusalReason?: string;
   traceability?: DeclarationTrace[];

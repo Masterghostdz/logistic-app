@@ -1,10 +1,11 @@
 // Chauffeur dashboard
 import { useOnlineStatus } from '../../contexts/OnlineStatusContext';
-import { DocumentReference, DocumentData } from 'firebase/firestore';
+import { DocumentReference, DocumentData, doc, updateDoc } from 'firebase/firestore';
 
 import React, { useState, useEffect } from 'react';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import CameraPreviewModal from '../CameraPreviewModal';
+import { getCurrentPosition } from '../../utils/gpsUtils';
 import { useAuth } from '../../contexts/AuthContext';
 import { useSharedData } from '../../contexts/SharedDataContext';
 import { useTranslation } from '../../hooks/useTranslation';
@@ -14,70 +15,46 @@ import { toast } from '../ui/use-toast';
 import { useIsMobile } from '../../hooks/use-mobile';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
+import { Badge } from '../ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
+import { PaymentReceipt, Declaration, Warehouse } from '../../types';
+import Header from '../Header';
+import ProfilePage from '../ProfilePage';
+import ChauffeurSidebar from './ChauffeurSidebar';
+import SearchAndFilter from '../SearchAndFilter';
+import DeclarationsTable from './DeclarationsTable';
+import { Search, Clock, Plus } from 'lucide-react';
+import { Separator } from '../ui/separator';
+import { db as firestore } from '../../services/firebaseClient';
+import { onlineBadgeClass, onlineBadgeInline, offlineBadgeClass, offlineBadgeInline } from '../ui/badge';
+import { getAllRefusalReasons } from '../../services/refusalReasonService';
+import { Edit, Trash2 } from 'lucide-react';
+import { Label } from '../ui/label';
+import { Input } from '../ui/input';
+import SimpleDeclarationNumberForm from '../SimpleDeclarationNumberForm';
+import TracageSection from '../TracageSection';
+import EditDeclarationDialog from '../EditDeclarationDialog';
+import { Textarea } from '../ui/textarea';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
 import {
   AlertDialog,
   AlertDialogTrigger,
   AlertDialogContent,
   AlertDialogHeader,
-  AlertDialogFooter,
   AlertDialogTitle,
   AlertDialogDescription,
-  AlertDialogAction,
+  AlertDialogFooter,
   AlertDialogCancel,
+  AlertDialogAction
 } from '../ui/alert-dialog';
-import { Input } from '../ui/input';
-import { Label } from '../ui/label';
-import { Textarea } from '../ui/textarea';
-import { Badge, onlineBadgeClass, onlineBadgeInline, offlineBadgeClass, offlineBadgeInline } from '../ui/badge';
-import { Separator } from '../ui/separator';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
-import { MapPin, Plus, Clock, Search, Edit, Trash2 } from 'lucide-react';
-import CreateChauffeurDialog from '../CreateChauffeurDialog';
-import ChauffeurSidebar from './ChauffeurSidebar';
-import { Declaration, Warehouse, PaymentReceipt } from '../../types';
-import SimpleDeclarationNumberForm from '../SimpleDeclarationNumberForm';
-import TracageSection from '../TracageSection';
-import SearchAndFilter from '../SearchAndFilter';
-import EditDeclarationDialog from '../EditDeclarationDialog';
-import Header from '../Header';
-import ProfilePage from '../ProfilePage';
-import { getAllRefusalReasons } from '../../services/refusalReasonService';
 
-import { getCurrentPosition } from '../../utils/gpsUtils';
-
-import { doc, updateDoc } from 'firebase/firestore';
-import { db as firestore } from '../../services/firebaseClient';
-
-const ChauffeurDashboard = () => {
-  const [notifications, setNotifications] = useState<any[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [showNotifications, setShowNotifications] = useState(false);
-  // Sync unread count to window for Header badge
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      (window as any).unreadChauffeurNotifications = unreadCount;
-    }
-  }, [unreadCount]);
-  // Listen for notification button click from Header
-  useEffect(() => {
-    const handler = () => setShowNotifications(true);
-    window.addEventListener('showChauffeurNotifications', handler);
-    return () => window.removeEventListener('showChauffeurNotifications', handler);
-  }, []);
-  // Mark notification as read
-  const handleMarkAsRead = async (id: string) => {
-    const { markNotificationAsRead } = await import('../../services/notificationService');
-    await markNotificationAsRead(id);
-    // Refresh notifications
-    const { getNotificationsForChauffeur } = await import('../../services/notificationService');
-    const notifs = await getNotificationsForChauffeur(auth.user.id);
-    setNotifications(notifs);
-    setUnreadCount(notifs.filter((n: any) => !n.read).length);
-  };
+const ChauffeurDashboard: React.FC = () => {
   const { t, settings } = useTranslation();
   // Use hook-based translation to respect current language (including Arabic)
   const addLabel = t('planificateur.add') || t('buttons.add');
   const auth = useAuth();
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [unreadCount, setUnreadCount] = useState<number>(0);
   useEffect(() => {
     async function fetchNotifications() {
       if (!auth?.user?.id) return;
@@ -255,10 +232,11 @@ const ChauffeurDashboard = () => {
   const [isCameraModalOpen, setIsCameraModalOpen] = useState(false);
   const [editingDeclaration, setEditingDeclaration] = useState<Declaration | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  // On utilise activeTab pour la navigation (dashboard, tracage, profile)
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'tracage' | 'profile'>('dashboard');
+  const [isEditDialogReadOnly, setIsEditDialogReadOnly] = useState(false);
+  // On utilise activeTab pour la navigation (dashboard, mesDeclarations, tracage, profile)
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'mesDeclarations' | 'tracage' | 'profile'>('dashboard');
   // Track previous tab to detect tab switch
-  const [prevTab, setPrevTab] = useState<'dashboard' | 'tracage' | 'profile'>('dashboard');
+  const [prevTab, setPrevTab] = useState<'dashboard' | 'mesDeclarations' | 'tracage' | 'profile'>('dashboard');
 
   // Effect: auto-activate GPS when entering 'tracage' from another tab
   useEffect(() => {
@@ -365,6 +343,29 @@ const ChauffeurDashboard = () => {
     { value: 'refuse', label: t('dashboard.refused') }
   ];
 
+  // When a dashboard summary indicator is clicked, open the "Mes déclarations" tab
+  // and apply the corresponding status filter (behaviour parallels PlanificateurDashboard)
+  const [lastNavSource, setLastNavSource] = useState<'none'|'nav'|'indicator'>('none');
+
+  // When a dashboard summary indicator is clicked, open the "Mes déclarations" tab
+  // and apply the corresponding status filter (behaviour parallels PlanificateurDashboard)
+  const handleStatClick = (status: string) => {
+    setLastNavSource('indicator');
+    setStatusFilter(status);
+    setSearchTerm('');
+    setActiveTab('mesDeclarations');
+  };
+
+  // If user navigates back to the mesDeclarations tab via the sidebar (nav),
+  // we reset any indicator-applied filters so the table shows the default view.
+  useEffect(() => {
+    if (activeTab === 'mesDeclarations' && lastNavSource === 'nav') {
+      setStatusFilter('all');
+      setSearchTerm('');
+      setLastNavSource('none');
+    }
+  }, [activeTab, lastNavSource]);
+
   // Nouveau workflow :
   // 1. Création = statut 'en_route' si référence (programNumber) OK, formulaire reste ouvert
   // 2. Bouton 'Déclarer' pour passer à 'en_cours' (distance ou frais requis), formulaire se ferme
@@ -454,13 +455,14 @@ const ChauffeurDashboard = () => {
       // Préparer l'objet sans undefined
       const updated: any = {
         ...enRouteDeclaration,
-        status: 'en_cours'
+        status: 'en_cours',
+        declaredAt: new Date().toISOString()
       };
       if (formData.distance) updated.distance = parseInt(formData.distance);
       else if ('distance' in updated) delete updated.distance;
       if (formData.deliveryFees) updated.deliveryFees = parseInt(formData.deliveryFees);
       else if ('deliveryFees' in updated) delete updated.deliveryFees;
-  updated.paymentReceipts = paymentReceipts.length > 0 ? paymentReceipts : undefined;
+      updated.paymentReceipts = paymentReceipts.length > 0 ? paymentReceipts : undefined;
       if (updated.paymentReceipts === undefined) {
         delete updated.paymentReceipts;
       }
@@ -508,14 +510,14 @@ const ChauffeurDashboard = () => {
   // Modifie getStatusBadge pour ouvrir le dialog si refusé
   const getStatusBadge = (status: string, declaration?: Declaration) => {
     switch (status) {
-      case 'en_route':
-  return <Badge size="md" style={{ ...badgeStyle }} className={`${badgeClass} bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200`}>{t('dashboard.onRoad')}</Badge>;
-      case 'en_panne':
-  return <Badge size="md" style={{ ...badgeStyle }} className={`${badgeClass} bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200`}>{t('declarations.breakdown')}</Badge>;
-      case 'en_cours':
-  return <Badge size="md" style={{ ...badgeStyle }} className={`${badgeClass} bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200`}>{t('dashboard.pending')}</Badge>;
-      case 'valide':
-  return <Badge size="md" style={{ ...badgeStyle }} className={`${badgeClass} bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200`}>{t('dashboard.validated')}</Badge>;
+    case 'en_route':
+  return <Badge size="md" style={{ ...badgeStyle }} className={`${badgeClass} bg-blue-100 text-blue-800 border border-blue-300 dark:bg-blue-900 dark:text-blue-200`}>{t('dashboard.onRoad')}</Badge>;
+    case 'en_panne':
+  return <Badge size="md" style={{ ...badgeStyle }} className={`${badgeClass} bg-orange-100 text-orange-800 border border-orange-300 dark:bg-orange-900 dark:text-orange-200`}>{t('declarations.breakdown')}</Badge>;
+    case 'en_cours':
+  return <Badge size="md" style={{ ...badgeStyle }} className={`${badgeClass} bg-yellow-100 text-yellow-800 border border-yellow-300 dark:bg-yellow-900 dark:text-yellow-200`}>{t('dashboard.pending')}</Badge>;
+    case 'valide':
+  return <Badge size="md" style={{ ...badgeStyle }} className={`${badgeClass} bg-green-100 text-green-800 border border-green-300 dark:bg-green-900 dark:text-green-200`}>{t('dashboard.validated')}</Badge>;
       case 'refuse':
         return (
           <button
@@ -652,7 +654,7 @@ const ChauffeurDashboard = () => {
       )}
       {isMobile ? (
         <div className="flex flex-col flex-1">
-          <ChauffeurSidebar activeTab={activeTab} onTabChange={(tab) => setActiveTab(tab as 'dashboard' | 'tracage')} />
+          <ChauffeurSidebar activeTab={activeTab} onTabChange={(tab) => { setLastNavSource('nav'); setActiveTab(tab as 'dashboard' | 'tracage' | 'mesDeclarations'); }} />
           <main className="flex-1">
             {activeTab === 'dashboard' && (
               <div className="max-w-[430px] mx-auto w-full p-2 pt-1">
@@ -699,6 +701,10 @@ const ChauffeurDashboard = () => {
                     </div>
                   </CardContent>
                 </Card>
+                {/* Mobile view: Mes déclarations */}
+                {String(activeTab) === 'mesDeclarations' && (
+                  null
+                )}
                 {/* Formulaire de déclaration en dessous */}
                 <Card className="bg-card border-border w-full">
                   <CardHeader className="pb-3 flex flex-row items-start justify-between">
@@ -1190,149 +1196,124 @@ const ChauffeurDashboard = () => {
                     )}
                   </CardContent>
                 </Card>
+                {/* mobile: 'Mes déclarations' is available from desktop sidebar only; keep mobile dashboard compact */}
                 <Separator className="bg-border mt-4" />
-                {/* Declarations List */}
+                {/* Ajout : Mes déclarations récentes (version Planificateur adaptée pour mobile) */}
                 <div className="mt-4">
                   <Card className="bg-card border-border w-full">
                     <CardHeader className="pb-3">
                       <CardTitle className="flex items-center gap-2 text-card-foreground text-lg">
                         <Search className="h-4 w-4 sm:h-5 sm:w-5" />
-                        {t('dashboard.myDeclarations')} ({chauffeurDeclarations.length})
+                        {t('planificateur.recentDeclarations') || t('declarations.recentDeclarations') || 'Mes déclarations récentes'} ({chauffeurDeclarations.length})
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-4">
-                        <SearchAndFilter
-                          searchValue={searchTerm}
-                          onSearchChange={setSearchTerm}
-                          filterValue={statusFilter}
-                          onFilterChange={setStatusFilter}
-                          filterOptions={filterOptions}
-                          searchPlaceholder={t('declarations.searchPlaceholder')}
-                          filterPlaceholder={t('declarations.filterPlaceholder')}
-                          searchColumn="number"
-                          onSearchColumnChange={() => {}}
-                          searchColumnOptions={[
-                            { value: 'number', label: t('declarations.number') },
-                            { value: 'notes', label: t('declarations.notes') },
-                            { value: 'chauffeurName', label: t('declarations.chauffeurName') }
-                          ]}
-                        />
-                        {filteredDeclarations.length === 0 ? (
+                        {chauffeurDeclarations.length === 0 ? (
                           <div className="text-center py-8 text-muted-foreground text-sm">
-                            {searchTerm || statusFilter !== 'all' 
-                              ? t('declarations.noDeclarationsWithFilters')
-                              : t('declarations.noDeclarations')
-                            }
+                            {t('declarations.noDeclarations')}
                           </div>
                         ) : (
-                          <div className="w-full overflow-x-auto">
-                            <div className="rounded-md border border-border bg-card min-w-full">
-                              <Table>
-                                <TableHeader>
-                                  <TableRow className="border-border hover:bg-muted/50">
-                                    <TableHead className="text-foreground text-xs sm:text-sm whitespace-nowrap">{t('declarations.number')}</TableHead>
-                                    <TableHead className="text-foreground text-xs sm:text-sm whitespace-nowrap">{t('declarations.distance')}</TableHead>
-                                    {/* Affiche Frais de Livraison uniquement si chauffeur externe */}
-                                    {auth?.user?.employeeType === 'externe' && (
-                                      <TableHead className="text-foreground text-xs sm:text-sm whitespace-nowrap">{t('declarations.deliveryFees')}</TableHead>
-                                    )}
-                                    {/* Affiche Prime de route uniquement si chauffeur interne */}
-                                    {auth?.user?.employeeType === 'interne' && (
-                                      <TableHead className="text-foreground text-xs sm:text-sm whitespace-nowrap">{t('declarations.primeDeRoute') === 'declarations.primeDeRoute' ? 'Prime de route' : t('declarations.primeDeRoute')}</TableHead>
-                                    )}
-                                    <TableHead className="text-foreground text-xs sm:text-sm whitespace-nowrap">{t('declarations.status')}</TableHead>
-                                    <TableHead className="text-foreground text-xs sm:text-sm whitespace-nowrap">{t('declarations.createdDate')}</TableHead>
-                                    <TableHead className="text-foreground text-xs sm:text-sm whitespace-nowrap">{t('declarations.actions')}</TableHead>
-                                  </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                  {filteredDeclarations.map((declaration) => (
-                                    <TableRow key={declaration.id} className="border-border hover:bg-muted/50">
-                                      <TableCell className="font-medium text-foreground text-xs sm:text-sm whitespace-nowrap">
-                                        {declaration.number}
-                                      </TableCell>
-                                      <TableCell className="text-foreground text-xs sm:text-sm whitespace-nowrap">
-                                        {declaration.distance ? declaration.distance : '-'}
-                                      </TableCell>
-                                      {/* Frais de Livraison uniquement pour externe */}
-                                      {auth?.user?.employeeType === 'externe' && (
-                                        <TableCell className="text-foreground text-xs sm:text-sm whitespace-nowrap">
-                                          {declaration.deliveryFees ? declaration.deliveryFees : '-'}
-                                        </TableCell>
-                                      )}
-                                      {/* Prime de route uniquement pour interne */}
-                                      {auth?.user?.employeeType === 'interne' && (
-                                        <TableCell className="text-xs sm:text-sm whitespace-nowrap">
-                                          {declaration.primeDeRoute ? (
-                                            <span style={{ color: '#FFD700', fontWeight: 'bold' }}>
-                                              {declaration.primeDeRoute.toFixed(2)}
-                                            </span>
-                                          ) : '-'}
-                                        </TableCell>
-                                      )}
-                                      <TableCell className="whitespace-nowrap">
-                                        {getStatusBadge(declaration.status, declaration)}
-                                      </TableCell>
-                                      <TableCell className="text-foreground text-xs sm:text-sm whitespace-nowrap">
-                                        {new Date(declaration.createdAt).toLocaleDateString('fr-FR')}
-                                      </TableCell>
-                                      <TableCell className="whitespace-nowrap">
-                                        <div className="flex gap-1 sm:gap-2">
-                                          {(declaration.status === 'en_cours' || declaration.status === 'en_route') && (
-                                            <>
-                                              <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={() => {
-                                                  setEditingDeclaration(declaration);
-                                                  setIsEditDialogOpen(true);
-                                                }}
-                                                className="h-8 w-8 p-0"
-                                              >
-                                                <Edit className="h-3 w-3 sm:h-4 sm:w-4" />
-                                              </Button>
-                                              <AlertDialog>
-                                                <AlertDialogTrigger asChild>
-                                                  <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 h-8 w-8 p-0"
-                                                  >
-                                                    <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
-                                                  </Button>
-                                                </AlertDialogTrigger>
-                                                <AlertDialogContent>
-                                                  <AlertDialogHeader>
-                                                    <AlertDialogTitle>{t('declarations.confirmDeleteTitle') || 'Confirmer la suppression'}</AlertDialogTitle>
-                                                    <AlertDialogDescription>
-                                                      {t('declarations.confirmDeleteDescription') || 'Êtes-vous sûr de vouloir supprimer cette déclaration ? Cette action est irréversible.'}
-                                                    </AlertDialogDescription>
-                                                  </AlertDialogHeader>
-                                                  <AlertDialogFooter>
-                                                    <AlertDialogCancel>{t('forms.no') || 'Non'}</AlertDialogCancel>
-                                                    <AlertDialogAction
-                                                      onClick={async () => {
-                                                        await deleteDeclaration(declaration.id);
-                                                      }}
-                                                    >
-                                                      {t('forms.yes') || 'Oui'}
-                                                    </AlertDialogAction>
-                                                  </AlertDialogFooter>
-                                                </AlertDialogContent>
-                                              </AlertDialog>
-                                            </>
-                                          )}
-                                        </div>
-                                      </TableCell>
-                                    </TableRow>
-                                  ))}
-                                </TableBody>
-                              </Table>
+                          <div className="w-full">
+                            <div className="space-y-4">
+                              {chauffeurDeclarations
+                                .slice()
+                                .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                                .slice(0, 5)
+                                .map((declaration) => {
+                                const badgePosStyle: React.CSSProperties = settings.language === 'ar' ? { position: 'absolute', top: 8, left: 8 } : { position: 'absolute', top: 8, right: 8 };
+                                // Calcul du nombre de jours ouverts si en_route
+                                let daysOpen = null;
+                                if (declaration.createdAt) {
+                                  const createdDate = new Date(declaration.createdAt);
+                                  let endDate = new Date();
+                                  if (declaration.declaredAt) {
+                                    endDate = new Date(declaration.declaredAt);
+                                  }
+                                  daysOpen = Math.floor((endDate.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24));
+                                }
+                                return (
+                                  <div
+                                    key={declaration.id}
+                                    className="relative flex items-center justify-between p-3 border rounded-lg cursor-pointer hover:bg-accent"
+                                    onClick={() => {
+                                      setEditingDeclaration(declaration);
+                                      setIsEditDialogReadOnly(true);
+                                      setIsEditDialogOpen(true);
+                                    }}
+                                  >
+                                    <div>
+                                      <div className="font-medium">{declaration.number}</div>
+                                      <div className="text-xs text-gray-500">
+                                        {declaration.month}/{declaration.year}
+                                        {daysOpen !== null && (
+                                          <span className="ml-2 text-orange-600 font-bold">{daysOpen}j</span>
+                                        )}
+                                      </div>
+                                      <div className="flex gap-2 mt-1 text-xs">
+                                        <span className="text-foreground">{declaration.distance ? `${declaration.distance} km` : '-'}</span>
+                                        {auth.user.employeeType === 'externe' && (
+                                          <span className="text-blue-700 font-semibold">{declaration.deliveryFees ? `${declaration.deliveryFees} DZD` : '-'}</span>
+                                        )}
+                                        {auth.user.employeeType === 'interne' && (
+                                          <span className="font-semibold" style={{ color: '#FFD700' }}>{declaration.primeDeRoute ? `${declaration.primeDeRoute.toFixed(2)} DZD` : '-'}</span>
+                                        )}
+                                      </div>
+                                    </div>
+                                    <div style={badgePosStyle}>
+                                      {getStatusBadge(declaration.status, declaration)}
+                                    </div>
+                                  </div>
+                                );
+                              })}
                             </div>
                           </div>
                         )}
                       </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+            )}
+            {String(activeTab) === 'mesDeclarations' && (
+              <div className="space-y-6 w-full p-2">
+                <div className="flex items-center justify-between mb-2">
+                  <h2 className={`text-2xl font-bold ${isMobile ? 'mb-2' : 'mb-4'}`}>{t('declarations.myDeclarations') || 'Mes déclarations'}</h2>
+                </div>
+
+                <SearchAndFilter
+                  searchValue={searchTerm}
+                  onSearchChange={setSearchTerm}
+                  filterValue={statusFilter}
+                  onFilterChange={setStatusFilter}
+                  filterOptions={filterOptions}
+                  searchPlaceholder={t('declarations.searchPlaceholder')}
+                  filterPlaceholder={t('declarations.filterPlaceholder')}
+                  searchColumn="number"
+                  onSearchColumnChange={() => {}}
+                  searchColumnOptions={[
+                    { value: 'number', label: t('declarations.number') },
+                    { value: 'notes', label: t('declarations.notes') },
+                    { value: 'chauffeurName', label: t('declarations.chauffeurName') }
+                  ]}
+                />
+
+                <div className={(isMobile ? 'overflow-x-auto ' : '') + 'mb-2'}>
+                  <Card>
+                    <CardContent className="p-0">
+                      <DeclarationsTable
+                        declarations={chauffeurDeclarations.filter(d => String(d.chauffeurId) === String(auth.user?.id))}
+                        onConsultDeclaration={(decl) => { setEditingDeclaration(decl); setIsEditDialogReadOnly(true); setIsEditDialogOpen(true); }}
+                        onEditDeclaration={(decl) => { setEditingDeclaration(decl); setIsEditDialogReadOnly(false); setIsEditDialogOpen(true); }}
+                        onDeleteDeclaration={(id: string) => { /* à implémenter si suppression requise */ }}
+                        onValidateDeclaration={(id: string) => { /* no-op for chauffeur view */ }}
+                        onRejectDeclaration={(id: string) => { /* no-op for chauffeur view */ }}
+                        chauffeurTypes={{ [auth.user.id]: auth.user.employeeType }}
+                        hideRecouvrementFields={true}
+                        hideValidatedColumn={true}
+                        chauffeurView={true}
+                        renderStatusBadge={getStatusBadge}
+                      />
                     </CardContent>
                   </Card>
                 </div>
@@ -1407,13 +1388,13 @@ const ChauffeurDashboard = () => {
     </AlertDialog>
   </div>
 )}
-          <ChauffeurSidebar activeTab={activeTab} onTabChange={(tab) => setActiveTab(tab as 'dashboard' | 'tracage')} />
-          <div className="flex-1 p-6 pt-3 overflow-auto">
+          <ChauffeurSidebar activeTab={activeTab} onTabChange={(tab) => { setLastNavSource('nav'); setActiveTab(tab as 'dashboard' | 'tracage' | 'mesDeclarations'); }} />
+          <div className={`flex-1 p-6 ${isMobile ? 'pt-3' : 'pt-16'} overflow-auto`}>
             {/* ...existing code for dashboard/tracage/content... */}
             {activeTab === 'dashboard' && (
               <>
-                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
-                  <h1 className="text-2xl font-bold text-foreground">{t('dashboard.chauffeurTitle')}</h1>
+                <div className="w-full p-2">
+                  <h2 className={`text-2xl font-bold ${isMobile ? 'mb-2' : 'mb-4'} text-foreground`}>{t('dashboard.chauffeurTitle')}</h2>
                 </div>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 mt-4">
                   {/* Create Declaration Form */}
@@ -1647,28 +1628,44 @@ const ChauffeurDashboard = () => {
                     <CardContent>
                       <div className="grid grid-cols-4 gap-2 sm:gap-4 text-center">
                         {/* En Route */}
-                        <div className="p-3 sm:p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                        <div
+                          role="button"
+                          onClick={() => handleStatClick('en_route')}
+                          className="cursor-pointer p-3 sm:p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800"
+                        >
                           <div className="text-xl sm:text-2xl font-bold text-blue-700 dark:text-blue-400">
                             {chauffeurDeclarations.filter(d => d.status === 'en_route').length}
                           </div>
                           <div className="text-xs sm:text-sm text-blue-600 dark:text-blue-300">{t('dashboard.onRoad')}</div>
                         </div>
                         {/* En Cours */}
-                        <div className="p-3 sm:p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                        <div
+                          role="button"
+                          onClick={() => handleStatClick('en_cours')}
+                          className="cursor-pointer p-3 sm:p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800"
+                        >
                           <div className="text-xl sm:text-2xl font-bold text-yellow-700 dark:text-yellow-400">
                             {chauffeurDeclarations.filter(d => d.status === 'en_cours').length}
                           </div>
                           <div className="text-xs sm:text-sm text-yellow-600 dark:text-yellow-300">{t('dashboard.pending')}</div>
                         </div>
                         {/* Validé */}
-                        <div className="p-3 sm:p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                        <div
+                          role="button"
+                          onClick={() => handleStatClick('valide')}
+                          className="cursor-pointer p-3 sm:p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800"
+                        >
                           <div className="text-xl sm:text-2xl font-bold text-green-700 dark:text-green-400">
                             {chauffeurDeclarations.filter(d => d.status === 'valide').length}
                           </div>
                           <div className="text-xs sm:text-sm text-green-600 dark:text-green-300">{t('dashboard.validated')}</div>
                         </div>
                         {/* Refusé */}
-                        <div className="p-3 sm:p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
+                        <div
+                          role="button"
+                          onClick={() => handleStatClick('refuse')}
+                          className="cursor-pointer p-3 sm:p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800"
+                        >
                           <div className="text-xl sm:text-2xl font-bold text-red-700 dark:text-red-400">
                             {chauffeurDeclarations.filter(d => d.status === 'refuse').length}
                           </div>
@@ -1679,13 +1676,13 @@ const ChauffeurDashboard = () => {
                   </Card>
                 </div>
                 <Separator className="bg-border mt-4" />
-                {/* Declarations List */}
+                {/* Mes déclarations récentes (version Planificateur adaptée pour le chauffeur) */}
                 <div className="mt-4">
                   <Card className="bg-card border-border w-full">
                     <CardHeader className="pb-3">
                       <CardTitle className="flex items-center gap-2 text-card-foreground text-lg">
                         <Search className="h-4 w-4 sm:h-5 sm:w-5" />
-                        {t('dashboard.myDeclarations')} ({chauffeurDeclarations.length})
+                        {t('planificateur.recentDeclarations') || t('declarations.recentDeclarations') || 'Mes déclarations récentes'} ({chauffeurDeclarations.length})
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
@@ -1707,115 +1704,64 @@ const ChauffeurDashboard = () => {
                         />
                         {filteredDeclarations.length === 0 ? (
                           <div className="text-center py-8 text-muted-foreground text-sm">
-                            {searchTerm || statusFilter !== 'all' 
+                            {searchTerm || statusFilter !== 'all'
                               ? t('declarations.noDeclarationsWithFilters')
                               : t('declarations.noDeclarations')
                             }
                           </div>
                         ) : (
-                          <div className="w-full overflow-x-auto">
-                            <div className="rounded-md border border-border bg-card min-w-full">
-                              <Table>
-                                <TableHeader>
-                                  <TableRow className="border-border hover:bg-muted/50">
-                                    <TableHead className="text-foreground text-xs sm:text-sm whitespace-nowrap">{t('declarations.number')}</TableHead>
-                                    <TableHead className="text-foreground text-xs sm:text-sm whitespace-nowrap">{t('declarations.distance')}</TableHead>
-                                    {/* Affiche Frais de Livraison uniquement si chauffeur externe */}
-                                    {auth?.user?.employeeType === 'externe' && (
-                                      <TableHead className="text-foreground text-xs sm:text-sm whitespace-nowrap">{t('declarations.deliveryFees')}</TableHead>
-                                    )}
-                                    {/* Affiche Prime de route uniquement si chauffeur interne */}
-                                    {auth?.user?.employeeType === 'interne' && (
-                                      <TableHead className="text-foreground text-xs sm:text-sm whitespace-nowrap">{t('declarations.primeDeRoute') === 'declarations.primeDeRoute' ? 'Prime de route' : t('declarations.primeDeRoute')}</TableHead>
-                                    )}
-                                    <TableHead className="text-foreground text-xs sm:text-sm whitespace-nowrap">{t('declarations.status')}</TableHead>
-                                    <TableHead className="text-foreground text-xs sm:text-sm whitespace-nowrap">{t('declarations.createdDate')}</TableHead>
-                                    <TableHead className="text-foreground text-xs sm:text-sm whitespace-nowrap">{t('declarations.actions')}</TableHead>
-                                  </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                  {filteredDeclarations.map((declaration) => (
-                                    <TableRow key={declaration.id} className="border-border hover:bg-muted/50">
-                                      <TableCell className="font-medium text-foreground text-xs sm:text-sm whitespace-nowrap">
-                                        {declaration.number}
-                                      </TableCell>
-                                      <TableCell className="text-foreground text-xs sm:text-sm whitespace-nowrap">
-                                        {declaration.distance ? declaration.distance : '-'}
-                                      </TableCell>
-                                      {/* Frais de Livraison uniquement pour externe */}
-                                      {auth?.user?.employeeType === 'externe' && (
-                                        <TableCell className="text-foreground text-xs sm:text-sm whitespace-nowrap">
-                                          {declaration.deliveryFees ? declaration.deliveryFees : '-'}
-                                        </TableCell>
-                                      )}
-                                      {/* Prime de route uniquement pour interne */}
-                                      {auth?.user?.employeeType === 'interne' && (
-                                        <TableCell className="text-xs sm:text-sm whitespace-nowrap">
-                                          {declaration.primeDeRoute ? (
-                                            <span style={{ color: '#FFD700', fontWeight: 'bold' }}>
-                                              {declaration.primeDeRoute.toFixed(2)}
-                                            </span>
-                                          ) : '-'}
-                                        </TableCell>
-                                      )}
-                                      <TableCell className="whitespace-nowrap">
-                                        {getStatusBadge(declaration.status, declaration)}
-                                      </TableCell>
-                                      <TableCell className="text-foreground text-xs sm:text-sm whitespace-nowrap">
-                                        {new Date(declaration.createdAt).toLocaleDateString('fr-FR')}
-                                      </TableCell>
-                                      <TableCell className="whitespace-nowrap">
-                                        <div className="flex gap-1 sm:gap-2">
-                                          {(declaration.status === 'en_cours' || declaration.status === 'en_route') && (
-                                            <>
-                                              <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={() => {
-                                                  setEditingDeclaration(declaration);
-                                                  setIsEditDialogOpen(true);
-                                                }}
-                                                className="h-8 w-8 p-0"
-                                              >
-                                                <Edit className="h-3 w-3 sm:h-4 sm:w-4" />
-                                              </Button>
-                                              <AlertDialog>
-                                                <AlertDialogTrigger asChild>
-                                                  <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 h-8 w-8 p-0"
-                                                  >
-                                                    <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
-                                                  </Button>
-                                                </AlertDialogTrigger>
-                                                <AlertDialogContent>
-                                                  <AlertDialogHeader>
-                                                    <AlertDialogTitle>{t('declarations.confirmDeleteTitle') || 'Confirmer la suppression'}</AlertDialogTitle>
-                                                    <AlertDialogDescription>
-                                                      {t('declarations.confirmDeleteDescription') || 'Êtes-vous sûr de vouloir supprimer cette déclaration ? Cette action est irréversible.'}
-                                                    </AlertDialogDescription>
-                                                  </AlertDialogHeader>
-                                                  <AlertDialogFooter>
-                                                    <AlertDialogCancel>{t('forms.no') || 'Non'}</AlertDialogCancel>
-                                                    <AlertDialogAction
-                                                      onClick={async () => {
-                                                        await deleteDeclaration(declaration.id);
-                                                      }}
-                                                    >
-                                                      {t('forms.yes') || 'Oui'}
-                                                    </AlertDialogAction>
-                                                  </AlertDialogFooter>
-                                                </AlertDialogContent>
-                                              </AlertDialog>
-                                            </>
+                          <div className="w-full">
+                            <div className="space-y-4">
+                              {filteredDeclarations
+                                .slice()
+                                .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                                .slice(0, 5)
+                                .map((declaration) => {
+                                  const badgePosStyle: React.CSSProperties = settings.language === 'ar' ? { position: 'absolute', top: 8, left: 8 } : { position: 'absolute', top: 8, right: 8 };
+                                  // Calcul du nombre de jours ouverts
+                                  let daysOpen = null;
+                                  if (declaration.createdAt) {
+                                    const createdDate = new Date(declaration.createdAt);
+                                    let endDate = new Date();
+                                    if (declaration.declaredAt) {
+                                      endDate = new Date(declaration.declaredAt);
+                                    }
+                                    daysOpen = Math.floor((endDate.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24));
+                                  }
+                                  return (
+                                    <div
+                                      key={declaration.id}
+                                      className="relative flex items-center justify-between p-3 border rounded-lg cursor-pointer hover:bg-accent"
+                                      onClick={() => {
+                                        setEditingDeclaration(declaration);
+                                        setIsEditDialogReadOnly(true);
+                                        setIsEditDialogOpen(true);
+                                      }}
+                                    >
+                                      <div>
+                                        <div className="font-medium">{declaration.number}</div>
+                                        <div className="text-xs text-gray-500">
+                                          {declaration.month}/{declaration.year}
+                                          {daysOpen !== null && (
+                                            <span className="ml-2 text-orange-600 font-bold">{daysOpen}j</span>
                                           )}
                                         </div>
-                                      </TableCell>
-                                    </TableRow>
-                                  ))}
-                                </TableBody>
-                              </Table>
+                                        <div className="flex gap-2 mt-1 text-xs">
+                                          <span className="text-foreground">{declaration.distance ? `${declaration.distance} km` : '-'}</span>
+                                          {auth.user.employeeType === 'externe' && (
+                                            <span className="text-blue-700 font-semibold">{declaration.deliveryFees ? `${declaration.deliveryFees} DZD` : '-'}</span>
+                                          )}
+                                          {auth.user.employeeType === 'interne' && (
+                                            <span className="font-semibold" style={{ color: '#FFD700' }}>{declaration.primeDeRoute ? `${declaration.primeDeRoute.toFixed(2)} DZD` : '-'}</span>
+                                          )}
+                                        </div>
+                                      </div>
+                                      <div style={badgePosStyle}>
+                                        {getStatusBadge(declaration.status, declaration)}
+                                      </div>
+                                    </div>
+                                  );
+                                })}
                             </div>
                           </div>
                         )}
@@ -1825,23 +1771,59 @@ const ChauffeurDashboard = () => {
                 </div>
               </>
             )}
+            {String(activeTab) === 'mesDeclarations' && (
+              <div className="w-full p-2">
+                <div className="flex items-center justify-between mb-2">
+                  <h2 className={`text-2xl font-bold ${isMobile ? 'mb-2' : 'mb-4'} text-foreground`}>{t('declarations.myDeclarations') || 'Mes déclarations'}</h2>
+                </div>
+                <SearchAndFilter
+                  searchValue={searchTerm}
+                  onSearchChange={setSearchTerm}
+                  filterValue={statusFilter}
+                  onFilterChange={setStatusFilter}
+                  filterOptions={filterOptions}
+                  searchPlaceholder={t('declarations.searchPlaceholder')}
+                  filterPlaceholder={t('declarations.filterPlaceholder')}
+                  searchColumn="number"
+                  onSearchColumnChange={() => {}}
+                  searchColumnOptions={[
+                    { value: 'number', label: t('declarations.number') },
+                    { value: 'notes', label: t('declarations.notes') },
+                    { value: 'chauffeurName', label: t('declarations.chauffeurName') }
+                  ]}
+                />
+
+                <div className={(isMobile ? 'overflow-x-auto ' : '') + 'mb-2'}>
+                  <Card>
+                    <CardContent className="p-0">
+                      <DeclarationsTable
+                        declarations={chauffeurDeclarations.filter(d => String(d.chauffeurId) === String(auth.user?.id))}
+                        onConsultDeclaration={(decl) => { setEditingDeclaration(decl); setIsEditDialogReadOnly(true); setIsEditDialogOpen(true); }}
+                        onEditDeclaration={(decl) => { setEditingDeclaration(decl); setIsEditDialogReadOnly(false); setIsEditDialogOpen(true); }}
+                        onDeleteDeclaration={(id: string) => { /* à implémenter si suppression requise */ }}
+                        onValidateDeclaration={(id: string) => { /* no-op */ }}
+                        onRejectDeclaration={(id: string) => { /* no-op */ }}
+                        chauffeurTypes={{ [auth.user.id]: auth.user.employeeType }}
+                        hideRecouvrementFields={true}
+                        hideValidatedColumn={true}
+                        chauffeurView={true}
+                        renderStatusBadge={getStatusBadge}
+                      />
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+            )}
             {activeTab === 'tracage' && (
-              <>
-                {/* Show Tracage title above tabs in desktop mode only */}
-                {!(settings?.viewMode === 'mobile') && (
-                  <div className="mb-4">
-                    <h1 className="text-2xl md:text-3xl font-bold text-primary mb-2">
-                      {t('tabs.tracage') || 'Traçage'}
-                    </h1>
-                  </div>
-                )}
+              <div className={isMobile ? 'max-w-[430px] mx-auto w-full p-4' : 'w-full p-2'}>
+                <h2 className={`text-2xl md:text-3xl font-bold text-primary ${isMobile ? 'mb-2' : 'mb-4'}`}>{t('tabs.tracage') || 'Traçage'}</h2>
                 <TracageSection 
                   gpsActive={gpsActive}
                   setGpsActive={setGpsActive}
                   userPosition={gpsPosition}
                   setUserPosition={setGpsPosition}
                 />
-              </>
+              </div>
             )}
           </div>
         </div>
@@ -1850,9 +1832,11 @@ const ChauffeurDashboard = () => {
       <EditDeclarationDialog
         declaration={editingDeclaration}
         isOpen={isEditDialogOpen}
+        readOnly={isEditDialogReadOnly}
         onClose={() => {
           setIsEditDialogOpen(false);
           setEditingDeclaration(null);
+          setIsEditDialogReadOnly(false);
         }}
         onSave={(updated) => {
           if (editingDeclaration) {

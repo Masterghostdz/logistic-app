@@ -25,6 +25,13 @@ const ChauffeurSidebar = ({ activeTab, onTabChange }: ChauffeurSidebarProps) => 
           <ClipboardList className="h-5 w-5" />
         </button>
         <button
+          aria-label="Mes déclarations"
+          onClick={() => onTabChange('mesDeclarations')}
+          className={`rounded-full p-2 transition-all ${activeTab === 'mesDeclarations' ? 'bg-blue-600 text-white shadow-lg scale-110' : 'bg-gray-100 text-gray-600'} flex items-center justify-center h-9 w-9`}
+        >
+          <ClipboardList className="h-5 w-5" />
+        </button>
+        <button
           aria-label="Traçage"
           onClick={() => onTabChange('tracage')}
           className={`rounded-full p-2 transition-all ${activeTab === 'tracage' ? 'bg-blue-600 text-white shadow-lg scale-110' : 'bg-gray-100 text-gray-600'} flex items-center justify-center h-9 w-9`}
@@ -45,6 +52,14 @@ const ChauffeurSidebar = ({ activeTab, onTabChange }: ChauffeurSidebarProps) => 
         >
           <ClipboardList className="mr-2 h-4 w-4" />
           {t('tabs.dashboard')}
+        </Button>
+        <Button
+          variant={activeTab === 'mesDeclarations' ? 'default' : 'ghost'}
+          className="w-full justify-start"
+          onClick={() => onTabChange('mesDeclarations')}
+        >
+          <ClipboardList className="mr-2 h-4 w-4" />
+          {t('declarations.myDeclarations') || 'Mes déclarations'}
         </Button>
         <Button
           variant={activeTab === 'tracage' ? 'default' : 'ghost'}

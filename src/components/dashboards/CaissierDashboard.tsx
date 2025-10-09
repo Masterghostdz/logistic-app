@@ -316,15 +316,15 @@ const CaissierDashboard = () => {
                               <div className="text-sm text-gray-500">{subtitle}</div>
                             </div>
                             <div style={badgePosStyle}>
-                              {isRecouvre ? (
-                                <Badge style={{ ...badgeStyle }} className={`bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 ${badgeClass} px-[10px]`}>
-                                  {t('declarations.recovered') || 'Recouvré'}
-                                </Badge>
-                              ) : (
-                                <Badge style={{ ...badgeStyle }} className={`bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200 ${badgeClass} px-[10px]`}>
-                                  {t('declarations.notRecovered') || 'Non Recouvré'}
-                                </Badge>
-                              )}
+                                      {isRecouvre ? (
+                                        <Badge style={{ ...badgeStyle }} className={`bg-green-100 text-green-800 border border-green-300 dark:bg-green-900 dark:text-green-200 ${badgeClass} px-[10px]`}>
+                                          {t('declarations.recovered') || 'Recouvré'}
+                                        </Badge>
+                                      ) : (
+                                        <Badge style={{ ...badgeStyle }} className={`bg-gray-100 text-gray-800 border border-gray-300 dark:bg-gray-800 dark:text-gray-200 ${badgeClass} px-[10px]`}>
+                                          {t('declarations.notRecovered') || 'Non Recouvré'}
+                                        </Badge>
+                                      )}
                             </div>
                           </div>
                         );
@@ -467,6 +467,8 @@ const CaissierDashboard = () => {
           <CreateRecouvrementDialog isOpen={showCreateRecouvrement} onClose={() => setShowCreateRecouvrement(false)} />
           {/* Declaration consult dialog (read-only) */}
           <EditDeclarationDialog declaration={consultDeclaration} isOpen={!!consultDeclaration} onClose={() => setConsultDeclaration(null)} readOnly={true} />
+          {/* Payment consult dialog (read-only) moved to top-level so recent recouvrements click opens it immediately */}
+          <EditPaymentDialog receipt={consultReceipt} isOpen={!!consultReceipt} onClose={() => setConsultReceipt(null)} readOnly={true} />
           {previewPhotoUrl && createPortal(
             <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/70 pointer-events-auto" onClick={(e) => { e.stopPropagation(); e.preventDefault(); setPreviewPhotoUrl(null); }} onPointerDownCapture={(e) => e.stopPropagation()} onMouseDownCapture={(e) => e.stopPropagation()}>
               <div className="bg-white dark:bg-slate-900 rounded-lg shadow-lg p-2 max-w-full max-h-full flex flex-col items-center" onClick={e => e.stopPropagation()}>
@@ -504,7 +506,6 @@ const CaissierDashboard = () => {
                   hideEditButton={isExternalCaissier}
                 />
               </div>
-              <EditPaymentDialog receipt={consultReceipt} isOpen={!!consultReceipt} onClose={() => setConsultReceipt(null)} readOnly={true} />
               <EditPaymentDialog receipt={editReceipt} isOpen={!!editReceipt} onClose={() => setEditReceipt(null)} onSave={(updated) => { /* parent can refresh or handle */ setEditReceipt(null); }} />
               <ValidatePaymentDialog receipt={validateReceipt} isOpen={!!validateReceipt} onClose={() => setValidateReceipt(null)} onValidated={(updated) => {
                 // parent can refresh or update local state; we rely on the payments listener to update

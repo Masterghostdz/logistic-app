@@ -96,13 +96,13 @@ const PaymentReceiptsTable: React.FC<PaymentReceiptsTableProps> = ({
     const s = (status || '').toLowerCase();
     // accept several possible stored strings and normalize to translation keys
     if (['brouillon', 'pending', 'pending_validation', 'pending_validation'].includes(s)) {
-      return <Badge size="md" style={{ ...badgeStyle }} className={`bg-yellow-100 text-yellow-800 ${badgeClass}`}>{t('dashboard.pending') || 'Brouillon'}</Badge>;
+      return <Badge size="md" style={{ ...badgeStyle }} className={`bg-yellow-100 text-yellow-800 border border-yellow-300 dark:bg-yellow-900 dark:text-yellow-200 ${badgeClass}`}>{t('dashboard.pending') || 'Brouillon'}</Badge>;
     }
     if (['validee', 'validated', 'valid'].includes(s)) {
-      return <Badge size="md" style={{ ...badgeStyle }} className={`bg-green-100 text-green-800 ${badgeClass}`}>{t('dashboard.validated') || 'Validée'}</Badge>;
+      return <Badge size="md" style={{ ...badgeStyle }} className={`bg-green-100 text-green-800 border border-green-300 dark:bg-green-900 dark:text-green-200 ${badgeClass}`}>{t('dashboard.validated') || 'Validée'}</Badge>;
     }
     if (['refuse', 'refused', 'rejected'].includes(s)) {
-      return <Badge size="md" style={{ ...badgeStyle }} className={`bg-red-100 text-red-800 ${badgeClass}`}>{t('declarations.refused') || 'Refusé'}</Badge>;
+      return <Badge size="md" style={{ ...badgeStyle }} className={`bg-red-100 text-red-800 border border-red-300 dark:bg-red-900 dark:text-red-200 ${badgeClass}`}>{t('declarations.refused') || 'Refusé'}</Badge>;
     }
     return <Badge size="md" variant="outline" style={{ ...badgeStyle }} className={badgeClass}>{status}</Badge>;
   };

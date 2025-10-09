@@ -1537,6 +1537,25 @@ try {
   // ignore, not fatal
 }
 
+// Ensure the `declarations.myDeclarations` key exists for common languages
+;(function ensureMyDeclarationsKey() {
+  try {
+    if (!translations.fr) (translations as any).fr = {};
+    if (!(translations as any).fr.declarations) (translations as any).fr.declarations = {};
+    if (!(translations as any).fr.declarations.myDeclarations) (translations as any).fr.declarations.myDeclarations = 'Mes déclarations';
+
+    if (!translations.en) (translations as any).en = {};
+    if (!(translations as any).en.declarations) (translations as any).en.declarations = {};
+    if (!(translations as any).en.declarations.myDeclarations) (translations as any).en.declarations.myDeclarations = 'My Declarations';
+
+    if (!translations.ar) (translations as any).ar = {};
+    if (!(translations as any).ar.declarations) (translations as any).ar.declarations = {};
+    if (!(translations as any).ar.declarations.myDeclarations) (translations as any).ar.declarations.myDeclarations = 'إعلاناتي';
+  } catch (e) {
+    // ignore any issues when patching translations at runtime
+  }
+})();
+
 export const getTranslation = (key: string, language: string) => {
   // Accept language codes like 'ar-DZ' or 'en-US' and normalize to base code
   const originalLanguage = language;

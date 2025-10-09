@@ -86,9 +86,9 @@ const WarehouseTable: React.FC<WarehouseTableProps> = ({ warehouses, onCreate, o
                   <TableCell className={`${getMinWidthForChars(18)} ${cellPaddingClass} whitespace-nowrap`} style={fontSizeStyle}>{wh.address}</TableCell>
                   <TableCell className={`${cellPaddingClass} whitespace-nowrap`} style={fontSizeStyle}>
                     {wh.isActive ? (
-                      <Badge size="md" style={{ ...badgeStyle }} className={`${badgeClass} font-semibold bg-green-100 text-green-700 border border-green-300 shadow`}>{t('warehouses.active') || t('chauffeurs.active') || 'Actif'}</Badge>
+                      <Badge size="md" style={{ ...badgeStyle }} className={`${badgeClass} font-semibold bg-green-100 text-green-800 border border-green-300 dark:bg-green-900 dark:text-green-200`}>{t('warehouses.active') || t('chauffeurs.active') || 'Actif'}</Badge>
                     ) : (
-                      <Badge size="md" style={{ ...badgeStyle }} className={`${badgeClass} font-semibold bg-red-100 text-red-700 border border-red-300 shadow`}>{t('warehouses.inactive') || t('chauffeurs.inactive') || 'Inactif'}</Badge>
+                      <Badge size="md" style={{ ...badgeStyle }} className={`${badgeClass} font-semibold bg-red-100 text-red-800 border border-red-300 dark:bg-red-900 dark:text-red-200`}>{t('warehouses.inactive') || t('chauffeurs.inactive') || 'Inactif'}</Badge>
                     )}
                   </TableCell>
                   <TableCell className={`${cellPaddingClass} whitespace-nowrap`} style={fontSizeStyle}>
