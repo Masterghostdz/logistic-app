@@ -36,13 +36,13 @@ export const translations = {
     planificateur: {
       statsTitle: "Indicateurs des déclarations",
       add: "Ajouter",
-      paymentsStatsTitle: "Payments summary",
+      paymentsStatsTitle: "Indicateurs des paiements",
       clientsTitle: "Gestion des Clients",
       dashboardTitle: "Tableau de bord - Planificateur",
       recentDeclarations: "Déclarations récentes",
       declarationsTitle: "Gestion des Déclarations",
       warehousesTitle: "Gestion des Entrepôts",
-        paymentsTitle: "Payments Management",
+        paymentsTitle: "Gestion des paiements",
       phoneNumbers: "Numéros de téléphone",
       status: "Statut"
     },
@@ -245,6 +245,7 @@ export const translations = {
       delete: "Supprimer",
       validate: "Valider",
       refuse: "Refuser",
+      refused: "Refusé",
       searchPlaceholder: "Rechercher par numéro, notes...",
       filterPlaceholder: "Filtrer par statut",
       noDeclarations: "Aucune déclaration trouvée",
@@ -277,7 +278,12 @@ export const translations = {
     planificateur: {
       add: "Add",
       statsTitle: "Declarations summary",
-      paymentsStatsTitle: "Payments summary"
+      paymentsStatsTitle: "Payments summary",
+      clientsTitle: "Clients Management",
+      dashboardTitle: "Planner Dashboard",
+      recentDeclarations: "Recent Declarations",
+      declarationsTitle: "Declarations Management",
+      warehousesTitle: "Warehouses Management",
     },
     buttons: {
       back: "Back"
@@ -305,6 +311,8 @@ export const translations = {
     // planificateur moved to final `ar` block to avoid duplication
     planificateur: {
       add: "إضافة",
+      paymentsStatsTitle: "ملخص المدفوعات",
+      paymentsTitle: "إدارة المدفوعات",
     },
     roles: {
       admin: "مسؤول",
@@ -321,7 +329,9 @@ export const translations = {
       recouvrementsTitle: "مؤشرات التحصيلات",
       recentRecouvrements: "التحصيلات الأخيرة",
       paymentsPendingTitle: "حالات المدفوعات غير المعتمدة",
-      paymentsNoCompanyTitle: "بدون شركة"
+      paymentsNoCompanyTitle: "بدون شركة",
+      paymentsStatsTitle: "ملخص المدفوعات",
+      paymentsTitle: "إدارة المدفوعات"
     },
     profile: {
       title: "الملف الشخصي",
@@ -1109,7 +1119,9 @@ export const translations = {
       dashboardTitle: "لوحة القيادة - أمين الصندوق",
       recouvrementsTitle: "مؤشرات التحصيلات",
       paymentsPendingTitle: "المدفوعات غير المعتمدة",
-      paymentsNoCompanyTitle: "بدون شركة"
+      paymentsNoCompanyTitle: "بدون شركة",
+      paymentsStatsTitle: "ملخص المدفوعات",
+      // paymentsTitle already defined above; do not duplicate
     },
     // Recouvrement labels (Arabic)
     recouvrement: {
@@ -1151,7 +1163,9 @@ export const translations = {
       statsTitle: "مؤشرات التصريحات",
       company: "الشركة",
       phoneNumbers: "أرقام الهاتف",
-      status: "الحالة"
+      status: "الحالة",
+      paymentsStatsTitle: "ملخص المدفوعات",
+      paymentsTitle: "إدارة المدفوعات",
     },
     // Header
     header: {
@@ -1553,6 +1567,44 @@ try {
     if (!(translations as any).ar.declarations.myDeclarations) (translations as any).ar.declarations.myDeclarations = 'إعلاناتي';
   } catch (e) {
     // ignore any issues when patching translations at runtime
+  }
+})();
+
+// Ensure declarations.breakdown exists for all languages (fix accidental overwrites)
+;(function ensureDeclarationsBreakdown() {
+  try {
+    if (!translations.fr) (translations as any).fr = {};
+    (translations as any).fr.declarations = (translations as any).fr.declarations || {};
+    if (!(translations as any).fr.declarations.breakdown) (translations as any).fr.declarations.breakdown = 'En panne';
+
+    if (!translations.en) (translations as any).en = {};
+    (translations as any).en.declarations = (translations as any).en.declarations || {};
+    if (!(translations as any).en.declarations.breakdown) (translations as any).en.declarations.breakdown = 'Breakdown';
+
+    if (!translations.ar) (translations as any).ar = {};
+    (translations as any).ar.declarations = (translations as any).ar.declarations || {};
+    if (!(translations as any).ar.declarations.breakdown) (translations as any).ar.declarations.breakdown = 'عطل تقني';
+  } catch (e) {
+    // ignore
+  }
+})();
+
+// Ensure declarations.breakdownButton exists for all languages (fix accidental overwrites)
+;(function ensureDeclarationsBreakdownButton() {
+  try {
+    if (!translations.fr) (translations as any).fr = {};
+    (translations as any).fr.declarations = (translations as any).fr.declarations || {};
+    if (!(translations as any).fr.declarations.breakdownButton) (translations as any).fr.declarations.breakdownButton = 'Signaler une panne';
+
+    if (!translations.en) (translations as any).en = {};
+    (translations as any).en.declarations = (translations as any).en.declarations || {};
+    if (!(translations as any).en.declarations.breakdownButton) (translations as any).en.declarations.breakdownButton = 'Report breakdown';
+
+    if (!translations.ar) (translations as any).ar = {};
+    (translations as any).ar.declarations = (translations as any).ar.declarations || {};
+    if (!(translations as any).ar.declarations.breakdownButton) (translations as any).ar.declarations.breakdownButton = 'الإبلاغ عن عطل تقني';
+  } catch (e) {
+    // ignore
   }
 })();
 

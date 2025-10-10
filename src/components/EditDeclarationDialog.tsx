@@ -72,13 +72,13 @@ const PaymentsForDeclaration: React.FC<{ declaration?: Declaration | null; readO
     const s = String(p.status || '').toLowerCase();
     if (['brouillon', 'pending', 'pending_validation'].includes(s)) {
       const label = (s === 'pending' && !p.uploadPending) ? (t('declarations.synchronized') || 'Synchronisé') : (t('dashboard.pending') || 'En attente');
-      return <Badge size="sm" style={{ ...badgeStyle }} className={`bg-yellow-100 text-yellow-800 border border-yellow-300 ${badgeClass}`}>{label}</Badge>;
+      return <Badge size="sm" style={{ ...badgeStyle }} className={`bg-yellow-100 text-yellow-800 ${badgeClass}`}>{label}</Badge>;
     }
     if (['validee', 'validated', 'valid', 'valide'].includes(s)) {
-      return <Badge size="sm" style={{ ...badgeStyle }} className={`bg-green-100 text-green-800 border border-green-300 ${badgeClass}`}>{t('dashboard.validated') || 'Validé'}</Badge>;
+      return <Badge size="sm" style={{ ...badgeStyle }} className={`bg-green-100 text-green-800 ${badgeClass}`}>{t('dashboard.validated') || 'Validé'}</Badge>;
     }
     if (['refuse', 'refused', 'rejected'].includes(s)) {
-      return <Badge size="sm" style={{ ...badgeStyle }} className={`bg-red-100 text-red-800 border border-red-300 ${badgeClass}`}>{t('declarations.refused') || 'Refusé'}</Badge>;
+      return <Badge size="sm" style={{ ...badgeStyle }} className={`bg-red-100 text-red-800 ${badgeClass}`}>{t('declarations.refused') || 'Refusé'}</Badge>;
     }
     return <Badge size="sm" variant="outline" style={{ ...badgeStyle }} className={badgeClass}>{p.status}</Badge>;
   };

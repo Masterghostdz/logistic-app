@@ -192,31 +192,53 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle, showMenuButton = false, o
                 <DropdownMenuContent className="w-56 bg-popover border-border" align="end" forceMount>
                   <div className="max-h-80 overflow-y-auto">
                     {notifState.length > 0 ? notifState.map((notif) => {
-                      let declaration = null;
-                      let message = notif.message;
-                      if (user?.role === 'planificateur' && notif.declarationId) {
-                        declaration = declarations.find((d: any) => d.id === notif.declarationId);
-                          if (declaration && declaration.status === 'en_panne') {
-                          const chauffeurName = declaration.chauffeurName || 'Inconnu';
-                          const refProgramme = declaration.programNumber && declaration.year && declaration.month
-                            ? `DCP/${declaration.year}/${declaration.month}/${declaration.programNumber}`
-                            : '';
-                          // Force LTR for the program reference so Arabic UI doesn't reverse numeric/latin segments
-                          message = `Chauffeur "${chauffeurName}" a tombé en panne dans le programme "${refProgramme}"`;
-                          // Note: when rendering, ensure the refProgramme is wrapped with dir="ltr" — done where displayed
-                        } else {
-                          // Ne pas afficher si la déclaration n'est pas en panne
-                          return null;
-                        }
-                      } else if (user?.role === 'chauffeur') {
-                        // ...logique existante pour chauffeur...
-                        const refMatch = notif.message.match(/DCP\/(\d{2})\/(\d{2})\/(\d+)/);
+                      // Resolve the declaration for this notification in a robust way:
+                      // 1) prefer direct declarationId matching
+                      // 2) fall back to programParts (enriched at creation time)
+                      // 3) as last resort try to parse a DCP/... ref in the message (best-effort)
+                      let declaration: any = null;
+                      let message: any = notif.message;
+
+                      if (notif.declarationId) {
+                        declaration = declarations.find((d: any) => d.id === notif.declarationId) || null;
+                      }
+
+                      if (!declaration && notif.programParts) {
+                        const pp = notif.programParts;
+                        declaration = declarations.find((d: any) => {
+                          const yearMatch = String(d.year).endsWith(String(pp.year)) || String(d.year) === String(pp.year);
+                          const monthMatch = String(d.month) === String(pp.month);
+                          const numMatch = String(d.programNumber) === String(pp.number) || String(d.number) === String(pp.number);
+                          return yearMatch && monthMatch && numMatch;
+                        }) || null;
+                      }
+
+                      if (!declaration && typeof notif.message === 'string') {
+                        // Try to extract a program ref like DCP/2025/07/1234 or DCP/25/07/1234
+                        const refMatch = notif.message.match(/DCP\/(\d{2,4})\/(\d{1,2})\/(\d+)/);
                         if (refMatch) {
-                          declaration = declarations.find((d: any) => d.year === refMatch[1] && d.month === refMatch[2] && d.programNumber === refMatch[3]);
-                        } else {
-                          declaration = declarations[0];
+                          const [, y, m, n] = refMatch;
+                          declaration = declarations.find((d: any) => {
+                            const yearMatch = String(d.year).endsWith(String(y)) || String(d.year) === String(y);
+                            const monthMatch = String(d.month) === String(m);
+                            const numMatch = String(d.programNumber) === String(n) || String(d.number) === String(n);
+                            return yearMatch && monthMatch && numMatch;
+                          }) || null;
                         }
                       }
+
+                      // For planificateur: only show notifications that relate to an en_panne declaration
+                      if (user?.role === 'planificateur') {
+                        if (!declaration || declaration.status !== 'en_panne') return null;
+                        const chauffeurName = declaration.chauffeurName || 'Inconnu';
+                        const refProgramme = declaration.programNumber && declaration.year && declaration.month
+                          ? `DCP/${declaration.year}/${declaration.month}/${declaration.programNumber}`
+                          : '';
+                        message = `Chauffeur "${chauffeurName}" a tombé en panne dans le programme "${refProgramme}"`;
+                      }
+
+                      // Do not force a fallback to declarations[0] — if we couldn't resolve the declaration
+                      // we still render the notification message, but clicking won't open the declaration.
                       return (
                         <div
                           key={notif.id}
@@ -226,7 +248,6 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle, showMenuButton = false, o
                             if (declaration) setConsultDeclaration(declaration);
                           }}
                         >
-                          {/* If message contains a program ref like DCP/YY/MM/NNNN, render the ref with LTR */}
                           {typeof message === 'string' ? (
                             <span className={notif.read ? 'text-xs text-muted-foreground' : 'text-xs font-semibold text-popover-foreground'}>
                               <TextWithProgramRef text={message} />

@@ -75,6 +75,19 @@ const DeclarationsTable = ({
   } = useTableZoom(fontSize as any);
 
   const { t, settings } = useTranslation();
+
+  // Helper to delete a declaration: always use parent callback (ChauffeurDashboard shows dialog), never browser confirm.
+  const handleDelete = (id: string) => {
+    if (onDeleteDeclaration) {
+      try {
+        onDeleteDeclaration(id);
+      } catch (e) {
+        console.error('onDeleteDeclaration threw', e);
+        toast({ title: t('forms.error') || 'Erreur', description: (e as any)?.message || undefined, variant: 'destructive' });
+      }
+    }
+  };
+
   const getStatusBadge = (status: string, declaration?: Declaration) => {
     const pad = 'px-[10px]';
     switch (status) {
@@ -87,7 +100,7 @@ const DeclarationsTable = ({
       case 'valide':
         return <Badge className={`bg-green-100 text-green-800 border border-green-300 dark:bg-green-900 dark:text-green-200 ${badgeClass} ${pad}`}>{t('dashboard.validated')}</Badge>;
       case 'refuse':
-        return <Badge className={`bg-red-100 text-red-800 border border-red-300 dark:bg-red-900 dark:text-red-200 ${badgeClass} ${pad}`}>{t('dashboard.refused')}</Badge>;
+        return <Badge className={`bg-red-100 text-red-800 border border-red-300 dark:bg-red-900 dark:text-red-200 ${badgeClass} ${pad}`}>{t('declarations.refused') || t('dashboard.refused')}</Badge>;
       default:
         return <Badge variant="outline" className={`${badgeClass} ${pad}`}>{status}</Badge>;
     }
@@ -306,33 +319,64 @@ const DeclarationsTable = ({
                   )}
                   <TableCell className={`whitespace-nowrap ${cellPaddingClass}`} style={fontSizeStyle}>
                     <div className="flex gap-1 whitespace-nowrap" style={fontSizeStyle}>
-                      {(onEditDeclaration || onDeleteDeclaration) && (declaration.status === 'en_cours' || declaration.status === 'en_route') && (
-                        <>
-                          {onEditDeclaration && (
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className={`flex items-center justify-center rounded-md`}
-                              style={{ width: computedRowPx, height: computedRowPx }}
-                              onClick={() => onEditDeclaration(declaration)}
-                            >
-                              <Edit style={{ width: computedIconPx, height: computedIconPx }} />
-                            </Button>
-                          )}
-                          {onDeleteDeclaration && (
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className={`flex items-center justify-center rounded-md text-red-600 hover:text-red-700`}
-                              style={{ width: computedRowPx, height: computedRowPx }}
-                              onClick={() => onDeleteDeclaration(declaration.id)}
-                            >
-                              <Trash2 style={{ width: computedIconPx, height: computedIconPx }} />
-                            </Button>
-                          )}
-                        </>
+                      {/* For chauffeur view: allow edit+delete only when status is 'en_cours', delete-only when 'en_route'.
+                          For non-chauffeur views keep previous behaviour (edit+delete for en_cours/en_route if callbacks provided). */}
+                      {chauffeurView ? (
+                        (declaration.status === 'en_cours' || declaration.status === 'en_route') && (
+                          <>
+                            {declaration.status === 'en_cours' && onEditDeclaration && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className={`flex items-center justify-center rounded-md`}
+                                style={{ width: computedRowPx, height: computedRowPx }}
+                                onClick={() => onEditDeclaration(declaration)}
+                              >
+                                <Edit style={{ width: computedIconPx, height: computedIconPx }} />
+                              </Button>
+                            )}
+                            {onDeleteDeclaration && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className={`flex items-center justify-center rounded-md text-red-600 hover:text-red-700`}
+                                style={{ width: computedRowPx, height: computedRowPx }}
+                                onClick={() => handleDelete(declaration.id)}
+                              >
+                                <Trash2 style={{ width: computedIconPx, height: computedIconPx }} />
+                              </Button>
+                            )}
+                          </>
+                        )
+                      ) : (
+                        (onEditDeclaration || onDeleteDeclaration) && (declaration.status === 'en_cours' || declaration.status === 'en_route') && (
+                          <>
+                            {onEditDeclaration && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className={`flex items-center justify-center rounded-md`}
+                                style={{ width: computedRowPx, height: computedRowPx }}
+                                onClick={() => onEditDeclaration(declaration)}
+                              >
+                                <Edit style={{ width: computedIconPx, height: computedIconPx }} />
+                              </Button>
+                            )}
+                            {onDeleteDeclaration && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className={`flex items-center justify-center rounded-md text-red-600 hover:text-red-700`}
+                                style={{ width: computedRowPx, height: computedRowPx }}
+                                onClick={() => handleDelete(declaration.id)}
+                              >
+                                <Trash2 style={{ width: computedIconPx, height: computedIconPx }} />
+                              </Button>
+                            )}
+                          </>
+                        )
                       )}
-                      {onSendReceipts && !hideSendButton && (
+                       {onSendReceipts && !hideSendButton && (
                         (() => {
                           const declPaymentState = String((declaration as any).paymentState || '').toLowerCase();
                           const isRecouvre = declPaymentState.startsWith('recouv');
@@ -384,7 +428,8 @@ const DeclarationsTable = ({
                           );
                         })()
                       )}
-                      {declaration.status === 'en_cours' && (
+                      {/* Validation actions: only visible to non-chauffeur roles */}
+                      {!chauffeurView && declaration.status === 'en_cours' && (
                         <>
                           <Button
                             size="sm"

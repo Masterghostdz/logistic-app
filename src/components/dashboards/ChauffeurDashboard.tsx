@@ -286,6 +286,30 @@ const ChauffeurDashboard: React.FC = () => {
   const [refusalDialogOpen, setRefusalDialogOpen] = useState(false);
   const [refusalReasonLabel, setRefusalReasonLabel] = useState<string | null>(null);
 
+  // Delete confirmation dialog state for chauffeur view
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+
+  const requestDeleteDeclaration = (id: string) => {
+    setDeleteTargetId(id);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteDeclaration = async () => {
+    if (!deleteTargetId) return;
+    try {
+      const { deleteDeclaration } = await import('../../services/declarationService');
+      await deleteDeclaration(deleteTargetId);
+      setDeleteDialogOpen(false);
+      setDeleteTargetId(null);
+      toast({ title: t('forms.success') || 'Succès', description: t('declarations.confirmDelete') || 'Suppression effectuée', variant: 'success' });
+      // Firestore synchronization / shared data should reflect deletion
+    } catch (e) {
+      console.error('Delete declaration failed', e);
+      toast({ title: t('forms.error') || 'Erreur', description: (e as any)?.message || undefined, variant: 'destructive' });
+    }
+  };
+
   useEffect(() => {
     if (auth && auth.user) {
       // Si une déclaration en_route ou en_panne existe pour ce chauffeur, la garder en mémoire et ouvrir le formulaire
@@ -340,7 +364,7 @@ const ChauffeurDashboard: React.FC = () => {
     { value: 'en_panne', label: t('declarations.breakdown') },
     { value: 'en_cours', label: t('dashboard.pending') },
     { value: 'valide', label: t('dashboard.validated') },
-    { value: 'refuse', label: t('dashboard.refused') }
+    { value: 'refuse', label: t('declarations.refused') || t('dashboard.refused') }
   ];
 
   // When a dashboard summary indicator is clicked, open the "Mes déclarations" tab
@@ -520,10 +544,13 @@ const ChauffeurDashboard: React.FC = () => {
   return <Badge size="md" style={{ ...badgeStyle }} className={`${badgeClass} bg-green-100 text-green-800 border border-green-300 dark:bg-green-900 dark:text-green-200`}>{t('dashboard.validated')}</Badge>;
       case 'refuse':
         return (
-          <button
-            type="button"
-            className={`${badgeClass} cursor-pointer underline bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 border border-transparent focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2`}
-            style={{ minWidth: 0 }}
+          <Badge
+            size="md"
+            style={{ ...badgeStyle }}
+            className={`${badgeClass} bg-red-100 text-red-800 border border-red-300 dark:bg-red-900 dark:text-red-200 cursor-pointer`}
+            role="button"
+            tabIndex={0}
+            title={t('declarations.refused') || t('dashboard.refused')}
             onClick={async (e) => {
               e.stopPropagation();
               if (declaration && declaration.refusalReason) {
@@ -538,17 +565,31 @@ const ChauffeurDashboard: React.FC = () => {
                 console.log('Ouverture dialog refus motif: aucun motif');
               }
             }}
-            title={t('dashboard.refused')}
+            onKeyDown={async (e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                e.stopPropagation();
+                if (declaration && declaration.refusalReason) {
+                  const reasons = await getAllRefusalReasons();
+                  const found = reasons.find(r => r.id === declaration.refusalReason);
+                  setRefusalReasonLabel(found ? (found[settings.language || 'fr'] || found['fr']) : null);
+                  setRefusalDialogOpen(true);
+                } else {
+                  setRefusalReasonLabel(null);
+                  setRefusalDialogOpen(true);
+                }
+              }
+            }}
           >
-            {t('dashboard.refused')}
-          </button>
+            {t('declarations.refused') || t('dashboard.refused')}
+          </Badge>
         );
-      default:
+     default:
   return <Badge size="md" variant="outline" style={{ ...badgeStyle }} className={badgeClass}>{status}</Badge>;
     }
   };
 
-  // Si on affiche le profil, on rend ProfilePage comme dans PlanificateurDashboard
+  // Si on affiche le profil, on rend ProfilePage comme dans PlanificateeurDashboard
   if (activeTab === 'profile') {
     if (isMobile) {
       // En mobile, pas de Header global, ProfilePage gère son header mobile
@@ -758,6 +799,8 @@ const ChauffeurDashboard: React.FC = () => {
                                         month: enRouteDeclaration.month,
                                         number: enRouteDeclaration.programNumber || enRouteDeclaration.number || ''
                                       },
+                                      // target role so planificateur fetches it
+                                      recipientRole: 'planificateur',
                                       message: `Chauffeur '${enRouteDeclaration.chauffeurName}' a tombé en panne dans le programme'`,
                                       createdAt: new Date().toISOString(),
                                       read: false
@@ -1196,9 +1239,65 @@ const ChauffeurDashboard: React.FC = () => {
                     )}
                   </CardContent>
                 </Card>
-                {/* mobile: 'Mes déclarations' is available from desktop sidebar only; keep mobile dashboard compact */}
+                {/* My Declarations Summary */}
+                <Card className="bg-card border-border w-full">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center gap-2 text-card-foreground text-lg">
+                      <Clock className="h-4 w-4 sm:h-5 sm:w-5" />
+                      {t('dashboard.myDeclarationsSummary')}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-4 gap-2 sm:gap-4 text-center">
+                      {/* En Route */}
+                      <div
+                        role="button"
+                        onClick={() => handleStatClick('en_route')}
+                        className="cursor-pointer p-3 sm:p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800"
+                      >
+                        <div className="text-xl sm:text-2xl font-bold text-blue-700 dark:text-blue-400">
+                          {chauffeurDeclarations.filter(d => d.status === 'en_route').length}
+                        </div>
+                        <div className="text-xs sm:text-sm text-blue-600 dark:text-blue-300">{t('dashboard.onRoad')}</div>
+                      </div>
+                      {/* En Cours */}
+                      <div
+                        role="button"
+                        onClick={() => handleStatClick('en_cours')}
+                        className="cursor-pointer p-3 sm:p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800"
+                      >
+                        <div className="text-xl sm:text-2xl font-bold text-yellow-700 dark:text-yellow-400">
+                          {chauffeurDeclarations.filter(d => d.status === 'en_cours').length}
+                        </div>
+                        <div className="text-xs sm:text-sm text-yellow-600 dark:text-yellow-300">{t('dashboard.pending')}</div>
+                      </div>
+                      {/* Validé */}
+                      <div
+                        role="button"
+                        onClick={() => handleStatClick('valide')}
+                        className="cursor-pointer p-3 sm:p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800"
+                      >
+                        <div className="text-xl sm:text-2xl font-bold text-green-700 dark:text-green-400">
+                          {chauffeurDeclarations.filter(d => d.status === 'valide').length}
+                        </div>
+                        <div className="text-xs sm:text-sm text-green-600 dark:text-green-300">{t('dashboard.validated')}</div>
+                      </div>
+                      {/* Refusé */}
+                      <div
+                        role="button"
+                        onClick={() => handleStatClick('refuse')}
+                        className="cursor-pointer p-3 sm:p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800"
+                      >
+                        <div className="text-xl sm:text-2xl font-bold text-red-700 dark:text-red-400">
+                          {chauffeurDeclarations.filter(d => d.status === 'refuse').length}
+                        </div>
+                        <div className="text-xs sm:text-sm text-red-600 dark:text-red-300">{t('dashboard.refused')}</div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
                 <Separator className="bg-border mt-4" />
-                {/* Ajout : Mes déclarations récentes (version Planificateur adaptée pour mobile) */}
+                {/* Mes déclarations récentes (version Planificateur adaptée pour mobile) */}
                 <div className="mt-4">
                   <Card className="bg-card border-border w-full">
                     <CardHeader className="pb-3">
@@ -1302,10 +1401,10 @@ const ChauffeurDashboard: React.FC = () => {
                   <Card>
                     <CardContent className="p-0">
                       <DeclarationsTable
-                        declarations={chauffeurDeclarations.filter(d => String(d.chauffeurId) === String(auth.user?.id))}
+                        declarations={filteredDeclarations}
                         onConsultDeclaration={(decl) => { setEditingDeclaration(decl); setIsEditDialogReadOnly(true); setIsEditDialogOpen(true); }}
                         onEditDeclaration={(decl) => { setEditingDeclaration(decl); setIsEditDialogReadOnly(false); setIsEditDialogOpen(true); }}
-                        onDeleteDeclaration={(id: string) => { /* à implémenter si suppression requise */ }}
+                        onDeleteDeclaration={(id: string) => { requestDeleteDeclaration(id); }}
                         onValidateDeclaration={(id: string) => { /* no-op for chauffeur view */ }}
                         onRejectDeclaration={(id: string) => { /* no-op for chauffeur view */ }}
                         chauffeurTypes={{ [auth.user.id]: auth.user.employeeType }}
@@ -1449,6 +1548,8 @@ const ChauffeurDashboard: React.FC = () => {
                                           month: enRouteDeclaration.month,
                                           number: enRouteDeclaration.programNumber || enRouteDeclaration.number || ''
                                         },
+                                        // target role so planificateur fetches it
+                                        recipientRole: 'planificateur',
                                         message: `Chauffeur '${enRouteDeclaration.chauffeurName}' a tombé en panne dans le programme'`,
                                         createdAt: new Date().toISOString(),
                                         read: false
@@ -1490,7 +1591,7 @@ const ChauffeurDashboard: React.FC = () => {
                             <div className="flex items-center gap-2 px-4 py-2 bg-red-100 border-b-2 border-red-500 text-red-700 font-semibold rounded-t-md mb-2">
                               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636l-1.414 1.414A7.975 7.975 0 0012 6c-2.21 0-4.21.896-5.95 2.364l-1.414-1.414A9.969 9.969 0 0112 4c2.761 0 5.261 1.12 7.071 2.929zM4.222 19.778A9.969 9.969 0 0112 20c2.761 0 5.261-1.12 7.071-2.929l-1.414-1.414A7.975 7.975 0 0112 18c-2.21 0-4.21-.896-5.95-2.364l-1.414 1.414z" />
-                            </svg>
+                              </svg>
                               <span>{t('declarations.breakdown')}</span>
                             </div>
                           )}
@@ -1797,12 +1898,12 @@ const ChauffeurDashboard: React.FC = () => {
                   <Card>
                     <CardContent className="p-0">
                       <DeclarationsTable
-                        declarations={chauffeurDeclarations.filter(d => String(d.chauffeurId) === String(auth.user?.id))}
+                        declarations={filteredDeclarations}
                         onConsultDeclaration={(decl) => { setEditingDeclaration(decl); setIsEditDialogReadOnly(true); setIsEditDialogOpen(true); }}
                         onEditDeclaration={(decl) => { setEditingDeclaration(decl); setIsEditDialogReadOnly(false); setIsEditDialogOpen(true); }}
-                        onDeleteDeclaration={(id: string) => { /* à implémenter si suppression requise */ }}
-                        onValidateDeclaration={(id: string) => { /* no-op */ }}
-                        onRejectDeclaration={(id: string) => { /* no-op */ }}
+                        onDeleteDeclaration={(id: string) => { requestDeleteDeclaration(id); }}
+                        onValidateDeclaration={(id: string) => { /* no-op for chauffeur view */ }}
+                        onRejectDeclaration={(id: string) => { /* no-op for chauffeur view */ }}
                         chauffeurTypes={{ [auth.user.id]: auth.user.employeeType }}
                         hideRecouvrementFields={true}
                         hideValidatedColumn={true}
@@ -1893,6 +1994,22 @@ const ChauffeurDashboard: React.FC = () => {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogAction onClick={() => setRefusalDialogOpen(false)}>{t('forms.confirm') || 'Fermer'}</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete confirmation dialog for chauffeurs */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent className={isMobile ? 'max-w-xs w-[90vw] p-4 rounded-xl' : ''}>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('declarations.confirmDeleteTitle') || 'Confirmer la suppression'}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('declarations.confirmDeleteDescription') || 'Êtes-vous sûr de vouloir supprimer cette déclaration ? Cette action est irréversible.'}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setDeleteDialogOpen(false)}>{t('forms.no') || 'Non'}</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteDeclaration}>{t('forms.yes') || 'Oui'}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
