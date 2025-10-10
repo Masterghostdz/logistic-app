@@ -123,6 +123,7 @@ const ChauffeurDashboard: React.FC = () => {
   }, [gpsActive, auth?.user?.id]);
   const [showGpsConfirm, setShowGpsConfirm] = useState(false);
   // Aperçu photo reçu (doit être déclaré dans le composant, après les imports)
+  const [photoNotice, setPhotoNotice] = useState<string | null>(null);
   const [previewPhotoUrl, setPreviewPhotoUrl] = useState<string | null>(null);
   // TOUS les hooks doivent être appelés avant tout return !
   const { isOnline } = useOnlineStatus();
@@ -609,7 +610,7 @@ const ChauffeurDashboard: React.FC = () => {
   // (supprimé, déjà géré plus haut avec 'profile')
 
   return (
-  <div className={isMobile ? 'max-w-[430px] mx-auto bg-gray-100 dark:bg-background min-h-screen flex flex-col' : 'min-h-screen bg-gray-100 dark:bg-background w-full overflow-x-hidden'}>
+  <div className={isMobile ? 'max-w-[430px] mx-auto bg-gray-100 dark:bg-background min-h-screen flex flex-col overflow-x-hidden' : 'min-h-screen bg-gray-100 dark:bg-background w-full overflow-x-hidden'}>
       <Header onProfileClick={() => setActiveTab('profile')} />
       {/* Badge En ligne + GPS : mobile sous le header, desktop en haut à droite (absolute, hors sidebar) */}
       {isMobile ? (
@@ -880,7 +881,15 @@ const ChauffeurDashboard: React.FC = () => {
                             <div className={isMobile ? "flex flex-col gap-2" : "flex flex-col gap-3 w-full"}>
                               {/* Ligne de boutons d'importation en haut */}
                               <div className={isMobile ? "flex gap-2" : "flex gap-2 mb-4"}>
-                                <label htmlFor="payment-receipt-upload-gallery" className="w-16 h-16 flex items-center justify-center border-2 border-dashed rounded cursor-pointer text-2xl text-muted-foreground bg-muted hover:bg-accent transition mr-2" title="Importer une photo">
+                                <label htmlFor="payment-receipt-upload-gallery" className="w-16 h-16 flex items-center justify-center border-2 border-dashed rounded cursor-pointer text-2xl text-muted-foreground bg-muted hover:bg-accent transition mr-2" title="Importer une photo"
+                                  onClick={e => {
+                                    if (!enRouteDeclaration || !enRouteDeclaration.id) {
+                                      e.preventDefault();
+                                      setPhotoNotice('Veuillez enregistrer la déclaration avant de prendre ou importer une photo.');
+                                    } else {
+                                      setPhotoNotice(null);
+                                    }
+                                  }}>
                                   +
                                   <input
                                     id="payment-receipt-upload-gallery"
@@ -888,6 +897,10 @@ const ChauffeurDashboard: React.FC = () => {
                                     accept="image/*"
                                     className="hidden"
                                     onChange={async e => {
+                                      if (!enRouteDeclaration || !enRouteDeclaration.id) {
+                                        setPhotoNotice('Veuillez enregistrer la déclaration avant de prendre ou importer une photo.');
+                                        return;
+                                      }
                                       if (e.target.files && e.target.files[0]) {
                                         const file = e.target.files[0];
                                         // Upload photo
@@ -940,6 +953,11 @@ const ChauffeurDashboard: React.FC = () => {
                                       }
                                     }}
                                   />
+                              {photoNotice && (
+                                <div className="text-red-600 font-semibold text-sm mt-2 mb-2 text-center border border-red-400 bg-red-100 rounded p-2">
+                                  {photoNotice}
+                                </div>
+                              )}
                                 </label>
                                 {/* Prendre une photo avec preview intégré (CameraPreviewModal) */}
                                 <button
@@ -1240,62 +1258,6 @@ const ChauffeurDashboard: React.FC = () => {
                   </CardContent>
                 </Card>
                 {/* My Declarations Summary */}
-                <Card className="bg-card border-border w-full">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="flex items-center gap-2 text-card-foreground text-lg">
-                      <Clock className="h-4 w-4 sm:h-5 sm:w-5" />
-                      {t('dashboard.myDeclarationsSummary')}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-4 gap-2 sm:gap-4 text-center">
-                      {/* En Route */}
-                      <div
-                        role="button"
-                        onClick={() => handleStatClick('en_route')}
-                        className="cursor-pointer p-3 sm:p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800"
-                      >
-                        <div className="text-xl sm:text-2xl font-bold text-blue-700 dark:text-blue-400">
-                          {chauffeurDeclarations.filter(d => d.status === 'en_route').length}
-                        </div>
-                        <div className="text-xs sm:text-sm text-blue-600 dark:text-blue-300">{t('dashboard.onRoad')}</div>
-                      </div>
-                      {/* En Cours */}
-                      <div
-                        role="button"
-                        onClick={() => handleStatClick('en_cours')}
-                        className="cursor-pointer p-3 sm:p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800"
-                      >
-                        <div className="text-xl sm:text-2xl font-bold text-yellow-700 dark:text-yellow-400">
-                          {chauffeurDeclarations.filter(d => d.status === 'en_cours').length}
-                        </div>
-                        <div className="text-xs sm:text-sm text-yellow-600 dark:text-yellow-300">{t('dashboard.pending')}</div>
-                      </div>
-                      {/* Validé */}
-                      <div
-                        role="button"
-                        onClick={() => handleStatClick('valide')}
-                        className="cursor-pointer p-3 sm:p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800"
-                      >
-                        <div className="text-xl sm:text-2xl font-bold text-green-700 dark:text-green-400">
-                          {chauffeurDeclarations.filter(d => d.status === 'valide').length}
-                        </div>
-                        <div className="text-xs sm:text-sm text-green-600 dark:text-green-300">{t('dashboard.validated')}</div>
-                      </div>
-                      {/* Refusé */}
-                      <div
-                        role="button"
-                        onClick={() => handleStatClick('refuse')}
-                        className="cursor-pointer p-3 sm:p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800"
-                      >
-                        <div className="text-xl sm:text-2xl font-bold text-red-700 dark:text-red-400">
-                          {chauffeurDeclarations.filter(d => d.status === 'refuse').length}
-                        </div>
-                        <div className="text-xs sm:text-sm text-red-600 dark:text-red-300">{t('dashboard.refused')}</div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
                 <Separator className="bg-border mt-4" />
                 {/* Mes déclarations récentes (version Planificateur adaptée pour mobile) */}
                 <div className="mt-4">
@@ -1788,21 +1750,7 @@ const ChauffeurDashboard: React.FC = () => {
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-4">
-                        <SearchAndFilter
-                          searchValue={searchTerm}
-                          onSearchChange={setSearchTerm}
-                          filterValue={statusFilter}
-                          onFilterChange={setStatusFilter}
-                          filterOptions={filterOptions}
-                          searchPlaceholder={t('declarations.searchPlaceholder')}
-                          filterPlaceholder={t('declarations.filterPlaceholder')}
-                          searchColumn="number"
-                          onSearchColumnChange={() => {}}
-                          searchColumnOptions={[
-                            { value: 'number', label: t('declarations.number') },
-                            { value: 'chauffeurName', label: t('declarations.chauffeurName') }
-                          ]}
-                        />
+                        {/* Recherche et filtre retirés comme demandé */}
                         {filteredDeclarations.length === 0 ? (
                           <div className="text-center py-8 text-muted-foreground text-sm">
                             {searchTerm || statusFilter !== 'all'
