@@ -783,53 +783,56 @@ const ChauffeurDashboard: React.FC = () => {
                                     action: 'Signalée en panne',
                                     date: new Date().toISOString(),
                                   };
-                                  await updateDeclaration(enRouteDeclaration.id, {
+
+                                  // create updated declaration locally
+                                  const updatedDecl: Declaration = {
                                     ...enRouteDeclaration,
                                     status: 'en_panne',
                                     traceability: [...(enRouteDeclaration.traceability || []), traceEntry],
-                                  });
-                                  // Ajout notification Firestore pour planificateur
+                                  };
+
+                                  try {
+                                    // persist change
+                                    await updateDeclaration(enRouteDeclaration.id, updatedDecl);
+                                  } catch (e) {
+                                    console.error('Erreur lors de la mise à jour de la déclaration en_panne:', e);
+                                  }
+
+                                  // try to notify planificateur (non-blocking)
                                   try {
                                     const notificationData = {
                                       chauffeurId: enRouteDeclaration.chauffeurId,
                                       declarationId: enRouteDeclaration.id,
-                                      // Store program parts separately so renderers can force LTR
                                       programParts: {
                                         prefix: 'DCP',
                                         year: enRouteDeclaration.year,
                                         month: enRouteDeclaration.month,
                                         number: enRouteDeclaration.programNumber || enRouteDeclaration.number || ''
                                       },
-                                      // target role so planificateur fetches it
                                       recipientRole: 'planificateur',
                                       message: `Chauffeur '${enRouteDeclaration.chauffeurName}' a tombé en panne dans le programme'`,
                                       createdAt: new Date().toISOString(),
                                       read: false
                                     };
-                                    console.log('DEBUG addNotification en_panne:', notificationData);
                                     const { addNotification } = await import('../../services/notificationService');
                                     await addNotification(notificationData);
                                   } catch (e) {
                                     console.error('Erreur lors de l\'ajout de la notification en_panne:', e);
-                                    if (typeof toast === 'function') {
-                                      toast({
-                                        title: 'Erreur lors de la notification',
-                                        description: 'Impossible d\'enregistrer la notification de panne. Contactez un administrateur.',
-                                        variant: 'destructive',
-                                      });
-                                    }
                                   }
-                                  setEnRouteDeclaration(null);
-                                  setIsCreating(false);
-                                  setFormData({
-                                    distance: '',
-                                    deliveryFees: '',
-                                    notes: '',
-                                    number: '',
-                                    year: '',
-                                    month: '',
-                                    programNumber: ''
-                                  });
+
+                                  // Reflect updated state locally and keep the form open so no refresh is needed
+                                  setEnRouteDeclaration(updatedDecl);
+                                  setIsCreating(true);
+                                  setFormData(prev => ({
+                                    ...prev,
+                                    number: updatedDecl.number || '',
+                                    year: updatedDecl.year || '',
+                                    month: updatedDecl.month || '',
+                                    programNumber: updatedDecl.programNumber || '',
+                                    notes: updatedDecl.notes || '',
+                                    distance: updatedDecl.distance ? String(updatedDecl.distance) : '',
+                                    deliveryFees: updatedDecl.deliveryFees ? String(updatedDecl.deliveryFees) : ''
+                                  }));
                                 }
                               }}
                             >
@@ -1218,7 +1221,7 @@ const ChauffeurDashboard: React.FC = () => {
                                     {t('forms.cancel')}
                                   </Button>
                                 </AlertDialogTrigger>
-                                <AlertDialogContent>
+                                <AlertDialogContent className={isMobile ? 'max-w-xs w-[90vw] p-4 rounded-xl' : ''}>
                                   <AlertDialogHeader>
                                     <AlertDialogTitle>{t('declarations.confirmDeleteTitle') || 'Confirmer la suppression'}</AlertDialogTitle>
                                     <AlertDialogDescription>
@@ -1494,12 +1497,21 @@ const ChauffeurDashboard: React.FC = () => {
                                       action: 'Signalée en panne',
                                       date: new Date().toISOString(),
                                     };
-                                    await updateDeclaration(enRouteDeclaration.id, {
+
+                                    // create updated declaration locally
+                                    const updatedDecl: Declaration = {
                                       ...enRouteDeclaration,
                                       status: 'en_panne',
                                       traceability: [...(enRouteDeclaration.traceability || []), traceEntry],
-                                    });
-                                    // Ajout notification Firestore pour planificateur (desktop)
+                                    };
+
+                                    try {
+                                      // persist change
+                                      await updateDeclaration(enRouteDeclaration.id, updatedDecl);
+                                    } catch (e) {
+                                      console.error('Erreur lors de la mise à jour de la déclaration en_panne (desktop):', e);
+                                    }
+
                                     try {
                                       const notificationData = {
                                         chauffeurId: enRouteDeclaration.chauffeurId,
@@ -1510,27 +1522,29 @@ const ChauffeurDashboard: React.FC = () => {
                                           month: enRouteDeclaration.month,
                                           number: enRouteDeclaration.programNumber || enRouteDeclaration.number || ''
                                         },
-                                        // target role so planificateur fetches it
                                         recipientRole: 'planificateur',
                                         message: `Chauffeur '${enRouteDeclaration.chauffeurName}' a tombé en panne dans le programme'`,
                                         createdAt: new Date().toISOString(),
                                         read: false
                                       };
-                                      console.log('DEBUG addNotification en_panne (desktop):', notificationData);
                                       const { addNotification } = await import('../../services/notificationService');
                                       await addNotification(notificationData);
                                     } catch (e) {
                                       console.error('Erreur lors de l\'ajout de la notification en_panne (desktop):', e);
-                                      if (typeof toast === 'function') {
-                                        toast({
-                                          title: 'Erreur lors de la notification',
-                                          description: 'Impossible d\'enregistrer la notification de panne (desktop). Contactez un administrateur.',
-                                          variant: 'destructive',
-                                        });
-                                      }
                                     }
-                                    // Ne pas fermer le formulaire ni réinitialiser l'état local ici
-                                    // La synchro Firestore (useEffect) s'en charge automatiquement
+
+                                    setEnRouteDeclaration(updatedDecl);
+                                    setIsCreating(true);
+                                    setFormData(prev => ({
+                                      ...prev,
+                                      number: updatedDecl.number || '',
+                                      year: updatedDecl.year || '',
+                                      month: updatedDecl.month || '',
+                                      programNumber: updatedDecl.programNumber || '',
+                                      notes: updatedDecl.notes || '',
+                                      distance: updatedDecl.distance ? String(updatedDecl.distance) : '',
+                                      deliveryFees: updatedDecl.deliveryFees ? String(updatedDecl.deliveryFees) : ''
+                                    }));
                                   }
                                 }}
                               >
@@ -1553,7 +1567,7 @@ const ChauffeurDashboard: React.FC = () => {
                             <div className="flex items-center gap-2 px-4 py-2 bg-red-100 border-b-2 border-red-500 text-red-700 font-semibold rounded-t-md mb-2">
                               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636l-1.414 1.414A7.975 7.975 0 0012 6c-2.21 0-4.21.896-5.95 2.364l-1.414-1.414A9.969 9.969 0 0112 4c2.761 0 5.261 1.12 7.071 2.929zM4.222 19.778A9.969 9.969 0 0112 20c2.761 0 5.261-1.12 7.071-2.929l-1.414-1.414A7.975 7.975 0 0112 18c-2.21 0-4.21-.896-5.95-2.364l-1.414 1.414z" />
-                              </svg>
+                            </svg>
                               <span>{t('declarations.breakdown')}</span>
                             </div>
                           )}

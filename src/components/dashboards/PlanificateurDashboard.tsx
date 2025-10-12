@@ -161,6 +161,11 @@ const PlanificateurDashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   // Track how the user navigated to a section so we can reset filters on sidebar navigation
   const [lastNavSource, setLastNavSource] = useState<'none'|'nav'|'indicator'>('none');
+  // When clicking dashboard indicators we want to navigate to the Declarations tab
+  // AND apply the indicator filter only to the Declarations tab. To avoid filtering
+  // the Dashboard recent list we store the requested filter here and apply it only
+  // when the Declarations tab becomes active.
+  const [pendingIndicatorFilter, setPendingIndicatorFilter] = useState<string | null>(null);
 
   // If the user navigates to the Declarations tab via the sidebar (nav), clear
   // any indicator-applied filters so the table shows the default view.
@@ -171,6 +176,17 @@ const PlanificateurDashboard = () => {
       setLastNavSource('none');
     }
   }, [activeTab, lastNavSource]);
+
+  // When an indicator is clicked we set a pendingIndicatorFilter and navigate to
+  // the Declarations tab. Apply the pending filter only once the Declarations tab
+  // is active so the Dashboard's recent list remains unaffected.
+  useEffect(() => {
+    if (activeTab === 'declarations' && lastNavSource === 'indicator' && pendingIndicatorFilter) {
+      setFilterStatus(pendingIndicatorFilter);
+      setPendingIndicatorFilter(null);
+      setLastNavSource('none');
+    }
+  }, [activeTab, lastNavSource, pendingIndicatorFilter]);
 
   // --- Clients state ---
   const [clients, setClients] = useState([]);
@@ -246,6 +262,16 @@ const PlanificateurDashboard = () => {
   // Ajout d'un statut enrichi pour chaque chauffeur (en_panne si au moins une déclaration en panne)
   const [chauffeurs, setChauffeurs] = useState<(Chauffeur & { isEnPanne?: boolean })[]>([]);
 
+  // Map des types de chauffeurs (interne/externe) utilisé par les tables pour afficher
+  // conditionnellement les colonnes comme 'Frais de livraison' ou 'Prime de route'.
+  const chauffeurTypesMap = useMemo(() => {
+    const map: Record<string, 'interne' | 'externe'> = {};
+    chauffeurs.forEach(c => {
+      map[c.id] = (c.employeeType === 'externe' ? 'externe' : 'interne');
+    });
+    return map;
+  }, [chauffeurs]);
+  
   // Synchronisation temps réel des chauffeurs depuis Firestore
   useEffect(() => {
     let unsubscribe: (() => void) | undefined;
@@ -357,6 +383,19 @@ const PlanificateurDashboard = () => {
       enPanne
     };
   }, [declarations]);
+
+  // Recent declarations shown on the Dashboard (top widget). These should NOT
+  // be affected by indicator-driven filters; keep them based on the full
+  // declarations list but still respect the planificateur rule to hide drafts.
+  const recentDeclarations = useMemo(() => {
+    return declarations.filter(declaration => {
+      if (user?.role === 'planificateur') {
+        const st = String(declaration.status || '').toLowerCase();
+        if (st === 'brouillon' || st === 'draft') return false;
+      }
+      return true;
+    }).slice(0, 5);
+  }, [declarations, user?.role]);
 
   // Reuse DeclarationsTable status badge logic for consistency
   const getStatusBadge = (status: string) => {
@@ -813,9 +852,9 @@ const PlanificateurDashboard = () => {
                       <div className="w-full">
                         <PlanificateurStats
                           stats={stats}
-                          onEnAttenteClick={handleEnAttenteClick}
-                          onEnRouteClick={() => { setLastNavSource('indicator'); setFilterStatus('en_route'); setActiveTab('declarations'); }}
-                          onEnPanneClick={() => { setLastNavSource('indicator'); setFilterStatus('en_panne'); setActiveTab('declarations'); }}
+                          onEnAttenteClick={() => { setLastNavSource('indicator'); setPendingIndicatorFilter('en_cours'); setActiveTab('declarations'); }}
+                          onEnRouteClick={() => { setLastNavSource('indicator'); setPendingIndicatorFilter('en_route'); setActiveTab('declarations'); }}
+                          onEnPanneClick={() => { setLastNavSource('indicator'); setPendingIndicatorFilter('en_panne'); setActiveTab('declarations'); }}
                         />
                       </div>
                     </CardContent>
@@ -827,7 +866,7 @@ const PlanificateurDashboard = () => {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
-                      {filteredDeclarations.slice(0,5).map((declaration) => {
+                      {recentDeclarations.map((declaration) => {
                         const badgePosStyle: React.CSSProperties = settings.language === 'ar' ? { position: 'absolute', top: 8, left: 8 } : { position: 'absolute', top: 8, right: 8 };
                         // Calcul du nombre de jours ouverts
                         let daysOpen = null;
@@ -921,6 +960,10 @@ const PlanificateurDashboard = () => {
                         onConsultDeclaration={setConsultingDeclaration}
                         // For Planificateur we hide the Paiements / Montant Recouvré columns
                         hideRecouvrementFields={true}
+                        // Use the full (unfiltered) declarations list to compute header visibility so
+                        // columns remain the same when parent applies filters (indicator clicks)
+                        referenceDeclarations={declarations}
+                        chauffeurTypes={chauffeurTypesMap}
                       />
                     {/* Confirmation suppression programme (déclaration) */}
                     <AlertDialog open={!!declarationToDelete} onOpenChange={open => { if (!open) setDeclarationToDelete(null); }}>

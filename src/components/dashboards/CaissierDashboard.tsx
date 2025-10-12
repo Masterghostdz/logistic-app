@@ -308,7 +308,7 @@ const CaissierDashboard = () => {
                         const title = p.programReference || decl?.number || p.declarationId || (p.companyName || '');
                         const subtitle = decl ? `${decl.chauffeurName || ''} - ${decl.month || ''}/${decl.year || ''}` : (p.chauffeurName || p.companyName || '');
                         const declPaymentState = decl ? String((decl as any).paymentState || '').toLowerCase() : '';
-                        const isRecouvre = declPaymentState.startsWith('recouv') || ['validee','validated','valide','valid'].includes(String(p.status || '').toLowerCase());
+                        const isRecouvre = declPaymentState.startsWith('recouvre') || ['validee','validated','valide','valid'].includes(String(p.status || '').toLowerCase());
                         return (
                           <div key={p.id} className="relative flex items-center justify-between p-3 border rounded-lg cursor-pointer hover:bg-accent" onClick={() => setConsultReceipt && setConsultReceipt(p)}>
                             <div>
@@ -452,14 +452,21 @@ const CaissierDashboard = () => {
                 const declId = sendReceiptsFor.id;
                 const related = payments.filter(p => String(p.declarationId || '') === String(declId) || (p.programReference && sendReceiptsFor && (`DCP/${sendReceiptsFor.year}/${sendReceiptsFor.month}/${sendReceiptsFor.programNumber}`) === p.programReference));
                 if (related.length > 0) return related;
-                // fallback to embedded receipts in declaration
-                return Array.isArray((sendReceiptsFor as any).paymentReceipts) ? (sendReceiptsFor as any).paymentReceipts : [];
+                // fallback to embedded receipts in declaration — but filter out any embedded receipts
+                // that reference a payment doc that no longer exists in the payments listener (deleted)
+                const embedded = Array.isArray((sendReceiptsFor as any).paymentReceipts) ? (sendReceiptsFor as any).paymentReceipts : [];
+                const filteredEmbedded = embedded.filter((pr: any) => {
+                  // keep receipts that have no id (local, not yet synced) or that still exist in payments listener
+                  if (!pr || !pr.id) return true;
+                  return payments.some(p => String(p.id) === String(pr.id));
+                });
+                return filteredEmbedded;
               })()}
               isOpen={!!sendReceiptsFor}
               declarationReference={sendReceiptsFor ? (sendReceiptsFor.programReference || sendReceiptsFor.number) : undefined}
               declarationId={sendReceiptsFor ? sendReceiptsFor.id : undefined}
               onClose={() => setSendReceiptsFor(null)}
-              onDeleteReceipt={(id) => handleDeleteReceipt(id)}
+              onDeleteReceipt={(id, skipConfirmation) => handleDeleteReceipt(id, skipConfirmation)}
               onValidateReceipt={(r) => setValidateReceipt(r)}
               onOpenPreview={(url) => setPreviewPhotoUrl(url)}
             />

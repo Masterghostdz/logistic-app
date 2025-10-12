@@ -37,6 +37,9 @@ interface DeclarationsTableProps {
   hideValidatedColumn?: boolean;
   // hide the send (Envoyer) action/button (for external cashier)
   hideSendButton?: boolean;
+  // Optional: reference (full) declarations array used to compute which columns/headers must be shown.
+  // This ensures header visibility doesn't change when the parent filters the displayed rows.
+  referenceDeclarations?: Declaration[];
 }
 
 const DeclarationsTable = ({ 
@@ -58,7 +61,8 @@ const DeclarationsTable = ({
   hideRecouvrementFields = false,
   hideStatusColumn = false,
   hideValidatedColumn = false
-  , hideSendButton = false
+  , hideSendButton = false,
+  referenceDeclarations = []
 }: DeclarationsTableProps) => {
   const {
     localFontSize,
@@ -116,8 +120,15 @@ const DeclarationsTable = ({
   // Determine whether to show the deliveryFees and prime headers based on the
   // data and the provided chauffeurTypes mapping. We show a header only when
   // at least one declaration would display a value for that column.
-  const showDeliveryHeader = declarations.some(d => chauffeurTypes && chauffeurTypes[d.chauffeurId] === 'externe' && d.deliveryFees);
-  const showPrimeHeader = declarations.some(d => {
+  // Use the provided referenceDeclarations if available (typically the full list of declarations)
+  // so that header visibility remains stable even when the displayed "declarations" array is filtered.
+  const refDecls = referenceDeclarations && referenceDeclarations.length > 0 ? referenceDeclarations : declarations;
+  // Show delivery header when at least one referenced declaration belongs to an external chauffeur.
+  // Do NOT require the declaration to already have a deliveryFees value — the column should be
+  // visible even when empty so Planificateur can see the column for external chauffeurs.
+  // NOTE: only use the explicit chauffeurTypes mapping as the condition (no 'TP - ' fallback).
+  const showDeliveryHeader = refDecls.some(d => chauffeurTypes && chauffeurTypes[d.chauffeurId] === 'externe');
+  const showPrimeHeader = refDecls.some(d => {
     if (chauffeurTypes) return chauffeurTypes[d.chauffeurId] === 'interne' && d.primeDeRoute;
     return !!d.primeDeRoute;
   });
