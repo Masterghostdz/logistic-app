@@ -9,6 +9,7 @@ import { Declaration, PaymentReceipt } from '../../types';
 import CopyButton from '../CopyButton';
 import useTableZoom, { FontSizeKey } from '../../hooks/useTableZoom';
 import { toast } from '../ui/use-toast';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface DeclarationsTableProps {
   declarations: Declaration[];
@@ -79,6 +80,8 @@ const DeclarationsTable = ({
   } = useTableZoom(fontSize as any);
 
   const { t, settings } = useTranslation();
+  const auth = useAuth();
+  const isExternalCaissier = !!(auth?.user && auth.user.role === 'caissier' && auth.user.employeeType === 'externe');
 
   // Helper to delete a declaration: always use parent callback (ChauffeurDashboard shows dialog), never browser confirm.
   const handleDelete = (id: string) => {
@@ -303,7 +306,8 @@ const DeclarationsTable = ({
                     // The declaration is considered 'Recouvré' only when the declaration itself
                     // has been marked by the caissier (we set this via updateDeclaration on Envoyer).
                     const declPaymentState = String((declaration as any).paymentState || '').toLowerCase();
-                    const isRecouvre = declPaymentState.startsWith('recouv');
+                    // Use "recouvr" here to match other places (recouvré / recouvr)
+                    const isRecouvre = declPaymentState.startsWith('recouvr');
                     return (
                       <>
                             <TableCell data-rtl={settings.language === 'ar'} className={`text-center whitespace-nowrap ${cellPaddingClass}`} style={fontSizeStyle}>
@@ -390,53 +394,85 @@ const DeclarationsTable = ({
                        {onSendReceipts && !hideSendButton && (
                         (() => {
                           const declPaymentState = String((declaration as any).paymentState || '').toLowerCase();
-                          const isRecouvre = declPaymentState.startsWith('recouv');
+                          const isRecouvre = declPaymentState.startsWith('recouvr');
                           if (isRecouvre) {
                             // show Annuler button (undo) to revert recouvrement
                             return (
+                              <div className="flex gap-1">
+                                {/* Annuler (undo) should be available only to internal caissiers */}
+                                {!isExternalCaissier && (
+                                  <Button
+                                    key="cancel-recouv"
+                                    title={t('payments.undo') || 'Annuler'}
+                                    size="sm"
+                                    variant="ghost"
+                                    className={`flex items-center justify-center rounded-md text-yellow-600 hover:bg-yellow-50 dark:hover:bg-yellow-900`}
+                                    style={{ width: computedRowPx, height: computedRowPx }}
+                                    onClick={async () => {
+                                      try {
+                                        const { updateDeclaration } = await import('../../services/declarationService');
+                                        const traceEntry = { userId: null, userName: null, action: t('traceability.revokedRecouvrement') || 'Annulation recouvrement', date: new Date().toISOString() };
+                                        await updateDeclaration(declaration.id, { paymentState: '', paymentRecoveredAt: null }, traceEntry);
+                                      } catch (e) {
+                                        console.error('Cancel recouvrement failed', e);
+                                        toast({
+                                          title: t('forms.error') || 'Erreur',
+                                          description: (e as any)?.message || undefined,
+                                          variant: 'destructive'
+                                        });
+                                      }
+                                    }}
+                                  >
+                                    {/* Undo icon */}
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" style={{ width: computedIconPx, height: computedIconPx }}>
+                                      <path d="M21 12a9 9 0 10-9 9" />
+                                      <path d="M21 3v9h-9" />
+                                    </svg>
+                                  </Button>
+                                )}
+
+                                {/* Recevoir: open send receipts dialog when declaration is recouvré */}
+                                {onSendReceipts && isExternalCaissier && (
+                                  <Button
+                                    key="receive-recouv"
+                                    title={t('payments.receive') || 'Recevoir'}
+                                    size="sm"
+                                    variant="ghost"
+                                    className={`flex items-center justify-center rounded-md text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900`}
+                                    style={{ width: computedRowPx, height: computedRowPx }}
+                                    onClick={() => {
+                                      try {
+                                        onSendReceipts(declaration);
+                                      } catch (e) {
+                                        console.error('Open send receipts failed', e);
+                                        toast({ title: t('forms.error') || 'Erreur', description: (e as any)?.message || undefined, variant: 'destructive' });
+                                      }
+                                    }}
+                                  >
+                                    {/* Icon: small receive */}
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" style={{ width: computedIconPx, height: computedIconPx }}>
+                                      <path d="M4 3a1 1 0 00-1 1v12a1 1 0 001 1h12a1 1 0 001-1V7a1 1 0 00-.293-.707l-4-4A1 1 0 0012.586 2H4zM11 3.5V7a1 1 0 001 1h3.5L11 3.5zM7 9a1 1 0 012 0v4a1 1 0 11-2 0V9z" />
+                                    </svg>
+                                  </Button>
+                                )}
+                              </div>
+                            );
+                          } else {
+                            // Only internal cashiers can initiate the 'Envoyer' (send) action
+                            return !isExternalCaissier ? (
                               <Button
-                                key="cancel-recouv"
-                                title={t('payments.undo') || 'Annuler'}
                                 size="sm"
                                 variant="ghost"
-                                className={`flex items-center justify-center rounded-md text-yellow-600 hover:bg-yellow-50 dark:hover:bg-yellow-900`}
+                                className={`text-green-600 hover:text-green-700 flex items-center justify-center`}
                                 style={{ width: computedRowPx, height: computedRowPx }}
-                                onClick={async () => {
-                                  try {
-                                    const { updateDeclaration } = await import('../../services/declarationService');
-                                    const traceEntry = { userId: null, userName: null, action: t('traceability.revokedRecouvrement') || 'Annulation recouvrement', date: new Date().toISOString() };
-                                    await updateDeclaration(declaration.id, { paymentState: '', paymentRecoveredAt: null }, traceEntry);
-                                  } catch (e) {
-                                    console.error('Cancel recouvrement failed', e);
-                                    toast({
-                                      title: t('forms.error') || 'Erreur',
-                                      description: (e as any)?.message || undefined,
-                                      variant: 'destructive'
-                                    });
-                                  }
-                                }}
+                                onClick={() => onSendReceipts && onSendReceipts(declaration)}
                               >
-                                {/* Undo icon */}
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" style={{ width: computedIconPx, height: computedIconPx }}>
-                                  <path d="M21 12a9 9 0 10-9 9" />
-                                  <path d="M21 3v9h-9" />
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
+                                  <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2 .01 5z" />
                                 </svg>
                               </Button>
-                            );
+                            ) : null;
                           }
-                          return (
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className={`text-green-600 hover:text-green-700 flex items-center justify-center`}
-                              style={{ width: computedRowPx, height: computedRowPx }}
-                              onClick={() => onSendReceipts(declaration)}
-                            >
-                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
-                                <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2 .01 5z" />
-                              </svg>
-                            </Button>
-                          );
                         })()
                       )}
                       {/* Validation actions: only visible to non-chauffeur roles */}

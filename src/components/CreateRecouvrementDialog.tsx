@@ -425,19 +425,17 @@ const CreateRecouvrementDialog: React.FC<Props> = ({ isOpen, onClose }) => {
     setDeleteDialogOpen(true);
   };
 
-  const confirmDelete = async (idToDelete?: string) => {
-    const id = idToDelete || receiptToDelete;
-    if (!id) return;
+  const confirmDelete = async () => {
+    if (!receiptToDelete) return;
     try {
       try { loadingCtx.show(t('forms.deleting') || 'Suppression...'); } catch (e) {}
       const { safeDeletePayment } = await import('../services/paymentService');
-      await safeDeletePayment(id, auth.user);
+      await safeDeletePayment(receiptToDelete, auth.user);
       toast({ title: t('payments.deleted') || 'Reçu supprimé' });
     } catch (e: any) {
       console.error('Delete failed', e);
       toast({ title: e?.message || (t('forms.error') || 'Erreur lors de la suppression'), variant: 'destructive' });
     } finally {
-      // close dialog and clear the pending id
       setDeleteDialogOpen(false);
       setReceiptToDelete(null);
       try { loadingCtx.hide(); } catch (e) {}
@@ -950,7 +948,7 @@ const CreateRecouvrementDialog: React.FC<Props> = ({ isOpen, onClose }) => {
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel className="border-0" onClick={() => { setDeleteDialogOpen(false); setReceiptToDelete(null); }}>{t('forms.cancel') || 'Annuler'}</AlertDialogCancel>
-              <AlertDialogAction onClick={() => confirmDelete(receiptToDelete)}>{t('forms.confirm') || 'Supprimer'}</AlertDialogAction>
+              <AlertDialogAction onClick={confirmDelete}>{t('forms.confirm') || 'Supprimer'}</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>

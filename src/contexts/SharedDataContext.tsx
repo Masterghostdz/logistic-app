@@ -130,13 +130,10 @@ export const SharedDataProvider: React.FC<SharedDataProviderProps> = ({ children
 
   const updateDeclaration = async (id: string, updatedDeclaration: Declaration) => {
     try {
-      // Optimistically update local state so UI reflects changes immediately
-      setDeclarationsState(prev => prev.map(d => d.id === id ? updatedDeclaration : d));
       await declarationService.updateDeclaration(id, updatedDeclaration);
-      // The realtime listener will also sync state; no further action required
+      // L'état local sera mis à jour par la synchro temps réel
     } catch (error) {
       console.error('Erreur lors de la mise à jour de la déclaration dans Firestore:', error);
-      // Optionally, we could refetch or revert the optimistic update here
     }
   };
 

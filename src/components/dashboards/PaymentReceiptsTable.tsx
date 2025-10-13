@@ -98,8 +98,11 @@ const PaymentReceiptsTable: React.FC<PaymentReceiptsTableProps> = ({
     if (['brouillon', 'pending', 'pending_validation', 'pending_validation'].includes(s)) {
       return <Badge size="md" style={{ ...badgeStyle }} className={`bg-yellow-100 text-yellow-800 border border-yellow-300 dark:bg-yellow-900 dark:text-yellow-200 ${badgeClass}`}>{t('dashboard.pending') || 'Brouillon'}</Badge>;
     }
-    if (['validee', 'validated', 'valid'].includes(s)) {
+    if (['validee', 'validated', 'valide', 'valid'].includes(s)) {
       return <Badge size="md" style={{ ...badgeStyle }} className={`bg-green-100 text-green-800 border border-green-300 dark:bg-green-900 dark:text-green-200 ${badgeClass}`}>{t('dashboard.validated') || 'Validée'}</Badge>;
+    }
+    if (s === 'recu') {
+      return <Badge size="md" style={{ ...badgeStyle }} className={`bg-blue-100 text-blue-800 border border-blue-300 dark:bg-blue-900 dark:text-blue-200 ${badgeClass}`}>{t('payments.received') || 'Reçu'}</Badge>;
     }
     if (['refuse', 'refused', 'rejected'].includes(s)) {
       return <Badge size="md" style={{ ...badgeStyle }} className={`bg-red-100 text-red-800 border border-red-300 dark:bg-red-900 dark:text-red-200 ${badgeClass}`}>{t('declarations.refused') || 'Refusé'}</Badge>;
@@ -267,11 +270,12 @@ const PaymentReceiptsTable: React.FC<PaymentReceiptsTableProps> = ({
                             const st = String(receipt.status || '').toLowerCase();
                             const isPending = ['brouillon', 'pending'].includes(st);
                             const isValidated = ['validee', 'validated', 'valide', 'valid'].includes(st);
+                            const isReceived = st === 'recu';
                             const isCancelled = ['annule', 'annulé', 'cancelled'].includes(st);
                             // Only internal cashiers may perform payment annulment (undo)
                             const isInternalCaissier = !!(auth.user && auth.user.role === 'caissier' && auth.user.employeeType === 'interne');
                             // If validated, show Undo (Annuler) button so caissier can revert to brouillon
-                            if (isValidated) {
+                            if (isValidated || isReceived) {
                               // If user is not internal cashier, hide undo button
                               if (!isInternalCaissier) return null;
 

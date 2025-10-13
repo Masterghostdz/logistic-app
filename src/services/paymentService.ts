@@ -66,8 +66,8 @@ export const safeDeletePayment = async (id: string, user: any) => {
   }
   const data: any = snap.data();
   const status = String(data.status || '').toLowerCase();
-  if (['validee', 'validated', 'valide', 'valid'].includes(status)) {
-    throw new Error('Cannot delete a validated payment');
+  if (['validee', 'validated', 'valide', 'valid', 'recu'].includes(status)) {
+    throw new Error('Cannot delete a validated or received payment');
   }
   const role = user?.role;
   if (!role) throw new Error('Unauthorized');
@@ -86,11 +86,32 @@ export const safeDeletePayment = async (id: string, user: any) => {
   throw new Error('Unauthorized role');
 };
 
+export const markPaymentReceived = async (id: string, user: any) => {
+  const ref = doc(db, 'payments', id);
+  const snap = await getDoc(ref);
+  if (!snap.exists()) throw new Error('Payment not found');
+  const data: any = snap.data();
+  // Only caissier or allowed chauffeur can mark received
+  const role = user?.role;
+  if (!role) throw new Error('Unauthorized');
+  if (role === 'planificateur') throw new Error('Planificateur cannot mark received');
+  if (role === 'caissier') {
+    return await updateDoc(ref, { status: 'recu', validatedAt: new Date().toISOString() });
+  }
+  if (role === 'chauffeur') {
+    const allowed = (data.createdBy && data.createdBy === user.id) || (data.chauffeurId && data.chauffeurId === user.id);
+    if (!allowed) throw new Error('Chauffeur can only mark their own receipts');
+    return await updateDoc(ref, { status: 'recu', validatedAt: new Date().toISOString() });
+  }
+  throw new Error('Unauthorized role');
+};
+
 export default {
   listenPayments,
   getPayments,
   addPayment,
   updatePayment,
   deletePayment
-  , filterPaymentsForUser
+  , filterPaymentsForUser,
+  markPaymentReceived
 };

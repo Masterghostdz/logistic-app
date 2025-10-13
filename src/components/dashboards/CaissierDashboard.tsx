@@ -432,8 +432,9 @@ const CaissierDashboard = () => {
            payments={payments}
            hideStatusColumn={isExternalCaissier}
            hideValidatedColumn={isExternalCaissier}
-           hideSendButton={isExternalCaissier}
-            />
+           // Do not hide the send/receive action here — external cashiers need the "Recevoir" action
+           hideSendButton={false}
+             />
           </div>
                     </div>
                   );
@@ -444,33 +445,31 @@ const CaissierDashboard = () => {
           {/* Envoyer dialog: choose receipts related to a declaration and send */}
           {/* We'll show a SendReceiptsDialog when sending */}
           {/* SendReceiptsDialog: only open for internal cashiers */}
-          {!isExternalCaissier && (
-            <SendReceiptsDialog
-              receipts={(() => {
-                if (!sendReceiptsFor) return [];
-                // prefer global payments listener
-                const declId = sendReceiptsFor.id;
-                const related = payments.filter(p => String(p.declarationId || '') === String(declId) || (p.programReference && sendReceiptsFor && (`DCP/${sendReceiptsFor.year}/${sendReceiptsFor.month}/${sendReceiptsFor.programNumber}`) === p.programReference));
-                if (related.length > 0) return related;
-                // fallback to embedded receipts in declaration — but filter out any embedded receipts
-                // that reference a payment doc that no longer exists in the payments listener (deleted)
-                const embedded = Array.isArray((sendReceiptsFor as any).paymentReceipts) ? (sendReceiptsFor as any).paymentReceipts : [];
-                const filteredEmbedded = embedded.filter((pr: any) => {
-                  // keep receipts that have no id (local, not yet synced) or that still exist in payments listener
-                  if (!pr || !pr.id) return true;
-                  return payments.some(p => String(p.id) === String(pr.id));
-                });
-                return filteredEmbedded;
-              })()}
-              isOpen={!!sendReceiptsFor}
-              declarationReference={sendReceiptsFor ? (sendReceiptsFor.programReference || sendReceiptsFor.number) : undefined}
-              declarationId={sendReceiptsFor ? sendReceiptsFor.id : undefined}
-              onClose={() => setSendReceiptsFor(null)}
-              onDeleteReceipt={(id, skipConfirmation) => handleDeleteReceipt(id, skipConfirmation)}
-              onValidateReceipt={(r) => setValidateReceipt(r)}
-              onOpenPreview={(url) => setPreviewPhotoUrl(url)}
-            />
-          )}
+          <SendReceiptsDialog
+               receipts={(() => {
+                 if (!sendReceiptsFor) return [];
+                 // prefer global payments listener
+                 const declId = sendReceiptsFor.id;
+                 const related = payments.filter(p => String(p.declarationId || '') === String(declId) || (p.programReference && sendReceiptsFor && (`DCP/${sendReceiptsFor.year}/${sendReceiptsFor.month}/${sendReceiptsFor.programNumber}`) === p.programReference));
+                 if (related.length > 0) return related;
+                 // fallback to embedded receipts in declaration — but filter out any embedded receipts
+                 // that reference a payment doc that no longer exists in the payments listener (deleted)
+                 const embedded = Array.isArray((sendReceiptsFor as any).paymentReceipts) ? (sendReceiptsFor as any).paymentReceipts : [];
+                 const filteredEmbedded = embedded.filter((pr: any) => {
+                   // keep receipts that have no id (local, not yet synced) or that still exist in payments listener
+                   if (!pr || !pr.id) return true;
+                   return payments.some(p => String(p.id) === String(pr.id));
+                 });
+                 return filteredEmbedded;
+               })()}
+               isOpen={!!sendReceiptsFor}
+               declarationReference={sendReceiptsFor ? (sendReceiptsFor.programReference || sendReceiptsFor.number) : undefined}
+               declarationId={sendReceiptsFor ? sendReceiptsFor.id : undefined}
+               onClose={() => setSendReceiptsFor(null)}
+               onDeleteReceipt={(id, skipConfirmation) => handleDeleteReceipt(id, skipConfirmation)}
+               onValidateReceipt={(r) => setValidateReceipt(r)}
+               onOpenPreview={(url) => setPreviewPhotoUrl(url)}
+             />
           <CreateRecouvrementDialog isOpen={showCreateRecouvrement} onClose={() => setShowCreateRecouvrement(false)} />
           {/* Declaration consult dialog (read-only) */}
           <EditDeclarationDialog declaration={consultDeclaration} isOpen={!!consultDeclaration} onClose={() => setConsultDeclaration(null)} readOnly={true} />

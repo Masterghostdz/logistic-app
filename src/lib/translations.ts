@@ -119,6 +119,8 @@ export const translations = {
       sendDialogDescription: "Envoyer des reçus de paiement",
       send: "Envoyer",
       validate: "Valider",
+      received: "Reçu",
+      markReceived: "Marquer comme reçu",
       confirmDeleteReceipt: "Confirmez-vous la suppression de ce reçu ?",
       undo: "Annuler",
       // added keys for recouvrement flows

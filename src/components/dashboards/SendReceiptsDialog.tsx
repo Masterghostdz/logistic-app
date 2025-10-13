@@ -325,6 +325,28 @@ const SendReceiptsDialog: React.FC<SendReceiptsDialogProps> = ({ receipts, isOpe
                               <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/></svg>
                             </button>
                           )}
+                          {/* Quick mark as Reçu: only for external cashiers and when receipt is validated */}
+                          {(!validatingIds[r.id] && r.status && String(r.status).toLowerCase() !== 'recu' && isValidated && auth.user?.role === 'caissier' && auth.user?.employeeType === 'externe') && (
+                            <button title={t('payments.markReceived') || 'Marquer Reçu'} onClick={async () => {
+                              try {
+                                const { updatePayment } = await import('../../services/paymentService');
+                                const traceEntry = { userId: auth.user?.id || null, userName: auth.user?.fullName || null, action: t('traceability.received') || 'Reçu marqué', date: new Date().toISOString() };
+                                const updates: any = { status: 'recu', validatedAt: new Date().toISOString() };
+                                try {
+                                  const { getPayments } = await import('../../services/paymentService');
+                                  const current: any = (await getPayments()).find((p: any) => p.id === r.id) || {};
+                                  updates.traceability = [...(current.traceability || []), traceEntry];
+                                } catch (e) {
+                                  updates.traceability = [traceEntry];
+                                }
+                                await updatePayment(r.id, updates);
+                                if (onValidateReceipt) onValidateReceipt({ ...r, ...updates } as PaymentReceipt);
+                              } catch (e) {
+                                console.error('Mark received failed', e);
+                                toast({ title: t('forms.error') || 'Erreur', variant: 'destructive' });
+                              }
+                            }} className="p-2 rounded border border-border text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900">🔵</button>
+                          )}
                         </>
                       );
                     })()}
@@ -336,7 +358,7 @@ const SendReceiptsDialog: React.FC<SendReceiptsDialogProps> = ({ receipts, isOpe
           <div className="flex justify-end gap-2 pt-2">
             <Button variant="outline" onClick={onClose}>{t('forms.close') || 'Fermer'}</Button>
             {(() => {
-              const allValidated = receipts.length > 0 && receipts.every(r => ['validee', 'validated', 'valide', 'valid'].includes(String(r.status || '').toLowerCase()));
+              const allValidated = receipts.length > 0 && receipts.every(r => ['validee', 'validated', 'valide', 'valid', 'recu'].includes(String(r.status || '').toLowerCase()));
               const handleSend = async () => {
                 if (!allValidated) return;
                 if (!declarationId) {
