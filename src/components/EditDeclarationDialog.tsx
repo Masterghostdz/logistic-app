@@ -70,17 +70,20 @@ const PaymentsForDeclaration: React.FC<{ declaration?: Declaration | null; readO
 
   const getStatusBadgeFor = (p: any) => {
     const s = String(p.status || '').toLowerCase();
-    if (['brouillon', 'pending', 'pending_validation'].includes(s)) {
-      const label = (s === 'pending' && !p.uploadPending) ? (t('declarations.synchronized') || 'Synchronisé') : (t('dashboard.pending') || 'En attente');
-      return <Badge size="sm" style={{ ...badgeStyle }} className={`bg-yellow-100 text-yellow-800 ${badgeClass}`}>{label}</Badge>;
+    if (["brouillon", "pending", "pending_validation"].includes(s)) {
+      const label = (s === "pending" && !p.uploadPending) ? (t("declarations.synchronized") || "Synchronisé") : (t("dashboard.pending") || "En attente");
+      return <Badge size="md" style={{ ...badgeStyle }} className={`bg-yellow-100 text-yellow-800 border border-yellow-300 dark:bg-yellow-900 dark:text-yellow-200 ${badgeClass}`}>{label}</Badge>;
     }
-    if (['validee', 'validated', 'valid', 'valide'].includes(s)) {
-      return <Badge size="sm" style={{ ...badgeStyle }} className={`bg-green-100 text-green-800 ${badgeClass}`}>{t('dashboard.validated') || 'Validé'}</Badge>;
+    if (["validee", "validated", "valid", "valide"].includes(s)) {
+      return <Badge size="md" style={{ ...badgeStyle }} className={`bg-green-100 text-green-800 border border-green-300 dark:bg-green-900 dark:text-green-200 ${badgeClass}`}>{t("dashboard.validated") || "Validé"}</Badge>;
     }
-    if (['refuse', 'refused', 'rejected'].includes(s)) {
-      return <Badge size="sm" style={{ ...badgeStyle }} className={`bg-red-100 text-red-800 ${badgeClass}`}>{t('declarations.refused') || 'Refusé'}</Badge>;
+    if (["recu", "received"].includes(s)) {
+      return <Badge size="md" style={{ ...badgeStyle }} className={`bg-blue-100 text-blue-800 border border-blue-300 dark:bg-blue-900 dark:text-blue-200 ${badgeClass}`}>{t("payments.received") || "Reçu"}</Badge>;
     }
-    return <Badge size="sm" variant="outline" style={{ ...badgeStyle }} className={badgeClass}>{p.status}</Badge>;
+    if (["refuse", "refused", "rejected"].includes(s)) {
+      return <Badge size="md" style={{ ...badgeStyle }} className={`bg-red-100 text-red-800 border border-red-300 dark:bg-red-900 dark:text-red-200 ${badgeClass}`}>{t("declarations.refused") || "Refusé"}</Badge>;
+    }
+    return <Badge size="md" variant="outline" style={{ ...badgeStyle }} className={badgeClass}>{p.status}</Badge>;
   };
 
   const handleDelete = async (p: any) => {
@@ -132,25 +135,9 @@ const PaymentsForDeclaration: React.FC<{ declaration?: Declaration | null; readO
             )}
           </div>
 
-          <div className={`${(useSettings().settings?.language === 'ar') ? 'mr-auto' : 'ml-auto'} flex gap-2`}>
-            {/* delete action if allowed */}
-            {!readOnly && (() => {
-              const role = authCtx.user?.role;
-              const s = String(p.status || '').toLowerCase();
-              const isValidated = ['validee', 'validated', 'valide', 'valid'].includes(s);
-              const canDelete = !!authCtx.user && role !== 'planificateur' && !isValidated;
-              if (!canDelete) return null;
-              return (
-                <Button size="sm" variant="ghost" className={`flex items-center justify-center rounded-md text-red-600 hover:text-red-700`} onClick={() => handleDelete(p)}>
-                  <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M1 7h22M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
-                </Button>
-              );
-            })()}
-
-            <div className="flex flex-col items-end gap-1">
-              <div className="text-xs text-muted-foreground">{getStatusBadgeFor(p)}</div>
-              <div className="text-xs text-muted-foreground">{p.createdAt ? new Date(p.createdAt).toLocaleString() : ''}</div>
-            </div>
+          {/* Status badge, styled and positioned like in payments table */}
+          <div className="flex items-center ml-auto">
+            {getStatusBadgeFor(p)}
           </div>
 
           {previewPhotoUrl && (

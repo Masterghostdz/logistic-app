@@ -111,7 +111,9 @@ const ValidatePaymentDialog: React.FC<ValidatePaymentDialogProps> = ({ receipt, 
 
           <div className="flex gap-2 justify-end">
             <Button variant="outline" onClick={() => onClose()}>{t('forms.cancel') || 'Annuler'}</Button>
-            <Button onClick={() => handleValidate()} disabled={loading}>{t('declarations.validate') || 'Valider'}</Button>
+            {auth.user?.employeeType !== 'externe' && (
+              <Button onClick={() => handleValidate()} disabled={loading}>{t('declarations.validate') || 'Valider'}</Button>
+            )}
           </div>
         </div>
       </DialogContent>

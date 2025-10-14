@@ -46,6 +46,7 @@ const SendReceiptsDialog: React.FC<SendReceiptsDialogProps> = ({ receipts, isOpe
   const { settings } = useSettings();
   const isMobile = (settings?.viewMode === 'mobile') || hookIsMobile;
   const auth = useAuth();
+  const isCaissierExterne = auth?.user?.role === 'caissier' && auth?.user?.employeeType === 'externe';
 
   useEffect(() => {
     let mounted = true;
@@ -182,29 +183,34 @@ const SendReceiptsDialog: React.FC<SendReceiptsDialogProps> = ({ receipts, isOpe
         <div className="space-y-4">
           {/* Photo-first upload controls: gallery upload + camera (mobile) */}
           <div className="flex items-center gap-2">
-            <label htmlFor="send-receipts-upload-gallery" className="w-16 h-16 flex items-center justify-center border-2 border-dashed rounded cursor-pointer text-2xl text-muted-foreground bg-muted hover:bg-accent transition" title={t('forms.import') || 'Importer une photo'}>
-              +
-              <input
-                id="send-receipts-upload-gallery"
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleFileInputChange}
-              />
-            </label>
-            {/* camera on mobile */}
-            <button
-              type="button"
-              onClick={() => setCameraOpen(true)}
-              className="w-16 h-16 flex items-center justify-center border-2 border-dashed rounded text-2xl text-green-600 bg-muted hover:bg-accent transition"
-              title={t('buttons.camera') || 'Prendre une photo'}
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="white">
-                <rect x="3" y="7" width="18" height="13" rx="2" stroke="white" strokeWidth="2" fill="none" />
-                <circle cx="12" cy="13.5" r="3.5" stroke="white" strokeWidth="2" fill="none" />
-                <rect x="8" y="3" width="8" height="4" rx="1" stroke="white" strokeWidth="2" fill="none" />
-              </svg>
-            </button>
+            {/* Hide import and photo buttons for caissier externe */}
+            {!(auth.user?.role === 'caissier' && auth.user?.employeeType === 'externe') && (
+              <>
+                <label htmlFor="send-receipts-upload-gallery" className="w-16 h-16 flex items-center justify-center border-2 border-dashed rounded cursor-pointer text-2xl text-muted-foreground bg-muted hover:bg-accent transition" title={t('forms.import') || 'Importer une photo'}>
+                  +
+                  <input
+                    id="send-receipts-upload-gallery"
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleFileInputChange}
+                  />
+                </label>
+                {/* camera on mobile */}
+                <button
+                  type="button"
+                  onClick={() => setCameraOpen(true)}
+                  className="w-16 h-16 flex items-center justify-center border-2 border-dashed rounded text-2xl text-green-600 bg-muted hover:bg-accent transition"
+                  title={t('buttons.camera') || 'Prendre une photo'}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="white">
+                    <rect x="3" y="7" width="18" height="13" rx="2" stroke="white" strokeWidth="2" fill="none" />
+                    <circle cx="12" cy="13.5" r="3.5" stroke="white" strokeWidth="2" fill="none" />
+                    <rect x="8" y="3" width="8" height="4" rx="1" stroke="white" strokeWidth="2" fill="none" />
+                  </svg>
+                </button>
+              </>
+            )}
             {localPreviewUrl && (
               <div className="ml-2">
                 <div className="relative w-16 h-16 border rounded overflow-hidden bg-muted">
@@ -228,11 +234,24 @@ const SendReceiptsDialog: React.FC<SendReceiptsDialogProps> = ({ receipts, isOpe
                   {/* programReference intentionally hidden here per Caissier UI request */}
                   <div className="w-44">
                     <Label htmlFor={`montant-${r.id}`}>{t('forms.amount') || 'Montant'}</Label>
-                    <Input id={`montant-${r.id}`} type="number" value={localAmounts[r.id] ?? ''} onChange={(e) => handleAmountChange(r.id, e.target.value)} className="bg-background dark:bg-background" />
+                    <Input
+                      id={`montant-${r.id}`}
+                      type="number"
+                      value={localAmounts[r.id] ?? ''}
+                      onChange={(e) => handleAmountChange(r.id, e.target.value)}
+                      className={`bg-background dark:bg-background ${auth.user?.role === 'caissier' && auth.user?.employeeType === 'externe' ? 'opacity-60 cursor-not-allowed' : ''}`}
+                      readOnly={auth.user?.role === 'caissier' && auth.user?.employeeType === 'externe'}
+                    />
                   </div>
                   <div className="w-56">
                     <Label htmlFor={`company-${r.id}`}>{t('companies.name') || 'Société'}</Label>
-                    <select id={`company-${r.id}`} value={localCompany[r.id] || ''} onChange={(e) => handleCompanyChange(r.id, e.target.value)} className="w-full border rounded px-2 py-1 bg-background dark:bg-background">
+                    <select
+                      id={`company-${r.id}`}
+                      value={localCompany[r.id] || ''}
+                      onChange={(e) => handleCompanyChange(r.id, e.target.value)}
+                      className="w-full border rounded px-2 py-1 bg-background dark:bg-background"
+                      disabled={auth.user?.role === 'caissier' && auth.user?.employeeType === 'externe'}
+                    >
                       <option value="">{t('companies.select') || 'Sélectionner une société'}</option>
                       {companies.map(c => (
                         <option key={c.id} value={c.id}>{c.name}</option>
@@ -246,106 +265,127 @@ const SendReceiptsDialog: React.FC<SendReceiptsDialogProps> = ({ receipts, isOpe
                       const isPending = ['brouillon', 'pending'].includes(st);
                       const isValidated = ['validee', 'validated', 'valide', 'valid'].includes(st);
                       const isCancelled = ['annule', 'annulé', 'cancelled'].includes(st);
+                      const isRecu = st === 'recu';
+                      const isCaissierExterne = auth.user?.role === 'caissier' && auth.user?.employeeType === 'externe';
                       return (
                         <>
-                          {isPending && (
+                          {/* Boutons Valider et Annuler masqués pour caissier externe */}
+                          {!isCaissierExterne && (
                             <>
-                              {onDeleteReceipt && (
+                              {isPending && !isRecu && (
                                 <>
-                                  <Button size="sm" variant="ghost" className="text-red-600" title={t('payments.confirmDeleteReceipt') || 'Confirmez-vous la suppression de ce reçu ?'} onClick={() => { setReceiptToDelete(r.id); setDeleteDialogOpen(true); }}>
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M1 7h22M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
-                                  </Button>
+                                  {onDeleteReceipt && (
+                                    <>
+                                      <Button size="sm" variant="ghost" className="text-red-600" title={t('payments.confirmDeleteReceipt') || 'Confirmez-vous la suppression de ce reçu ?'} onClick={() => { setReceiptToDelete(r.id); setDeleteDialogOpen(true); }}>
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M1 7h22M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                                      </Button>
+                                    </>
+                                  )}
+                                  <button title={t('payments.validate') || 'Valider'} onClick={async () => {
+                                    // direct validation: use local values and persist
+                                    const compId = localCompany[r.id] || '';
+                                    const montantValue = Number(localAmounts[r.id] || 0);
+                                    if (!montantValue) {
+                                      toast({ title: t('forms.required') || 'Montant requis', variant: 'destructive' });
+                                      return;
+                                    }
+                                    if (!compId) {
+                                      toast({ title: t('companies.select') || 'Société requise', variant: 'destructive' });
+                                      return;
+                                    }
+                                    try {
+                                      setValidatingIds(prev => ({ ...prev, [r.id]: true }));
+                                      const { updatePayment, getPayments } = await import('../../services/paymentService');
+                                      const traceEntry = { userId: auth.user?.id || null, userName: auth.user?.fullName || null, action: t('traceability.validated') || 'Déclaration Validée', date: new Date().toISOString() };
+                                      const updates: any = {
+                                        montant: montantValue,
+                                        companyId: compId,
+                                        companyName: companies.find((c: any) => c.id === compId)?.name || null,
+                                        status: 'validee',
+                                        validatedAt: new Date().toISOString()
+                                      };
+                                      try {
+                                        const current: any = (await getPayments()).find((p: any) => p.id === r.id) || {};
+                                        updates.traceability = [...(current.traceability || []), traceEntry];
+                                      } catch (e) {
+                                        updates.traceability = [traceEntry];
+                                      }
+                                      await updatePayment(r.id, updates);
+                                      if (onValidateReceipt) onValidateReceipt({ ...r, ...updates } as PaymentReceipt);
+                                    } catch (e: any) {
+                                      console.error('Validation failed', e);
+                                      toast({ title: e?.message || (t('forms.error') || 'Erreur lors de l\'opération'), variant: 'destructive' });
+                                    } finally {
+                                      setValidatingIds(prev => ({ ...prev, [r.id]: false }));
+                                    }
+                                  }} className="p-2 rounded border border-border text-green-600 hover:bg-green-50 dark:hover:bg-green-900" disabled={!!validatingIds[r.id]}>
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/></svg>
+                                  </button>
                                 </>
                               )}
-                              {
-                                // Validate directly without opening the validation dialog
-                              }
-                              <button title={t('payments.validate') || 'Valider'} onClick={async () => {
-                                // direct validation: use local values and persist
-                                const compId = localCompany[r.id] || '';
-                                const montantValue = Number(localAmounts[r.id] || 0);
-                                if (!montantValue) {
-                                  toast({ title: t('forms.required') || 'Montant requis', variant: 'destructive' });
-                                  return;
-                                }
-                                if (!compId) {
-                                  toast({ title: t('companies.select') || 'Société requise', variant: 'destructive' });
-                                  return;
-                                }
+                              {/* Undo button only if validated and not recu */}
+                              {isValidated && !isRecu && (
+                                <button title={t('payments.undo') || 'Annuler'} onClick={async () => {
+                                  // Attempt to revert the receipt status to pending
+                                  try {
+                                    const { updatePayment } = await import('../../services/paymentService');
+                                    await updatePayment(r.id, { status: 'brouillon' });
+                                  } catch (e) {
+                                    console.error('Undo failed', e);
+                                    toast({ title: t('forms.error') || 'Erreur lors de l\'opération', variant: 'destructive' });
+                                  }
+                                }} className="p-2 rounded border border-border text-yellow-600 hover:bg-yellow-50 dark:hover:bg-yellow-900">
+                                  {/* Representative Undo icon */}
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M21 12a9 9 0 10-9 9" />
+                                    <path d="M21 3v9h-9" />
+                                  </svg>
+                                </button>
+                              )}
+                              {!isValidated && !isPending && !isRecu && onValidateReceipt && (
+                                <button title={t('payments.validate') || 'Valider'} onClick={() => onValidateReceipt(r)} className="p-2 rounded border border-border text-green-600 hover:bg-green-50 dark:hover:bg-green-900">
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/></svg>
+                                </button>
+                              )}
+                            </>
+                          )}
+                          {/* Eye icon: always show gray if status is 'recu' */}
+                          {isRecu && (
+                            <span className="p-2 rounded text-gray-500">
+                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#6B7280" style={{ width: 22, height: 22 }}>
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                              </svg>
+                            </span>
+                          )}
+                          {/* Quick mark as Reçu: only for external cashiers and when receipt is validated and not already recu */}
+                          {(isValidated && !isRecu && auth.user?.role === 'caissier' && auth.user?.employeeType === 'externe') && (
+                            <button
+                              title={t('payments.markReceived') || 'Marquer Reçu'}
+                              onClick={async () => {
                                 try {
                                   setValidatingIds(prev => ({ ...prev, [r.id]: true }));
-                                  const { updatePayment, getPayments } = await import('../../services/paymentService');
-                                  const traceEntry = { userId: auth.user?.id || null, userName: auth.user?.fullName || null, action: t('traceability.validated') || 'Déclaration Validée', date: new Date().toISOString() };
-                                  const updates: any = {
-                                    montant: montantValue,
-                                    companyId: compId,
-                                    companyName: companies.find((c: any) => c.id === compId)?.name || null,
-                                    status: 'validee',
-                                    validatedAt: new Date().toISOString()
-                                  };
+                                  const { updatePayment } = await import('../../services/paymentService');
+                                  const traceEntry = { userId: auth.user?.id || null, userName: auth.user?.fullName || null, action: t('traceability.received') || 'Reçu marqué', date: new Date().toISOString() };
+                                  const updates: any = { status: 'recu', validatedAt: new Date().toISOString() };
                                   try {
-                                    const current: any = (await getPayments()).find((p: any) => p.id === r.id) || {};
-                                    updates.traceability = [...(current.traceability || []), traceEntry];
+                                    await updatePayment(r.id, updates);
                                   } catch (e) {
-                                    updates.traceability = [traceEntry];
+                                    toast({ title: t('forms.error') || 'Erreur lors de l\'opération', variant: 'destructive' });
                                   }
-                                  await updatePayment(r.id, updates);
-                                  if (onValidateReceipt) onValidateReceipt({ ...r, ...updates } as PaymentReceipt);
-                                } catch (e: any) {
-                                  console.error('Validation failed', e);
-                                  toast({ title: e?.message || (t('forms.error') || 'Erreur lors de l\'opération'), variant: 'destructive' });
                                 } finally {
                                   setValidatingIds(prev => ({ ...prev, [r.id]: false }));
                                 }
-                              }} className="p-2 rounded border border-border text-green-600 hover:bg-green-50 dark:hover:bg-green-900" disabled={!!validatingIds[r.id]}>
-                                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/></svg>
-                              </button>
-                            </>
-                          )}
-                          {isValidated && (
-                            <button title={t('payments.undo') || 'Annuler'} onClick={async () => {
-                              // Attempt to revert the receipt status to pending
-                              try {
-                                const { updatePayment } = await import('../../services/paymentService');
-                                await updatePayment(r.id, { status: 'brouillon' });
-                              } catch (e) {
-                                console.error('Undo failed', e);
-                                toast({ title: t('forms.error') || 'Erreur lors de l\'opération', variant: 'destructive' });
-                              }
-                            }} className="p-2 rounded border border-border text-yellow-600 hover:bg-yellow-50 dark:hover:bg-yellow-900">
-                              {/* Representative Undo icon */}
-                              <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M21 12a9 9 0 10-9 9" />
-                                <path d="M21 3v9h-9" />
+                              }}
+                              className="p-2 rounded border border-border text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900"
+                              disabled={!!validatingIds[r.id]}
+                            >
+                              {/* Eye icon */}
+                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#2563EB" style={{ width: 22, height: 22 }}>
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                               </svg>
                             </button>
-                          )}
-                          {!isValidated && !isPending && onValidateReceipt && (
-                            <button title={t('payments.validate') || 'Valider'} onClick={() => onValidateReceipt(r)} className="p-2 rounded border border-border text-green-600 hover:bg-green-50 dark:hover:bg-green-900">
-                              <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/></svg>
-                            </button>
-                          )}
-                          {/* Quick mark as Reçu: only for external cashiers and when receipt is validated */}
-                          {(!validatingIds[r.id] && r.status && String(r.status).toLowerCase() !== 'recu' && isValidated && auth.user?.role === 'caissier' && auth.user?.employeeType === 'externe') && (
-                            <button title={t('payments.markReceived') || 'Marquer Reçu'} onClick={async () => {
-                              try {
-                                const { updatePayment } = await import('../../services/paymentService');
-                                const traceEntry = { userId: auth.user?.id || null, userName: auth.user?.fullName || null, action: t('traceability.received') || 'Reçu marqué', date: new Date().toISOString() };
-                                const updates: any = { status: 'recu', validatedAt: new Date().toISOString() };
-                                try {
-                                  const { getPayments } = await import('../../services/paymentService');
-                                  const current: any = (await getPayments()).find((p: any) => p.id === r.id) || {};
-                                  updates.traceability = [...(current.traceability || []), traceEntry];
-                                } catch (e) {
-                                  updates.traceability = [traceEntry];
-                                }
-                                await updatePayment(r.id, updates);
-                                if (onValidateReceipt) onValidateReceipt({ ...r, ...updates } as PaymentReceipt);
-                              } catch (e) {
-                                console.error('Mark received failed', e);
-                                toast({ title: t('forms.error') || 'Erreur', variant: 'destructive' });
-                              }
-                            }} className="p-2 rounded border border-border text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900">🔵</button>
                           )}
                         </>
                       );
@@ -357,7 +397,7 @@ const SendReceiptsDialog: React.FC<SendReceiptsDialogProps> = ({ receipts, isOpe
           )}
           <div className="flex justify-end gap-2 pt-2">
             <Button variant="outline" onClick={onClose}>{t('forms.close') || 'Fermer'}</Button>
-            {(() => {
+            {!isCaissierExterne && (() => {
               const allValidated = receipts.length > 0 && receipts.every(r => ['validee', 'validated', 'valide', 'valid', 'recu'].includes(String(r.status || '').toLowerCase()));
               const handleSend = async () => {
                 if (!allValidated) return;

@@ -25,6 +25,7 @@ interface Props {
 const CreateRecouvrementDialog: React.FC<Props> = ({ isOpen, onClose }) => {
   const { t } = useTranslation();
   const auth = useAuth();
+  const isCaissierExterne = auth?.user?.role === 'caissier' && auth?.user?.employeeType === 'externe';
   const { declarations, addDeclaration } = useSharedData();
   const loadingCtx = useLoading();
 
@@ -878,53 +879,55 @@ const CreateRecouvrementDialog: React.FC<Props> = ({ isOpen, onClose }) => {
           <div className="flex gap-2 pt-2 justify-end">
             <Button variant="outline" onClick={onClose}>{t('forms.cancel') || 'Annuler'}</Button>
             {/* If an existing declaration or a draft exists, show 'Envoyer' to avoid creating duplicates; otherwise show 'Enregistrer' */}
-            {!(existingDeclId || draftDeclId) ? (
-              <Button
-                onClick={handleSaveDraft}
-                disabled={
-                  savingDraft ||
-                  (!noProgramReference && !(programNumber && programNumber.length === 4)) ||
-                  // require a chauffeur to be selected before allowing save
-                  !selectedChauffeur
-                }
-              >
-                {savingDraft ? (t('forms.saving') || 'Enregistrement...') : (t('forms.save') || 'Enregistrer')}
-              </Button>
-            ) : (
-              (() => {
-                // If the existing declaration has been marked recouvré, offer Annuler (revoke) instead of Envoyer
-                const existingDecl = (declarations || []).find(d => d.id === (existingDeclId || draftDeclId));
-                const declPaymentState = String((existingDecl as any)?.paymentState || '').toLowerCase();
-                const isRecouvre = declPaymentState.startsWith('recouv');
-                if (isRecouvre) {
-                  // Filled orange 'Retourner' button — same shape as Envoyer but orange + contour
+            {!isCaissierExterne && (
+              !(existingDeclId || draftDeclId) ? (
+                <Button
+                  onClick={handleSaveDraft}
+                  disabled={
+                    savingDraft ||
+                    (!noProgramReference && !(programNumber && programNumber.length === 4)) ||
+                    // require a chauffeur to be selected before allowing save
+                    !selectedChauffeur
+                  }
+                >
+                  {savingDraft ? (t('forms.saving') || 'Enregistrement...') : (t('forms.save') || 'Enregistrer')}
+                </Button>
+              ) : (
+                (() => {
+                  // If the existing declaration has been marked recouvré, offer Annuler (revoke) instead of Envoyer
+                  const existingDecl = (declarations || []).find(d => d.id === (existingDeclId || draftDeclId));
+                  const declPaymentState = String((existingDecl as any)?.paymentState || '').toLowerCase();
+                  const isRecouvre = declPaymentState.startsWith('recouv');
+                  if (isRecouvre) {
+                    // Filled orange 'Retourner' button — same shape as Envoyer but orange + contour
+                    return (
+                      <Button
+                        onClick={handleCancelRecouvrement}
+                        disabled={loading}
+                        className={`bg-yellow-600 text-white border border-yellow-700 flex items-center gap-2 ${loading ? 'opacity-50 pointer-events-none' : ''}`}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M21 12a9 9 0 10-9 9" />
+                          <path d="M21 3v9h-9" />
+                        </svg>
+                        <span>{t('recouvrement.return') || 'Retourner'}</span>
+                      </Button>
+                    );
+                  }
+                  // Green filled 'Envoyer' button with send icon (same as SendReceiptsDialog)
                   return (
                     <Button
-                      onClick={handleCancelRecouvrement}
-                      disabled={loading}
-                      className={`bg-yellow-600 text-white border border-yellow-700 flex items-center gap-2 ${loading ? 'opacity-50 pointer-events-none' : ''}`}
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M21 12a9 9 0 10-9 9" />
-                        <path d="M21 3v9h-9" />
+                      onClick={handleSend}
+                      disabled={loading || !allValidated}
+                      className={`bg-green-600 text-white flex items-center gap-2 ${(loading || !allValidated) ? 'opacity-50 pointer-events-none' : ''}`}>
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
+                        <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2 .01 5z" />
                       </svg>
-                      <span>{t('recouvrement.return') || 'Retourner'}</span>
+                      <span>{t('payments.send') || 'Envoyer'}</span>
                     </Button>
                   );
-                }
-                // Green filled 'Envoyer' button with send icon (same as SendReceiptsDialog)
-                return (
-                  <Button
-                    onClick={handleSend}
-                    disabled={loading || !allValidated}
-                    className={`bg-green-600 text-white flex items-center gap-2 ${(loading || !allValidated) ? 'opacity-50 pointer-events-none' : ''}`}>
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
-                      <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2 .01 5z" />
-                    </svg>
-                    <span>{t('payments.send') || 'Envoyer'}</span>
-                  </Button>
-                );
-              })()
+                })()
+              )
             )}
           </div>
         </div>
