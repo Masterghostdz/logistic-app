@@ -274,8 +274,13 @@ const PaymentReceiptsTable: React.FC<PaymentReceiptsTableProps> = ({
                             const isCancelled = ['annule', 'annulé', 'cancelled'].includes(st);
                             // Only internal cashiers may perform payment annulment (undo)
                             const isInternalCaissier = !!(auth.user && auth.user.role === 'caissier' && auth.user.employeeType === 'interne');
-                            // If validated, show Undo (Annuler) button so caissier can revert to brouillon
-                            if (isValidated || isReceived) {
+                            // If payment is already received, show no actions (including no Undo)
+                            if (isReceived) {
+                              return null;
+                            }
+
+                            // If validated, show Undo (Annuler) button so internal caissier can revert to brouillon
+                            if (isValidated) {
                               // If user is not internal cashier, hide undo button
                               if (!isInternalCaissier) return null;
 

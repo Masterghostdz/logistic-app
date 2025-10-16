@@ -107,9 +107,41 @@ const CaissierDashboard = () => {
   }).length;
 
   // Payments not validated: consider multiple normalization variants for status
+  // Payments pending: count only receipts explicitly in pending states (do NOT include 'recu')
   const paymentsNotValidatedCount = (receipts || []).filter(r => {
     const s = String(r.status || '').toLowerCase();
-    return !['validee', 'validated', 'valid', 'valide'].includes(s);
+    return ['pending', 'brouillon'].includes(s);
+  }).length;
+
+  // Payments validated but not received ('Non Reçu'): status in validated variants but not 'recu'
+  const paymentsValidatedNotReceivedCount = (receipts || []).filter(r => {
+    const s = String(r.status || '').toLowerCase();
+    // treat 'recu' as already received; we want validated but not received
+    const isValidated = ['validee', 'validated', 'valide', 'valid'].includes(s);
+    const isReceived = s === 'recu';
+    return isValidated && !isReceived;
+  }).length;
+
+  // For external cashier: show number of payments in state 'validated' (including variants)
+  const paymentsValidatedCount = (receipts || []).filter(r => {
+    const s = String(r.status || '').toLowerCase();
+    return ['validee', 'validated', 'valide', 'valid'].includes(s);
+  }).length;
+
+  // Recouvrements 'Non Reçu' for external cashier: declarations that are in recouvré state
+  // and that have at least one related payment in a validated variant. Count declarations.
+  const recouvrementsNotReceivedCount = (declarations || []).filter(d => {
+    const paymentState = String((d as any).paymentState || '').toLowerCase();
+    if (!paymentState.startsWith('recouvr')) return false;
+    const declId = String(d.id || '');
+    // has at least one related validated payment (visible to current user via receipts)
+    const hasValidatedPayment = (receipts || []).some(r => {
+      if (!r) return false;
+      if (String(r.declarationId || '') !== declId) return false;
+      const s = String(r.status || '').toLowerCase();
+      return ['validee', 'validated', 'valide', 'valid'].includes(s);
+    });
+    return hasValidatedPayment;
   }).length;
 
   // Payments without company: no companyId and no companyName (empty/whitespace)
@@ -259,14 +291,19 @@ const CaissierDashboard = () => {
                       </CardHeader>
                       <CardContent className="pt-0">
                         <CaissierStats
-                          stats={{ recouvrements: recouvrementsCount, paymentsPending: 0, paymentsNoCompany: 0 }}
+                          stats={{ recouvrements: recouvrementsCount, paymentsPending: 0, paymentsNoCompany: 0, recouvrementsNotReceived: recouvrementsNotReceivedCount }}
                           showRecouvrements={true}
+                          // show at most 3 indicators: for externals include recouvrementsNotReceived
+                          showRecouvrementsNotReceived={isExternalCaissier}
+                          // hide other payment tiles in this card
                           showPaymentsPending={false}
                           showPaymentsNoCompany={false}
-                          statusLabels={{ recouvrements: t('declarations.notRecovered') || 'Non Recouvré' }}
-                          onRecouvrementsClick={() => { setLastNavSource('indicator'); setStatusFilter('non_recouvre'); setPaymentInitialFilter('all'); setPaymentInitialCompanyFilter('all'); setActiveTab('recouvrement'); }}
-                          onPaymentsPendingClick={() => { setLastNavSource('indicator'); setPaymentInitialFilter('brouillon'); setPaymentInitialCompanyFilter('all'); setActiveTab('paiement'); }}
-                          onPaymentsNoCompanyClick={() => { setLastNavSource('indicator'); setPaymentInitialFilter('all'); setPaymentInitialCompanyFilter('no-company'); setActiveTab('paiement'); }}
+                           statusLabels={{ recouvrements: t('declarations.notRecovered') || 'Non Recouvré' }}
+                           onRecouvrementsClick={() => { setLastNavSource('indicator'); setStatusFilter('non_recouvre'); setPaymentInitialFilter('all'); setPaymentInitialCompanyFilter('all'); setActiveTab('recouvrement'); }}
+                           // open recouvrement list filtered to recouvré declarations that have validated payments
+                           onRecouvrementsNotReceivedClick={() => { setLastNavSource('indicator'); setStatusFilter('recouvre_validated'); setPaymentInitialFilter('validee'); setPaymentInitialCompanyFilter('all'); setActiveTab('recouvrement'); }}
+                           onPaymentsPendingClick={() => { setLastNavSource('indicator'); setPaymentInitialFilter('brouillon'); setPaymentInitialCompanyFilter('all'); setActiveTab('paiement'); }}
+                           onPaymentsNoCompanyClick={() => { setLastNavSource('indicator'); setPaymentInitialFilter('all'); setPaymentInitialCompanyFilter('no-company'); setActiveTab('paiement'); }}
                         />
                       </CardContent>
                     </Card>
@@ -280,14 +317,20 @@ const CaissierDashboard = () => {
                       </CardHeader>
                       <CardContent className="pt-0">
                         <CaissierStats
-                          stats={{ recouvrements: 0, paymentsPending: paymentsNotValidatedCount, paymentsNoCompany: paymentsNoCompanyCount }}
+                          stats={{ recouvrements: 0, paymentsPending: paymentsNotValidatedCount, paymentsNoCompany: paymentsNoCompanyCount, paymentsNotReceived: paymentsValidatedNotReceivedCount, paymentsValidated: paymentsValidatedCount }}
                           showRecouvrements={false}
                           showPaymentsPending={true}
+                          // show the 'Non Reçu' indicator only to internal cashiers
+                          showPaymentsNotReceived={!isExternalCaissier}
                           showPaymentsNoCompany={!isExternalCaissier}
-                          statusLabels={{ paymentsPending: t('dashboard.pending') || 'en attente', paymentsNoCompany: t('caissier.paymentsNoCompanyTitle') || 'sans société' }}
+                          // for external cashier show validated payments count
+                          showPaymentsValidated={isExternalCaissier}
+                          statusLabels={{ paymentsPending: t('dashboard.pending') || 'en attente', paymentsNoCompany: t('caissier.paymentsNoCompanyTitle') || 'sans société', paymentsNotReceived: t('caissier.notReceived') || 'Non Reçu' }}
                           onRecouvrementsClick={() => {}}
                           onPaymentsPendingClick={() => { setPaymentInitialFilter('brouillon'); setPaymentInitialCompanyFilter('all'); setActiveTab('paiement'); }}
                           onPaymentsNoCompanyClick={() => { setPaymentInitialFilter('all'); setPaymentInitialCompanyFilter('no-company'); setActiveTab('paiement'); }}
+                          onPaymentsNotReceivedClick={() => { setPaymentInitialFilter('validee'); setPaymentInitialCompanyFilter('all'); setActiveTab('paiement'); }}
+                          onPaymentsValidatedClick={() => { setPaymentInitialFilter('validee'); setPaymentInitialCompanyFilter('all'); setActiveTab('paiement'); }}
                         />
                       </CardContent>
                     </Card>
@@ -408,8 +451,12 @@ const CaissierDashboard = () => {
                     let matchesStatus = true;
                     // Use startsWith to be robust to accents/variants (recouvre, recouvré, recouvr...) 
                     const isRecouvre = paymentState.startsWith('recouvr');
+                    // determine if this declaration has any validated payments (either via live payments or embedded receipts)
+                    const hasValidatedPayment = ((payments || []).some(p => String(p.declarationId || '') === String(d.id) && ['validee','validated','valide','valid'].includes(String(p.status || '').toLowerCase())))
+                      || (Array.isArray((d as any).paymentReceipts) && (d as any).paymentReceipts.some((pr: any) => ['validee','validated','valide','valid'].includes(String(pr.status || '').toLowerCase())));
                     if (statusFilter === 'recouvre') matchesStatus = isRecouvre;
                     else if (statusFilter === 'non_recouvre') matchesStatus = !isRecouvre;
+                    else if (statusFilter === 'recouvre_validated') matchesStatus = isRecouvre && hasValidatedPayment;
                      return matchesSearch && matchesStatus;
                    });
 

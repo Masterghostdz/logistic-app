@@ -12,6 +12,7 @@ import { toast } from '../ui/use-toast';
 import { useAuth } from '../../contexts/AuthContext';
 
 interface DeclarationsTableProps {
+  recouvrementView?: boolean;
   declarations: Declaration[];
   onValidateDeclaration: (id: string) => void;
   onRejectDeclaration: (id: string) => void;
@@ -63,7 +64,8 @@ const DeclarationsTable = ({
   hideStatusColumn = false,
   hideValidatedColumn = false
   , hideSendButton = false,
-  referenceDeclarations = []
+  referenceDeclarations = [],
+  recouvrementView = false
 }: DeclarationsTableProps) => {
   const {
     localFontSize,
@@ -82,6 +84,8 @@ const DeclarationsTable = ({
   const { t, settings } = useTranslation();
   const auth = useAuth();
   const isExternalCaissier = !!(auth?.user && auth.user.role === 'caissier' && auth.user.employeeType === 'externe');
+  // When in recouvrement view and user is external cashier, hide distance and prime columns
+  const hideDistanceAndPrimeForExternal = !!(recouvrementView && isExternalCaissier);
 
   // Helper to delete a declaration: always use parent callback (ChauffeurDashboard shows dialog), never browser confirm.
   const handleDelete = (id: string) => {
@@ -186,7 +190,7 @@ const DeclarationsTable = ({
                     <TableHead data-rtl={settings.language === 'ar'} className={`${getMinWidthForChars(12)} whitespace-nowrap ${cellPaddingClass}`} style={fontSizeStyle}>{t('declarations.deliveryFees')}</TableHead>
                   ) : null}
                   {/* Affiche Prime de route pour interne et planificateur */}
-                  {showPrimeHeader ? (
+                  {showPrimeHeader && !hideDistanceAndPrimeForExternal ? (
                     <TableHead data-rtl={settings.language === 'ar'} className={`${colWidth} whitespace-nowrap ${cellPaddingClass}`} style={fontSizeStyle}>{t('declarations.primeDeRoute') === 'declarations.primeDeRoute' ? 'Prime de route' : t('declarations.primeDeRoute')}</TableHead>
                   ) : null}
                   {chauffeurView ? (
@@ -266,7 +270,7 @@ const DeclarationsTable = ({
                     </TableCell>
                   ) : null}
                   {/* Prime de route : afficher pour interne et planificateur */}
-                  {showPrimeHeader ? (
+                  {showPrimeHeader && !hideDistanceAndPrimeForExternal ? (
                     <TableCell data-rtl={settings.language === 'ar'} className={`text-center whitespace-nowrap ${cellPaddingClass}`} style={fontSizeStyle}>
                       {(chauffeurTypes && chauffeurTypes[declaration.chauffeurId] === 'interne' && declaration.primeDeRoute) || (!chauffeurTypes && declaration.primeDeRoute) ? (
                         <span className={`${getMinWidthForChars(6)} inline-block font-bold`} style={{ ...fontSizeStyle, color: '#D4AF37' /* gold-ish */ }}>{declaration.primeDeRoute.toFixed(2)} DZD</span>

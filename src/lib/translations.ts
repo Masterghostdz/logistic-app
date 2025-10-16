@@ -10,6 +10,8 @@ export const translations = {
       paymentsTitle: "Gestion des paiements",
       recouvrementTitle: "Gestion des Recouvrements",
       recentRecouvrements: "Recouvrements récents",
+      notReceived: "Non Reçu",
+      paymentsValidatedTitle: "Validé",
       // Created for CreateRecouvrementDialog
       createRecouvrement: "Créer un recouvrement",
       emptyDashboard: "Espace Caissier (façade, aucun contenu)",
@@ -267,6 +269,8 @@ export const translations = {
       paymentsStatsTitle: "Payments indicators",
       paymentsNoCompanyTitle: "No company",
       dashboardTitle: "Cashier Dashboard",
+      notReceived: "Not received",
+      paymentsValidatedTitle: "Validated",
       createPaymentTitle: "Add payment receipt",
       createPaymentDesc: "Fill the form to add a payment receipt.",
       viewPaymentTitle: "View receipt",
@@ -333,6 +337,8 @@ export const translations = {
       paymentsPendingTitle: "حالات المدفوعات غير المعتمدة",
       paymentsNoCompanyTitle: "بدون شركة",
       paymentsStatsTitle: "ملخص المدفوعات",
+      notReceived: "غير مستلم",
+      paymentsValidatedTitle: "معتمد",
       paymentsTitle: "إدارة المدفوعات"
     },
     profile: {
@@ -649,6 +655,8 @@ export const translations = {
       paymentsStatsTitle: "Payments indicators",
       paymentsNoCompanyTitle: "No company",
       dashboardTitle: "Cashier Dashboard",
+      notReceived: "Not received",
+      paymentsValidatedTitle: "Validated",
       createPaymentTitle: "Add payment receipt",
       createPaymentDesc: "Fill the form to add a payment receipt.",
       viewPaymentTitle: "View receipt",
@@ -1110,7 +1118,6 @@ export const translations = {
       createPaymentTitle: "إضافة إيصال دفع",
       createPaymentDesc: "املأ النموذج لإضافة إيصال دفع.",
       profileTitle: "ملف أمين الصندوق",
-      paymentsTitle: "إدارة المدفوعات",
       
       recouvrementTitle: "إدارة التحصيل",
       recentRecouvrements: "التحصيلات الأخيرة",
@@ -1123,7 +1130,9 @@ export const translations = {
       paymentsPendingTitle: "المدفوعات غير المعتمدة",
       paymentsNoCompanyTitle: "بدون شركة",
       paymentsStatsTitle: "ملخص المدفوعات",
-      // paymentsTitle already defined above; do not duplicate
+      notReceived: "غير مستلم",
+      paymentsValidatedTitle: "معتمد",
+      paymentsTitle: "إدارة المدفوعات"
     },
     // Recouvrement labels (Arabic)
     recouvrement: {
