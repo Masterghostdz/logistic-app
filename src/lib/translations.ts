@@ -232,7 +232,11 @@ export const translations = {
       chauffeurName: "Nom du chauffeur",
       date: "Date",
       createdDate: "Date de création",
-      validated: "Validé",
+      declaredAt: "Date de déclaration",
+      // Header now shows the validation date
+      validated: "Date de Validation",
+      // Date when declaration was marked as recouvré
+      paymentRecoveredAt: "Date de recouvrement",
     distance: "Distance (km)",
     deliveryFees: "Frais de livraison (DZD)",
   primeDeRoute: "Prime de route (DZD)",
@@ -1436,6 +1440,14 @@ export const translations = {
     // helpers used by payment dialogs
     traceability: "سجل التتبع",
     creator: "المنشئ"
+    },
+    // New form strings used by deletion & traceability UI (Arabic)
+    forms_extra: {
+      cannotDeleteValidated: "لا يمكن حذف إيصال تم التحقق منه",
+      unauthorized: "غير مصرح",
+      deleteFailed: "فشل الحذف",
+      traceability: "سجل التتبع",
+      creator: "المنشئ"
     },
     clients: {
       name: "الاسم",
