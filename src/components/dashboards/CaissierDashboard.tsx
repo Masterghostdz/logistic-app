@@ -353,12 +353,20 @@ const CaissierDashboard = () => {
                         const declPaymentState = decl ? String((decl as any).paymentState || '').toLowerCase() : '';
                         const isRecouvre = declPaymentState.startsWith('recouvre') || ['validee','validated','valide','valid'].includes(String(p.status || '').toLowerCase());
                         return (
-                          <div key={p.id} className="relative flex items-center justify-between p-3 border rounded-lg cursor-pointer hover:bg-accent" onClick={() => setConsultReceipt && setConsultReceipt(p)}>
-                            <div>
-                              <div className="font-medium">{title}</div>
-                              <div className="text-sm text-gray-500">{subtitle}</div>
-                            </div>
-                            <div style={badgePosStyle}>
+                          <div key={p.id} className="relative flex items-center justify-between p-3 border rounded-lg cursor-pointer hover:bg-accent" onClick={() => {
+                            // If this payment is linked to a declaration, open declaration consult (recouvrement)
+                            if (decl) {
+                              setConsultDeclaration && setConsultDeclaration(decl);
+                              return;
+                            }
+                            // Fallback: open payment consult when no related declaration is available
+                            if (setConsultReceipt) setConsultReceipt(p);
+                          }}>
+                           <div>
+                             <div className="font-medium">{title}</div>
+                             <div className="text-sm text-gray-500">{subtitle}</div>
+                           </div>
+                           <div style={badgePosStyle}>
                                       {isRecouvre ? (
                                         <Badge style={{ ...badgeStyle }} className={`bg-green-100 text-green-800 border border-green-300 dark:bg-green-900 dark:text-green-200 ${badgeClass} px-[10px]`}>
                                           {t('declarations.recovered') || 'Recouvré'}

@@ -246,17 +246,32 @@ const DeclarationsTable = ({
     = ({ colKey, className, style, children }) => {
     const startX = useRef<number | null>(null);
     const startWidth = useRef<number>(0);
+    const didDrag = useRef(false);
+    const DRAG_THRESHOLD = 3; // pixels before we treat as drag
 
     const handleMouseDown = (e: React.MouseEvent) => {
       // only left button
       if ((e as any).button && (e as any).button !== 0) return;
-      e.preventDefault();
+      // do not call preventDefault here; stop click propagation on the grip element instead
       startX.current = (e as any).clientX;
-      startWidth.current = columnWidths[colKey] || defaultColumnWidths[colKey] || 120;
+      // use the actual header element width when available to avoid incorrect initial sizing
+      try {
+        const headerEl = (e.currentTarget as HTMLElement).closest('th, [data-resizable-head]') as HTMLElement | null;
+        const measured = headerEl ? Math.round(headerEl.getBoundingClientRect().width) : undefined;
+        startWidth.current = columnWidths[colKey] || measured || defaultColumnWidths[colKey] || 120;
+      } catch (err) {
+        startWidth.current = columnWidths[colKey] || defaultColumnWidths[colKey] || 120;
+      }
+      didDrag.current = false;
+      // prevent text selection while dragging
+      try { document.body.style.userSelect = 'none'; } catch (e) { /* ignore */ }
 
       const onMouseMove = (ev: MouseEvent) => {
         if (startX.current == null) return;
         const delta = ev.clientX - startX.current;
+        // ignore tiny movements until user actually drags beyond threshold
+        if (!didDrag.current && Math.abs(delta) < DRAG_THRESHOLD) return;
+        didDrag.current = true;
         const newW = Math.max(40, Math.round(startWidth.current + delta));
         setColumnWidths(prev => ({ ...prev, [colKey]: newW }));
       };
@@ -265,6 +280,9 @@ const DeclarationsTable = ({
         document.removeEventListener('mousemove', onMouseMove);
         document.removeEventListener('mouseup', onMouseUp);
         startX.current = null;
+        didDrag.current = false;
+        // restore text selection
+        try { document.body.style.userSelect = ''; } catch (e) { /* ignore */ }
       };
 
       document.addEventListener('mousemove', onMouseMove);
@@ -285,6 +303,7 @@ const DeclarationsTable = ({
             {/* Visible semi-transparent grip icon to indicate resize handle (click & drag) */}
             <div
               onMouseDown={handleMouseDown}
+              onClick={(e) => e.stopPropagation()}
               title={t('table.resize') || 'Redimensionner'}
               style={{ cursor: 'col-resize', padding: 2, borderRadius: 2, opacity: 0.55, transition: 'opacity 120ms', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#6B7280' }}
               onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.95')}
@@ -417,7 +436,7 @@ const DeclarationsTable = ({
                       <ResizableTableHead colKey="createdDate" className={`${getMinWidthForChars(12)} whitespace-nowrap ${cellPaddingClass}`} style={fontSizeStyle}>{t('declarations.createdDate')}</ResizableTableHead>
                       {/* Date de déclaration */}
                       <ResizableTableHead colKey="declaredAt" className={`${getMinWidthForChars(12)} whitespace-nowrap ${cellPaddingClass}`} style={fontSizeStyle}>{t('declarations.declaredAt') || 'Date de déclaration'}</ResizableTableHead>
-                      {/* Date de recouvrement: visible aux caissiers (interne et externe) - moved immediately après Date de déclaration */}
+                      {/* Date de recouvrement: visible aux caissiers (interne et externe) - moved immédiatement après Date de déclaration */}
                       {!chauffeurView && isCaissier && columnsVisible.paymentRecoveredAt && (
                         <ResizableTableHead colKey="paymentRecoveredAt" className={`${getMinWidthForChars(12)} whitespace-nowrap ${cellPaddingClass}`} style={fontSizeStyle}>
                           {t('declarations.paymentRecoveredAt') || 'Date recouvrement'}
