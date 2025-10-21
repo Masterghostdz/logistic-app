@@ -1340,9 +1340,9 @@ const ChauffeurDashboard: React.FC = () => {
               </div>
             )}
             {String(activeTab) === 'mesDeclarations' && (
-              <div className="space-y-6 w-full p-2">
-                <div className="flex items-center justify-between mb-2">
-                  <h2 className={`text-2xl font-bold ${isMobile ? 'mb-2' : 'mb-4'}`}>{t('declarations.myDeclarations') || 'Mes déclarations'}</h2>
+              <div className={`${isMobile ? 'max-w-[430px] mx-auto w-full p-2 pt-1' : 'space-y-6 w-full p-2 pl-6 md:pt-16'}`}>
+                <div className="w-full p-2">
+                  <h2 className={`text-2xl font-bold text-foreground ${isMobile ? 'mb-0' : 'mb-4'}`}>{t('declarations.myDeclarations') || 'Mes déclarations'}</h2>
                 </div>
 
                 <SearchAndFilter
@@ -1384,10 +1384,10 @@ const ChauffeurDashboard: React.FC = () => {
               </div>
             )}
             {activeTab === 'tracage' && (
-              <div className={isMobile ? 'max-w-[430px] mx-auto w-full p-4' : 'p-6 pt-8'}>
-                <h1 className="text-2xl font-bold text-foreground mb-6">
-                  {t('tabs.tracage') || 'Traçage'}
-                </h1>
+              <div className={isMobile ? 'max-w-[430px] mx-auto w-full p-2 pt-1' : 'w-full p-2 pl-6 md:pt-16'}>
+                <div className="w-full p-2">
+                  <h2 className={`text-2xl font-bold text-foreground ${isMobile ? 'mb-2' : 'mb-4'}`}>{t('tabs.tracage') || 'Traçage'}</h2>
+                </div>
                 <TracageSection 
                   gpsActive={gpsActive}
                   setGpsActive={setGpsActive}
@@ -1835,9 +1835,9 @@ const ChauffeurDashboard: React.FC = () => {
               </>
             )}
             {String(activeTab) === 'mesDeclarations' && (
-              <div className="w-full p-2">
-                <div className="flex items-center justify-between mb-2">
-                  <h2 className={`text-2xl font-bold ${isMobile ? 'mb-2' : 'mb-4'} text-foreground`}>{t('declarations.myDeclarations') || 'Mes déclarations'}</h2>
+              <div className={`${isMobile ? 'max-w-[430px] mx-auto w-full p-2 pt-1' : 'w-full p-2'}`}>
+                <div className="w-full p-2">
+                  <h2 className={`text-2xl font-bold text-foreground ${isMobile ? 'mb-0' : 'mb-4'}`}>{t('declarations.myDeclarations') || 'Mes déclarations'}</h2>
                 </div>
                 <SearchAndFilter
                   searchValue={searchTerm}
@@ -1878,8 +1878,10 @@ const ChauffeurDashboard: React.FC = () => {
               </div>
             )}
             {activeTab === 'tracage' && (
-              <div className={isMobile ? 'max-w-[430px] mx-auto w-full p-4' : 'w-full p-2'}>
-                <h2 className={`text-2xl md:text-3xl font-bold text-primary ${isMobile ? 'mb-2' : 'mb-4'}`}>{t('tabs.tracage') || 'Traçage'}</h2>
+              <div className={isMobile ? 'max-w-[430px] mx-auto w-full p-2 pt-1' : 'w-full p-2'}>
+                <div className="w-full p-2">
+                  <h2 className={`text-2xl font-bold text-foreground ${isMobile ? 'mb-0' : 'mb-4'}`}>{t('tabs.tracage') || 'Traçage'}</h2>
+                </div>
                 <TracageSection 
                   gpsActive={gpsActive}
                   setGpsActive={setGpsActive}

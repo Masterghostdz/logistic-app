@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { useTranslation } from '../../hooks/useTranslation';
 import { Warehouse } from "../../types";
 import { Eye, Pencil, Trash2 } from "lucide-react";
@@ -8,6 +8,7 @@ import { Badge } from "../ui/badge";
 import { Card, CardContent } from "../ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "../ui/dialog";
+import PaginationControls from '../ui/PaginationControls';
 import useTableZoom from '../../hooks/useTableZoom';
 
 interface WarehouseTableProps {
@@ -37,10 +38,26 @@ const WarehouseTable: React.FC<WarehouseTableProps> = ({ warehouses, onCreate, o
   // Le parent gère la recherche et le filtre, ici on affiche tout
   const filtered = warehouses;
 
+  // Pagination local (client-side). Parent can switch to server-side if needed.
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(20);
+
+  const pageRows = useMemo(() => {
+    const start = (page - 1) * perPage;
+    const end = start + perPage;
+    return (filtered || []).slice(start, end);
+  }, [filtered, page, perPage]);
+
+  useEffect(() => {
+    const totalPages = Math.max(1, Math.ceil((filtered?.length || 0) / perPage));
+    if (page > totalPages) setPage(totalPages);
+    if (page < 1) setPage(1);
+  }, [filtered, perPage]);
+
   // iconSize and spacing provided by useTableZoom
   return (
     <>
-      <div className="flex items-center justify-end mb-2">
+      <div className="flex items-center justify-end mb-2 gap-4">
         {/* Sélecteur de zoom */}
         <div className="flex items-center">
           <label className="mr-2 text-xs text-muted-foreground">Zoom :</label>
@@ -57,6 +74,15 @@ const WarehouseTable: React.FC<WarehouseTableProps> = ({ warehouses, onCreate, o
             <option value="60">60%</option>
           </select>
         </div>
+
+        {/* Pagination controls (client-side) */}
+        <PaginationControls
+          page={page}
+          perPage={perPage}
+          onPageChange={p => setPage(p)}
+          onPerPageChange={pp => { setPerPage(pp); setPage(1); }}
+          totalItems={filtered.length}
+        />
       </div>
       <div className="overflow-x-auto">
         <Table>
@@ -76,7 +102,7 @@ const WarehouseTable: React.FC<WarehouseTableProps> = ({ warehouses, onCreate, o
                 <TableCell colSpan={6} className="text-muted-foreground text-center py-4">Aucun entrepôt trouvé.</TableCell>
               </TableRow>
             ) : (
-              filtered.map(wh => (
+              pageRows.map(wh => (
                 <TableRow key={wh.id} className={rowHeight} style={fontSizeStyle}>
                   <TableCell className={`font-medium cursor-pointer hover:underline ${getMinWidthForChars(12)} ${cellPaddingClass} whitespace-nowrap`} style={fontSizeStyle} onClick={() => onConsult(wh)}>
                     {wh.name}
@@ -93,13 +119,13 @@ const WarehouseTable: React.FC<WarehouseTableProps> = ({ warehouses, onCreate, o
                   </TableCell>
                   <TableCell className={`${cellPaddingClass} whitespace-nowrap`} style={fontSizeStyle}>
                     <div className="flex gap-1" style={fontSizeStyle}>
-                      <Button size="sm" variant="outline" className={`flex items-center justify-center rounded-md border border-border`} style={{ width: computedRowPx, height: computedRowPx }} onClick={() => onConsult(wh)} title="Consulter">
+                      <Button size="sm" variant="ghost" className={`flex items-center justify-center rounded-md`} style={{ width: computedRowPx, height: computedRowPx }} onClick={() => onConsult(wh)} title="Consulter">
                         <Eye style={{ width: computedIconPx, height: computedIconPx }} />
                       </Button>
-                      <Button size="sm" variant="outline" className={`flex items-center justify-center rounded-md border border-border`} style={{ width: computedRowPx, height: computedRowPx }} onClick={() => onEdit(wh)} title={t('forms.edit') || 'Modifier'}>
+                      <Button size="sm" variant="ghost" className={`flex items-center justify-center rounded-md`} style={{ width: computedRowPx, height: computedRowPx }} onClick={() => onEdit(wh)} title={t('forms.edit') || 'Modifier'}>
                         <Pencil style={{ width: computedIconPx, height: computedIconPx }} />
                       </Button>
-                      <Button size="sm" variant="outline" className={`flex items-center justify-center rounded-md border border-border text-red-600 hover:text-red-700`} style={{ width: computedRowPx, height: computedRowPx }} onClick={() => onDelete(wh)} title="Supprimer">
+                      <Button size="sm" variant="ghost" className={`flex items-center justify-center rounded-md text-red-600 hover:text-red-700`} style={{ width: computedRowPx, height: computedRowPx }} onClick={() => onDelete(wh)} title="Supprimer">
                         <Trash2 style={{ width: computedIconPx, height: computedIconPx }} />
                       </Button>
                     </div>

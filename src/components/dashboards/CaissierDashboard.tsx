@@ -267,6 +267,7 @@ const CaissierDashboard = () => {
         {!isMobile && (
           <div className={`absolute top-0 ${settings.language === 'ar' ? 'left-0' : 'right-0'} m-2 z-10`}>
             <Badge size="md" style={{ ...badgeStyle, ...onlineBadgeInline }} className={`${badgeClass} items-center gap-2 font-semibold ${onlineBadgeClass} shadow`} title={isOnline ? t('dashboard.online') : t('dashboard.offline')}>
+              <span className="inline-block w-2 h-2 rounded-full bg-green-500"></span>
               {isOnline ? t('dashboard.online') : t('dashboard.offline')}
             </Badge>
           </div>

@@ -48,9 +48,8 @@ const TraceabilitySection: React.FC<TraceabilitySectionProps> = ({ traces = [], 
         </div>
       ) : (
         <div className="text-xs text-muted-foreground mt-2">
-          {ordered.length > 0 ? ordered.slice(-1).map((tr, i) => (
-            <div key={i} className="truncate">{tr.action} — {tr.userName || tr.userId || '—'} {tr.date ? `(${new Date(tr.date).toLocaleDateString()})` : ''}</div>
-          )) : (
+          {/* When collapsed we only show the label and the count (shown in the top-right). Do not show the last trace line unless expanded. */}
+          {ordered.length === 0 && (
             <div>{emptyText || t('traceability.none') || 'Aucune trace'}</div>
           )}
         </div>

@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useSharedData } from '../../contexts/SharedDataContext';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { Edit, Trash2 } from 'lucide-react';
+import PaginationControls from '../ui/PaginationControls';
 import { Chauffeur } from '../../types';
 import PasswordField from '../PasswordField';
 import { useTranslation } from '../../hooks/useTranslation';
@@ -30,6 +31,20 @@ interface ChauffeursTableProps {
 
 const ChauffeursTable = ({ chauffeurs, onEditChauffeur, onDeleteChauffeur, fontSize = '80', showPosition = true }: ChauffeursTableProps) => {
   const { localFontSize, setLocalFontSize, fontSizeStyle, rowHeight, iconSize, cellPaddingClass, badgeClass, badgeStyle, getMinWidthForChars, computedRowPx, computedIconPx } = useTableZoom(fontSize as any);
+  const [page, setPage] = React.useState(1);
+  const [perPage, setPerPage] = React.useState(20);
+
+  const pageRows = useMemo(() => {
+    const start = (page - 1) * perPage;
+    const end = start + perPage;
+    return (chauffeurs || []).slice(start, end);
+  }, [chauffeurs, page, perPage]);
+
+  React.useEffect(() => {
+    const totalPages = Math.max(1, Math.ceil((chauffeurs?.length || 0) / perPage));
+    if (page > totalPages) setPage(totalPages);
+    if (page < 1) setPage(1);
+  }, [chauffeurs, perPage]);
   const { vehicleTypes } = useSharedData();
   const { t, settings } = useTranslation();
   return (
@@ -50,6 +65,9 @@ const ChauffeursTable = ({ chauffeurs, onEditChauffeur, onDeleteChauffeur, fontS
             <option value="70">70%</option>
             <option value="60">60%</option>
           </select>
+          <div className="ml-3">
+            <PaginationControls page={page} perPage={perPage} onPageChange={setPage} onPerPageChange={(n) => { setPerPage(n); setPage(1); }} totalItems={chauffeurs.length} />
+          </div>
         </div>
         <Table data-rtl={settings.language === 'ar'}>
           <TableHeader dir={settings.language === 'ar' ? 'rtl' : 'ltr'} data-rtl={settings.language === 'ar'}>
@@ -70,7 +88,7 @@ const ChauffeursTable = ({ chauffeurs, onEditChauffeur, onDeleteChauffeur, fontS
             </TableRow>
           </TableHeader>
           <TableBody dir={settings.language === 'ar' ? 'rtl' : 'ltr'} data-rtl={settings.language === 'ar'}>
-            {chauffeurs.map((chauffeur) => {
+            {pageRows.map((chauffeur) => {
               // Statut métier uniquement (exemple : En Panne, Actif, Inactif)
               const statutEnPanne = t('chauffeurs.enPanne') || 'En Panne';
               const statutActif = t('chauffeurs.active') || 'Actif';
@@ -183,8 +201,8 @@ const ChauffeursTable = ({ chauffeurs, onEditChauffeur, onDeleteChauffeur, fontS
                     <div className="flex gap-1" style={fontSizeStyle}>
                       <Button
                         size="sm"
-                        variant="outline"
-                        className={`flex items-center justify-center rounded-md border border-border`}
+                        variant="ghost"
+                        className={`flex items-center justify-center rounded-md`}
                         style={{ width: computedRowPx, height: computedRowPx }}
                         onClick={() => onEditChauffeur(chauffeur)}
                         title={t('forms.edit')}
@@ -193,8 +211,8 @@ const ChauffeursTable = ({ chauffeurs, onEditChauffeur, onDeleteChauffeur, fontS
                       </Button>
                       <Button
                         size="sm"
-                        variant="outline"
-                        className={`flex items-center justify-center rounded-md border border-border text-red-600 hover:text-red-700`}
+                        variant="ghost"
+                        className={`flex items-center justify-center rounded-md text-red-600 hover:text-red-700`}
                         style={{ width: computedRowPx, height: computedRowPx }}
                         onClick={() => onDeleteChauffeur(chauffeur.id)}
                         title={t('forms.delete')}

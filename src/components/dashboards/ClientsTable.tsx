@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { Edit, Trash2, ZoomIn, MapPin, Check } from 'lucide-react';
+import PaginationControls from '../ui/PaginationControls';
 import { useTranslation } from '../../hooks/useTranslation';
 import { Client } from '../../types/client';
 import useTableZoom from '../../hooks/useTableZoom';
@@ -22,11 +23,25 @@ const ClientsTable = ({ clients, onEditClient, onConsultClient, onDeleteClient, 
   const { t } = useTranslation();
   // Use the table zoom hook directly so the selector controls the shared zoom helpers
   const { localFontSize, setLocalFontSize, fontSizeStyle, rowHeight, iconSize, badgeClass, badgeStyle, cellPaddingClass, getMinWidthForChars, computedRowPx, computedIconPx } = useTableZoom(fontSize as any);
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(20);
+  // compute current page rows
+  const pageRows = useMemo(() => {
+    const start = (page - 1) * perPage;
+    const end = start + perPage;
+    return (clients || []).slice(start, end);
+  }, [clients, page, perPage]);
+
+  useEffect(() => {
+    const totalPages = Math.max(1, Math.ceil((clients?.length || 0) / perPage));
+    if (page > totalPages) setPage(totalPages);
+    if (page < 1) setPage(1);
+  }, [clients, perPage]);
   return (
     <Card>
       <CardContent className="p-0">
         {/* Sélecteur de zoom */}
-        <div className="flex items-center justify-end mb-2">
+  <div className="flex items-center justify-end mb-2">
           <label className="mr-2 text-xs text-muted-foreground">Zoom :</label>
           <select
             value={localFontSize}
@@ -40,6 +55,9 @@ const ClientsTable = ({ clients, onEditClient, onConsultClient, onDeleteClient, 
             <option value="70">70%</option>
             <option value="60">60%</option>
           </select>
+          <div className="ml-3">
+            <PaginationControls page={page} perPage={perPage} onPageChange={setPage} onPerPageChange={(n) => { setPerPage(n); setPage(1); }} totalItems={clients.length} />
+          </div>
         </div>
         <Table>
           <TableHeader>
@@ -52,7 +70,7 @@ const ClientsTable = ({ clients, onEditClient, onConsultClient, onDeleteClient, 
             </TableRow>
           </TableHeader>
           <TableBody>
-            {clients.map((client) => (
+            {pageRows.map((client) => (
               <TableRow key={client.id} className={rowHeight} style={fontSizeStyle}>
                 <TableCell className={`font-medium ${cellPaddingClass}`} style={fontSizeStyle}>
                   <button

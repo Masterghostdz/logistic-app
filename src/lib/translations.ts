@@ -302,6 +302,7 @@ export const translations = {
       title: "My Profile",
       personalInfo: "Personal Information",
       contactAndVehicle: "Contact & Vehicle",
+      professionalInfo: "Professional Information",
       notProvided: "Not provided",
       userNotFound: "User not found",
       securityTitle: "Security",
@@ -349,6 +350,7 @@ export const translations = {
       title: "الملف الشخصي",
       personalInfo: "المعلومات الشخصية",
       contactAndVehicle: "جهات الاتصال والمركبة",
+      professionalInfo: "المعلومات المهنية",
       notProvided: "غير متوفر",
       userNotFound: "المستخدم غير موجود",
       securityTitle: "الأمان",
@@ -595,6 +597,7 @@ export const translations = {
       title: "Mon Profil",
       personalInfo: "Informations personnelles",
       contactAndVehicle: "Contact & Véhicule",
+      professionalInfo: "Information Professionnelle",
       notProvided: "Non renseigné",
       userNotFound: "Utilisateur non trouvé"
       ,

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useSharedData } from '../contexts/SharedDataContext';
 import { Declaration } from '../types';
 import EditDeclarationDialog from './EditDeclarationDialog';
@@ -35,18 +35,68 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle, showMenuButton = false, o
   const [notifState, setNotifState] = useState<any[]>([]);
   const { user, logout } = useAuth();
   useEffect(() => {
-    async function fetchNotifications() {
-      if (user?.role === 'planificateur') {
-        const { getNotificationsForPlanificateur } = await import('../services/notificationService');
-        const notifs = await getNotificationsForPlanificateur(user.id);
-        setNotifState(notifs);
-      } else if (user?.role === 'chauffeur') {
-        const { getNotificationsForChauffeur } = await import('../services/notificationService');
-        const notifs = await getNotificationsForChauffeur(user.id);
-        setNotifState(notifs);
+    // Real-time listener for notifications. For planificateur we listen to recipientRole==planificateur,
+    // for chauffeur we listen to chauffeurId==currentUserId. We order by createdAt desc when available.
+    if (!user?.id) return;
+    let unsubscribe: (() => void) | undefined;
+
+    (async () => {
+      try {
+        const { db } = await import('../services/firebaseClient');
+        const { collection, query, where, onSnapshot, orderBy } = await import('firebase/firestore');
+        const coll = collection(db, 'notifications');
+        let q;
+        if (user.role === 'planificateur') {
+          try { q = query(coll, where('recipientRole', '==', 'planificateur'), orderBy('createdAt', 'desc')); } catch (e) { q = query(coll, where('recipientRole', '==', 'planificateur')); }
+        } else if (user.role === 'chauffeur') {
+          try { q = query(coll, where('chauffeurId', '==', user.id), orderBy('createdAt', 'desc')); } catch (e) { q = query(coll, where('chauffeurId', '==', user.id)); }
+        } else {
+          // other roles do not have notifications dropdown
+          return;
+        }
+
+        unsubscribe = onSnapshot(q, (snap) => {
+          const notifs = snap.docs.map(d => ({ id: d.id, ...(d.data() as any) }));
+          setNotifState(notifs);
+        }, (err) => {
+          console.warn('Notifications realtime listener error', err);
+          // fallback to one-shot fetch if snapshot fails
+          (async () => {
+            try {
+              if (user.role === 'planificateur') {
+                const { getNotificationsForPlanificateur } = await import('../services/notificationService');
+                const notifs = await getNotificationsForPlanificateur(user.id);
+                setNotifState(notifs);
+              } else if (user.role === 'chauffeur') {
+                const { getNotificationsForChauffeur } = await import('../services/notificationService');
+                const notifs = await getNotificationsForChauffeur(user.id);
+                setNotifState(notifs);
+              }
+            } catch (e) {
+              console.warn('Fallback one-shot notifications fetch failed', e);
+            }
+          })();
+        });
+      } catch (e) {
+        console.warn('Failed to initialize notifications listener', e);
+        // fallback one-shot fetch
+        try {
+          if (user.role === 'planificateur') {
+            const { getNotificationsForPlanificateur } = await import('../services/notificationService');
+            const notifs = await getNotificationsForPlanificateur(user.id);
+            setNotifState(notifs);
+          } else if (user.role === 'chauffeur') {
+            const { getNotificationsForChauffeur } = await import('../services/notificationService');
+            const notifs = await getNotificationsForChauffeur(user.id);
+            setNotifState(notifs);
+          }
+        } catch (err) {
+          console.warn('Fallback one-shot notifications fetch failed', err);
+        }
       }
-    }
-    if (user?.id) fetchNotifications();
+    })();
+
+    return () => { if (unsubscribe) unsubscribe(); };
   }, [user?.id, user?.role]);
 
   const handleNotifClick = async (id: string) => {
@@ -69,9 +119,67 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle, showMenuButton = false, o
   // Un seul état pour gérer l'ouverture des deux menus glissants
   // 'none' | 'notifications' | 'avatar'
   const [openMenu, setOpenMenu] = useState<'none' | 'notifications' | 'avatar'>('none');
+  // When user opens the notifications menu we hide the small bell indicator
+  // immediately (so the bell no longer shows the unread count). The
+  // per-item unread markers inside the dropdown remain unchanged.
+  const [hideBellIndicator, setHideBellIndicator] = useState(false);
+  const prevUnreadRef = useRef<number>(0);
   const { t } = useTranslation();
   const [showSettings, setShowSettings] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
+
+  // Precompute rendered notifications to avoid showing an empty dropdown
+  // when `notifState` contains items that are filtered-out for the current role
+  const renderedNotifications = useMemo(() => {
+    if (!Array.isArray(notifState) || notifState.length === 0) return [];
+    return notifState.map((notif) => {
+      let declaration: any = null;
+      let message: any = notif.message;
+
+      if (notif.declarationId) {
+        declaration = declarations.find((d: any) => d.id === notif.declarationId) || null;
+      }
+
+      if (!declaration && notif.programParts) {
+        const pp = notif.programParts as any;
+        declaration = declarations.find((d: any) => {
+          const yearMatch = String(d.year).endsWith(String(pp.year)) || String(d.year) === String(pp.year);
+          const monthMatch = String(d.month) === String(pp.month);
+          const numMatch = String(d.programNumber) === String(pp.number) || String(d.number) === String(pp.number);
+          return yearMatch && monthMatch && numMatch;
+        }) || null;
+      }
+
+      if (!declaration && typeof notif.message === 'string') {
+        const refMatch = notif.message.match(/DCP\/(\d{2,4})\/(\d{1,2})\/(\d+)/);
+        if (refMatch) {
+          const [, y, m, n] = refMatch;
+          declaration = declarations.find((d: any) => {
+            const yearMatch = String(d.year).endsWith(String(y)) || String(d.year) === String(y);
+            const monthMatch = String(d.month) === String(m);
+            const numMatch = String(d.programNumber) === String(n) || String(d.number) === String(n);
+            return yearMatch && monthMatch && numMatch;
+          }) || null;
+        }
+      }
+
+      if (user?.role === 'planificateur') {
+        // For planificateur we want to show the same notification history as chauffeurs.
+        // Do not filter-out items that cannot be resolved to an 'en_panne' declaration.
+        // Preserve the original `notif.message` when present; if message is missing
+        // but we resolved a declaration, construct a friendly fallback message.
+        if ((!message || String(message).trim() === '') && declaration) {
+          const chauffeurName = declaration.chauffeurName || 'Inconnu';
+          const refProgramme = declaration.programNumber && declaration.year && declaration.month
+            ? `DCP/${declaration.year}/${declaration.month}/${declaration.programNumber}`
+            : '';
+          message = `Chauffeur "${chauffeurName}" a tombé en panne${refProgramme ? ` dans le programme "${refProgramme}"` : ''}`;
+        }
+      }
+
+      return { notif, declaration, message } as any;
+    }).filter(x => x !== null);
+  }, [notifState, declarations, user?.role]);
 
 
 
@@ -174,7 +282,16 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle, showMenuButton = false, o
                   </Badge>
             {/* Notification Circle Button & Dropdown for Chauffeur & Planificateur */}
             {(user?.role === 'chauffeur' || user?.role === 'planificateur') && (
-              <DropdownMenu open={openMenu === 'notifications'} onOpenChange={open => setOpenMenu(open ? 'notifications' : 'none')}>
+              <DropdownMenu
+                open={openMenu === 'notifications'}
+                onOpenChange={open => {
+                  setOpenMenu(open ? 'notifications' : 'none');
+                  if (open) {
+                    // hide the small indicator on the bell immediately when opening
+                    setHideBellIndicator(true);
+                  }
+                }}
+              >
                 <DropdownMenuTrigger asChild>
                   <button
                     className={`relative ${settings.viewMode === 'mobile' ? 'h-7 w-7' : 'h-8 w-8'} rounded-full flex items-center justify-center border border-white-600 hover:bg-white-50 transition`}
@@ -182,63 +299,22 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle, showMenuButton = false, o
                     style={{ marginRight: 0 }}
                   >
                     <span className="material-icons text-white-600 text-lg">notifications</span>
-                    {notifState.filter(n => !n.read).length > 0 && (
-                      <span className="absolute -top-1 -right-1 bg-orange-500 animate-pulse text-white text-xs rounded-full px-1.5 py-0.5 font-bold">
-                        {notifState.filter(n => !n.read).length}
-                      </span>
-                    )}
+                    {(() => {
+                      const unreadCount = Array.isArray(notifState) ? notifState.filter(n => !n.read).length : 0;
+                      // Show the bell indicator only when there are unread items and
+                      // the indicator hasn't been hidden by opening the menu.
+                      return (unreadCount > 0 && !hideBellIndicator) ? (
+                        <span className="absolute -top-1 -right-1 bg-orange-500 animate-pulse text-white text-xs rounded-full px-1.5 py-0.5 font-bold">
+                          {unreadCount}
+                        </span>
+                      ) : null;
+                    })()}
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-56 bg-popover border-border" align="end" forceMount>
                   <div className="max-h-80 overflow-y-auto">
-                    {notifState.length > 0 ? notifState.map((notif) => {
-                      // Resolve the declaration for this notification in a robust way:
-                      // 1) prefer direct declarationId matching
-                      // 2) fall back to programParts (enriched at creation time)
-                      // 3) as last resort try to parse a DCP/... ref in the message (best-effort)
-                      let declaration: any = null;
-                      let message: any = notif.message;
-
-                      if (notif.declarationId) {
-                        declaration = declarations.find((d: any) => d.id === notif.declarationId) || null;
-                      }
-
-                      if (!declaration && notif.programParts) {
-                        const pp = notif.programParts;
-                        declaration = declarations.find((d: any) => {
-                          const yearMatch = String(d.year).endsWith(String(pp.year)) || String(d.year) === String(pp.year);
-                          const monthMatch = String(d.month) === String(pp.month);
-                          const numMatch = String(d.programNumber) === String(pp.number) || String(d.number) === String(pp.number);
-                          return yearMatch && monthMatch && numMatch;
-                        }) || null;
-                      }
-
-                      if (!declaration && typeof notif.message === 'string') {
-                        // Try to extract a program ref like DCP/2025/07/1234 or DCP/25/07/1234
-                        const refMatch = notif.message.match(/DCP\/(\d{2,4})\/(\d{1,2})\/(\d+)/);
-                        if (refMatch) {
-                          const [, y, m, n] = refMatch;
-                          declaration = declarations.find((d: any) => {
-                            const yearMatch = String(d.year).endsWith(String(y)) || String(d.year) === String(y);
-                            const monthMatch = String(d.month) === String(m);
-                            const numMatch = String(d.programNumber) === String(n) || String(d.number) === String(n);
-                            return yearMatch && monthMatch && numMatch;
-                          }) || null;
-                        }
-                      }
-
-                      // For planificateur: only show notifications that relate to an en_panne declaration
-                      if (user?.role === 'planificateur') {
-                        if (!declaration || declaration.status !== 'en_panne') return null;
-                        const chauffeurName = declaration.chauffeurName || 'Inconnu';
-                        const refProgramme = declaration.programNumber && declaration.year && declaration.month
-                          ? `DCP/${declaration.year}/${declaration.month}/${declaration.programNumber}`
-                          : '';
-                        message = `Chauffeur "${chauffeurName}" a tombé en panne dans le programme "${refProgramme}"`;
-                      }
-
-                      // Do not force a fallback to declarations[0] — if we couldn't resolve the declaration
-                      // we still render the notification message, but clicking won't open the declaration.
+                    {renderedNotifications.length > 0 ? renderedNotifications.map((item: any) => {
+                      const { notif, declaration, message } = item;
                       return (
                         <div
                           key={notif.id}

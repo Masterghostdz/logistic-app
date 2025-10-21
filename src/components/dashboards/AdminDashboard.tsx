@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui
 import { Button } from '../ui/button';
 import { Badge, onlineBadgeClass, onlineBadgeInline } from '../ui/badge';
 import useTableZoom from '../../hooks/useTableZoom';
+import PaginationControls from '../ui/PaginationControls';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
@@ -464,6 +465,45 @@ const AdminDashboard = () => {
 
   const { badgeClass, badgeStyle } = useTableZoom();
 
+  // Pagination state for the inline tables in this dashboard (client-side)
+  const [userPage, setUserPage] = useState(1);
+  const [userPerPage, setUserPerPage] = useState(20);
+  const [companyPage, setCompanyPage] = useState(1);
+  const [companyPerPage, setCompanyPerPage] = useState(20);
+  const [vehicleTypePage, setVehicleTypePage] = useState(1);
+  const [vehicleTypePerPage, setVehicleTypePerPage] = useState(20);
+
+  // page rows for inline admin tables
+  const userPageRows = React.useMemo(() => {
+    const start = (userPage - 1) * userPerPage;
+    return (users || []).slice(start, start + userPerPage);
+  }, [users, userPage, userPerPage]);
+  React.useEffect(() => {
+    const total = Math.max(1, Math.ceil((users?.length || 0) / userPerPage));
+    if (userPage > total) setUserPage(total);
+    if (userPage < 1) setUserPage(1);
+  }, [users, userPerPage]);
+
+  const companyPageRows = React.useMemo(() => {
+    const start = (companyPage - 1) * companyPerPage;
+    return (companies || []).slice(start, start + companyPerPage);
+  }, [companies, companyPage, companyPerPage]);
+  React.useEffect(() => {
+    const total = Math.max(1, Math.ceil((companies?.length || 0) / companyPerPage));
+    if (companyPage > total) setCompanyPage(total);
+    if (companyPage < 1) setCompanyPage(1);
+  }, [companies, companyPerPage]);
+
+  const vehicleTypePageRows = React.useMemo(() => {
+    const start = (vehicleTypePage - 1) * vehicleTypePerPage;
+    return (vehicleTypes || []).slice(start, start + vehicleTypePerPage);
+  }, [vehicleTypes, vehicleTypePage, vehicleTypePerPage]);
+  React.useEffect(() => {
+    const total = Math.max(1, Math.ceil((vehicleTypes?.length || 0) / vehicleTypePerPage));
+    if (vehicleTypePage > total) setVehicleTypePage(total);
+    if (vehicleTypePage < 1) setVehicleTypePage(1);
+  }, [vehicleTypes, vehicleTypePerPage]);
+
   const getRoleBadge = (role: string) => {
     // Harmonisation avec Header : couleurs et border identiques
     const roleColors = {
@@ -694,11 +734,11 @@ const AdminDashboard = () => {
                             <SelectTrigger>
                               <SelectValue placeholder={t('companies.select') || 'Sélectionner une société'} />
                             </SelectTrigger>
-                            <SelectContent>
-                              {companies.map(c => (
-                                <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                              ))}
-                            </SelectContent>
+                                  <SelectContent>
+                                    {companies.map(c => (
+                                      <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                                    ))}
+                                  </SelectContent>
                           </Select>
                         </div>
                       )}
@@ -782,20 +822,24 @@ const AdminDashboard = () => {
               <Card>
                 <CardContent className="p-0">
                   {/* Sélecteur de zoom pour utilisateurs */}
-                  <div className="flex items-center justify-end mb-2">
-                    <label className="mr-2 text-xs text-muted-foreground">Zoom :</label>
-                    <select
-                      value={userTableFontSize}
-                      onChange={e => handleUserTableZoom(e.target.value)}
-                      className="border rounded px-2 py-1 text-xs bg-background"
-                      title="Zoom sur la taille d'écriture du tableau"
-                    >
-                      <option value="100">100%</option>
-                      <option value="90">90%</option>
-                      <option value="80">80%</option>
-                      <option value="70">70%</option>
-                      <option value="60">60%</option>
-                    </select>
+                  <div className="flex items-center justify-end mb-2 gap-4">
+                    <div className="flex items-center">
+                      <label className="mr-2 text-xs text-muted-foreground">Zoom :</label>
+                      <select
+                        value={userTableFontSize}
+                        onChange={e => handleUserTableZoom(e.target.value)}
+                        className="border rounded px-2 py-1 text-xs bg-background"
+                        title="Zoom sur la taille d'écriture du tableau"
+                      >
+                        <option value="100">100%</option>
+                        <option value="90">90%</option>
+                        <option value="80">80%</option>
+                        <option value="70">70%</option>
+                        <option value="60">60%</option>
+                      </select>
+                    </div>
+
+                    <PaginationControls page={userPage} perPage={userPerPage} onPageChange={setUserPage} onPerPageChange={(n) => { setUserPerPage(n); setUserPage(1); }} totalItems={users.length} />
                   </div>
                   <div className="w-full overflow-x-auto">
                     <Table>
@@ -812,7 +856,7 @@ const AdminDashboard = () => {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {users.map((user) => (
+                          {userPageRows.map((user) => (
                             <TableRow key={user.id} className={userRowHeight}>
                               <TableCell className="font-medium" style={userFontSizeStyle}>{user.fullName}</TableCell>
                               <TableCell style={userFontSizeStyle}>{user.username}</TableCell>
@@ -1073,20 +1117,24 @@ const AdminDashboard = () => {
                 </CardHeader>
                 <CardContent className="p-0">
                   {/* Sélecteur de zoom pour sociétés */}
-                  <div className="flex items-center justify-end mb-2">
-                    <label className="mr-2 text-xs text-muted-foreground">Zoom :</label>
-                    <select
-                      value={companyTableFontSize}
-                      onChange={e => handleCompanyTableZoom(e.target.value)}
-                      className="border rounded px-2 py-1 text-xs bg-background"
-                      title="Zoom sur la taille d'écriture du tableau"
-                    >
-                      <option value="100">100%</option>
-                      <option value="90">90%</option>
-                      <option value="80">80%</option>
-                      <option value="70">70%</option>
-                      <option value="60">60%</option>
-                    </select>
+                  <div className="flex items-center justify-end mb-2 gap-4">
+                    <div className="flex items-center">
+                      <label className="mr-2 text-xs text-muted-foreground">Zoom :</label>
+                      <select
+                        value={companyTableFontSize}
+                        onChange={e => handleCompanyTableZoom(e.target.value)}
+                        className="border rounded px-2 py-1 text-xs bg-background"
+                        title="Zoom sur la taille d'écriture du tableau"
+                      >
+                        <option value="100">100%</option>
+                        <option value="90">90%</option>
+                        <option value="80">80%</option>
+                        <option value="70">70%</option>
+                        <option value="60">60%</option>
+                      </select>
+                    </div>
+
+                    <PaginationControls page={companyPage} perPage={companyPerPage} onPageChange={setCompanyPage} onPerPageChange={(n) => { setCompanyPerPage(n); setCompanyPage(1); }} totalItems={companies.length} />
                   </div>
                   <div className="w-full overflow-x-auto">
                     <Table>
@@ -1100,7 +1148,7 @@ const AdminDashboard = () => {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {companies.map((company) => (
+                        {companyPageRows.map((company) => (
                           <TableRow key={company.id} className={userRowHeight}>
                             <TableCell className="font-medium" style={userFontSizeStyle}>{company.name}</TableCell>
                             <TableCell style={userFontSizeStyle}>{company.address || '-'}</TableCell>
@@ -1118,7 +1166,7 @@ const AdminDashboard = () => {
                               <div className="flex gap-2">
                                 <Button 
                                   size="sm" 
-                                  variant="outline"
+                                  variant="ghost"
                                   style={userFontSizeStyle}
                                   onClick={() => handleEditCompany(company)}
                                 >
@@ -1126,7 +1174,7 @@ const AdminDashboard = () => {
                                 </Button>
                                 <Button 
                                   size="sm" 
-                                  variant="outline"
+                                  variant="ghost"
                                   style={userFontSizeStyle}
                                   onClick={() => handleDeleteCompany(company.id)}
                                 >
@@ -1205,20 +1253,24 @@ const AdminDashboard = () => {
                 </CardHeader>
                 <CardContent className="p-0">
                   {/* Sélecteur de zoom pour types de véhicules */}
-                  <div className="flex items-center justify-end mb-2">
-                    <label className="mr-2 text-xs text-muted-foreground">Zoom :</label>
-                    <select
-                      value={vehicleTypeTableFontSize}
-                      onChange={e => handleVehicleTypeTableZoom(e.target.value)}
-                      className="border rounded px-2 py-1 text-xs bg-background"
-                      title="Zoom sur la taille d'écriture du tableau"
-                    >
-                      <option value="100">100%</option>
-                      <option value="90">90%</option>
-                      <option value="80">80%</option>
-                      <option value="70">70%</option>
-                      <option value="60">60%</option>
-                    </select>
+                  <div className="flex items-center justify-end mb-2 gap-4">
+                    <div className="flex items-center">
+                      <label className="mr-2 text-xs text-muted-foreground">Zoom :</label>
+                      <select
+                        value={vehicleTypeTableFontSize}
+                        onChange={e => handleVehicleTypeTableZoom(e.target.value)}
+                        className="border rounded px-2 py-1 text-xs bg-background"
+                        title="Zoom sur la taille d'écriture du tableau"
+                      >
+                        <option value="100">100%</option>
+                        <option value="90">90%</option>
+                        <option value="80">80%</option>
+                        <option value="70">70%</option>
+                        <option value="60">60%</option>
+                      </select>
+                    </div>
+
+                    <PaginationControls page={vehicleTypePage} perPage={vehicleTypePerPage} onPageChange={setVehicleTypePage} onPerPageChange={(n) => { setVehicleTypePerPage(n); setVehicleTypePage(1); }} totalItems={vehicleTypes.length} />
                   </div>
                   <div className="w-full overflow-x-auto">
                     <Table>
@@ -1230,7 +1282,7 @@ const AdminDashboard = () => {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {vehicleTypes.map((vehicleType) => (
+                        {vehicleTypePageRows.map((vehicleType) => (
                           <TableRow key={vehicleType.id} className={vehicleTypeRowHeight} style={vehicleTypeFontSizeStyle}>
                             <TableCell className="font-medium">{vehicleType.name}</TableCell>
                             <TableCell>{vehicleType.primeKilometrique != null ? vehicleType.primeKilometrique.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'}</TableCell>
@@ -1238,7 +1290,7 @@ const AdminDashboard = () => {
                               <div className="flex gap-2">
                                 <Button 
                                   size="sm" 
-                                  variant="outline"
+                                  variant="ghost"
                                   style={vehicleTypeFontSizeStyle}
                                   onClick={() => handleEditVehicleType(vehicleType)}
                                   className="p-0"
@@ -1247,7 +1299,7 @@ const AdminDashboard = () => {
                                 </Button>
                                 <Button 
                                   size="sm" 
-                                  variant="outline"
+                                  variant="ghost"
                                   style={vehicleTypeFontSizeStyle}
                                   onClick={() => handleDeleteVehicleType(vehicleType.id)}
                                   className="p-0"

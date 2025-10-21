@@ -5,6 +5,7 @@ import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { Check, X, Edit, Trash2 } from 'lucide-react';
+import PaginationControls from '../ui/PaginationControls';
 import { Declaration, PaymentReceipt } from '../../types';
 import CopyButton from '../CopyButton';
 import useTableZoom, { FontSizeKey } from '../../hooks/useTableZoom';
@@ -78,6 +79,23 @@ const DeclarationsTable = ({
     computedRowPx,
     computedIconPx
   } = useTableZoom(fontSize as any);
+
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(20);
+
+  // Ensure page stays within valid range when declarations or perPage change
+  useEffect(() => {
+    const totalPages = Math.max(1, Math.ceil((declarations?.length || 0) / perPage));
+    if (page > totalPages) setPage(totalPages);
+    if (page < 1) setPage(1);
+  }, [declarations, perPage]);
+
+  // Compute the rows for the current page (client-side pagination)
+  const pageRows = useMemo(() => {
+    const start = (page - 1) * perPage;
+    const end = start + perPage;
+    return (declarations || []).slice(start, end);
+  }, [declarations, page, perPage]);
 
   const { t, settings } = useTranslation();
   const auth = useAuth();
@@ -214,7 +232,7 @@ const DeclarationsTable = ({
 
   // sensible default widths (px) per column key
   const defaultColumnWidths: Record<string, number> = {
-    number: 120,
+    number: 180,
     chauffeur: 160,
     distance: 90,
     deliveryFees: 120,
@@ -229,17 +247,47 @@ const DeclarationsTable = ({
     actions: Math.max(90, Math.round(4 * 24 * zoomGlobal))
   };
 
-  // Initialize column widths when availableColumns change (desktop only)
+  // NOTE: we intentionally do NOT pre-populate `columnWidths` here. The
+  // balanced initial sizing (container-based) is computed in the effect
+  // below. Pre-populating early would make the balanced computation a no-op
+  // (because it avoids overriding existing widths) and prevent a true
+  // balanced layout. This matches the behaviour used in
+  // `PaymentReceiptsTable.tsx`.
+
+  // Container ref for balanced initial width calculation (desktop only)
+  const containerRef = useRef<HTMLDivElement | null>(null);
+
   useEffect(() => {
-    if (mobile) return; // only enable resizing on desktop
-    setColumnWidths(prev => {
-      const next = { ...prev } as Record<string, number>;
-      availableColumns.forEach(c => {
-        if (!next[c.key]) next[c.key] = defaultColumnWidths[c.key] || 120;
+    if (mobile) return;
+    const computeBalanced = () => {
+      const el = containerRef.current;
+      if (!el) return;
+      const total = Math.max(600, Math.round(el.getBoundingClientRect().width || 800));
+      // pick keys we want to distribute (exclude actions which is fixed)
+      const keys = availableColumns.map(c => c.key).filter(k => k !== 'actions');
+      const fixed = { actions: defaultColumnWidths.actions };
+      const fixedTotal = Object.values(fixed).reduce((s, v) => s + (v || 0), 0);
+      const remaining = Math.max(200, total - fixedTotal - 40);
+      const per = Math.max(80, Math.floor(remaining / Math.max(1, keys.length)));
+      const newWidths: Record<string, number> = {};
+      keys.forEach(k => newWidths[k] = per);
+      newWidths['actions'] = fixed.actions;
+      setColumnWidths(prev => {
+        if (Object.keys(prev).length > 0) return prev; // don't override user resize
+        return { ...prev, ...newWidths };
       });
-      return next;
-    });
-  }, [availableColumns, mobile]);
+    };
+
+    let to: any = null;
+    const onResize = () => {
+      if (to) clearTimeout(to);
+      to = setTimeout(() => computeBalanced(), 120);
+    };
+
+    computeBalanced();
+    window.addEventListener('resize', onResize);
+    return () => { window.removeEventListener('resize', onResize); if (to) clearTimeout(to); };
+  }, [mobile, availableColumns, defaultColumnWidths]);
 
   // Resizable TableHead wrapper used to add a draggable resizer to each header cell
   const ResizableTableHead: React.FC<{ colKey: string; className?: string; style?: React.CSSProperties; children?: React.ReactNode }>
@@ -294,7 +342,7 @@ const DeclarationsTable = ({
     return (
       <TableHead data-rtl={settings.language === 'ar'} className={className} style={{ ...style, ...widthStyle, position: 'relative' }}>
         {children}
-        {!mobile && (
+  {!(mobile || settings?.viewMode === 'mobile') && (
           <div
             role="separator"
             aria-orientation="vertical"
@@ -321,10 +369,17 @@ const DeclarationsTable = ({
     );
   };
 
+  // Helper to apply the computed column width to table body cells
+  const getCellStyle = (colKey: string) => {
+    const w = columnWidths[colKey];
+    const widthStyle = w ? { width: `${w}px`, maxWidth: `${w}px`, minWidth: `${w}px` } : {};
+    return { ...fontSizeStyle, ...widthStyle } as React.CSSProperties;
+  };
+
   return (
     <>
       {/* Sélecteur de zoom */}
-      <div className="flex items-center justify-end mb-2" style={{ position: 'relative' }}>
+  <div className="flex items-center justify-end mb-2" style={{ position: 'relative' }}>
         <label className="mr-2 text-xs text-muted-foreground">Zoom :</label>
         <select
           value={localFontSize}
@@ -338,6 +393,10 @@ const DeclarationsTable = ({
           <option value="70">70%</option>
           <option value="60">60%</option>
         </select>
+        {/* Pagination controls placed beside zoom */}
+        <div className="ml-3">
+          <PaginationControls page={page} perPage={perPage} onPageChange={setPage} onPerPageChange={(n) => { setPerPage(n); setPage(1); }} totalItems={declarations.length} />
+        </div>
 
         {/* 3-dots vertical menu to toggle visible columns */}
         <div ref={menuRef} className="ml-2 relative">
@@ -381,6 +440,7 @@ const DeclarationsTable = ({
           )}
         </div>
       </div>
+      <div ref={containerRef} className="w-full">
       <Card>
         <CardContent className="p-0">
           <Table data-rtl={settings.language === 'ar'}>
@@ -391,12 +451,17 @@ const DeclarationsTable = ({
                       <input
                         type="checkbox"
                         className={checkboxSize}
-                        checked={declarations.length > 0 && selectedDeclarationIds.length === declarations.length}
+                        // header checkbox applies to the current page only
+                        checked={pageRows.length > 0 && pageRows.every(p => selectedDeclarationIds.includes(p.id))}
                         onChange={e => {
                           if (e.target.checked) {
-                            setSelectedDeclarationIds(declarations.map(d => d.id));
+                            // add current page ids to selection (avoid duplicates)
+                            const idsToAdd = pageRows.map(d => d.id).filter(id => !selectedDeclarationIds.includes(id));
+                            setSelectedDeclarationIds([...selectedDeclarationIds, ...idsToAdd]);
                           } else {
-                            setSelectedDeclarationIds([]);
+                            // remove current page ids from selection
+                            const pageIds = new Set(pageRows.map(d => d.id));
+                            setSelectedDeclarationIds(selectedDeclarationIds.filter(id => !pageIds.has(id)));
                           }
                         }}
                       />
@@ -456,11 +521,12 @@ const DeclarationsTable = ({
                       )}
                     </>
                   )}
-                  <ResizableTableHead colKey="actions" className={`${getMinWidthForChars(12)} whitespace-nowrap ${cellPaddingClass}`} style={fontSizeStyle}>{t('declarations.actions')}</ResizableTableHead>
+                  <TableHead className={`${getMinWidthForChars(12)} whitespace-nowrap ${cellPaddingClass}`} style={fontSizeStyle}>{t('declarations.actions')}</TableHead>
                 </TableRow>
             </TableHeader>
             <TableBody data-rtl={settings.language === 'ar'}>
-              {declarations.map((declaration) => (
+              {/** Render only the rows for the current page */}
+              {pageRows.map((declaration) => (
                 <TableRow key={declaration.id} className={rowHeight}>
                   {setSelectedDeclarationIds && (
                     <TableCell data-rtl={settings.language === 'ar'} className={`text-center ${cellPaddingClass}`} style={fontSizeStyle}>
@@ -478,8 +544,8 @@ const DeclarationsTable = ({
                       />
                     </TableCell>
                   )}
-                  <TableCell data-rtl={settings.language === 'ar'} className={`font-medium cursor-pointer hover:underline whitespace-nowrap ${cellPaddingClass}`} style={fontSizeStyle} onClick={() => onConsultDeclaration && onConsultDeclaration(declaration)}>
-                    <div className={`whitespace-nowrap`} style={fontSizeStyle}>{declaration.number}</div>
+                  <TableCell data-rtl={settings.language === 'ar'} className={`font-medium cursor-pointer hover:underline whitespace-nowrap ${cellPaddingClass}`} style={getCellStyle('number')} onClick={() => onConsultDeclaration && onConsultDeclaration(declaration)}>
+                    <div className={`whitespace-nowrap`} style={getCellStyle('number')}>{declaration.number}</div>
                   </TableCell>
                   {!chauffeurView && (
                     <TableCell data-rtl={settings.language === 'ar'} className={`whitespace-nowrap ${getMinWidthForChars(12)} ${cellPaddingClass}`} style={fontSizeStyle}>
@@ -511,7 +577,7 @@ const DeclarationsTable = ({
                   {showRecouvrementColsForUser && showPrimeHeader && columnsVisible.primeDeRoute ? (
                     <TableCell data-rtl={settings.language === 'ar'} className={`text-center whitespace-nowrap ${cellPaddingClass}`} style={fontSizeStyle}>
                       {(chauffeurTypes && chauffeurTypes[declaration.chauffeurId] === 'interne' && declaration.primeDeRoute) || (!chauffeurTypes && declaration.primeDeRoute) ? (
-                        <span className={`${getMinWidthForChars(6)} inline-block font-bold`} style={{ ...fontSizeStyle, color: '#D4AF37' /* gold-ish */ }}>{declaration.primeDeRoute.toFixed(2)} DZD</span>
+                        <span className={`${getMinWidthForChars(6)} inline-block font-bold text-center`} style={{ ...getCellStyle('primeDeRoute'), color: '#D4AF37' /* gold-ish */ }}>{declaration.primeDeRoute.toFixed(2)} DZD</span>
                       ) : '-' }
                     </TableCell>
                   ) : null}
@@ -589,8 +655,10 @@ const DeclarationsTable = ({
                     );
                   })()}
                   {!chauffeurView && showStatusColumn && columnsVisible.status && (
-                    <TableCell data-rtl={settings.language === 'ar'} className={`whitespace-nowrap text-center ${cellPaddingClass}`} style={fontSizeStyle}>
-                      {renderStatusBadge ? renderStatusBadge(declaration.status, declaration) : getStatusBadge(declaration.status, declaration)}
+                    <TableCell data-rtl={settings.language === 'ar'} className={`whitespace-nowrap text-center ${cellPaddingClass}`} style={getCellStyle('status')}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        {renderStatusBadge ? renderStatusBadge(declaration.status, declaration) : getStatusBadge(declaration.status, declaration)}
+                      </div>
                     </TableCell>
                   )}
                   <TableCell className={`whitespace-nowrap ${cellPaddingClass}`} style={fontSizeStyle}>
@@ -749,8 +817,8 @@ const DeclarationsTable = ({
                         <>
                           <Button
                             size="sm"
-                            variant="outline"
-                            className={`flex items-center justify-center rounded-md border border-border text-green-600 hover:text-green-700`}
+                            variant="ghost"
+                            className={`flex items-center justify-center rounded-md text-green-600 hover:text-green-700`}
                             style={{ width: computedRowPx, height: computedRowPx }}
                             onClick={() => onValidateDeclaration(declaration.id)}
                           >
@@ -758,8 +826,8 @@ const DeclarationsTable = ({
                           </Button>
                           <Button
                             size="sm"
-                            variant="outline"
-                            className={`flex items-center justify-center rounded-md border border-border text-red-600 hover:text-red-700`}
+                            variant="ghost"
+                            className={`flex items-center justify-center rounded-md text-red-600 hover:text-red-700`}
                             style={{ width: computedRowPx, height: computedRowPx }}
                             onClick={() => onRejectDeclaration(declaration.id)}
                           >
@@ -770,11 +838,12 @@ const DeclarationsTable = ({
                     </div>
                   </TableCell>
                 </TableRow>
-              ))}
+          ))}
             </TableBody>
           </Table>
         </CardContent>
       </Card>
+      </div>
     </>
   );
 };

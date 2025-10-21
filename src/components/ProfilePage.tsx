@@ -10,7 +10,7 @@ import { Label } from './ui/label';
 import { Badge } from './ui/badge';
 import useTableZoom from '../hooks/useTableZoom';
 import { useAuth } from '../contexts/AuthContext';
-import { ArrowLeft, User, Phone, Car, Shield } from 'lucide-react';
+import { ArrowLeft, User, Phone, Car, Shield, Briefcase } from 'lucide-react';
 import { success, error, info } from './ui/use-toast';
 
 interface ProfilePageProps {
@@ -38,6 +38,21 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
   }
   const { badgeClass, badgeStyle } = useTableZoom();
   const { t } = useTranslation();
+
+  const getRoleBadgeColor = (role: string) => {
+    switch (role) {
+      case 'admin':
+        return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-300 border-red-200 dark:border-red-800';
+      case 'planificateur':
+        return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300 border-blue-200 dark:border-blue-800';
+      case 'caissier':
+        return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300 border-green-200 dark:border-green-800';
+      case 'chauffeur':
+        return 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-300 border-purple-200 dark:border-purple-800';
+      default:
+        return 'bg-muted text-muted-foreground border-border';
+    }
+  };
 
   // Gestion absence de contexte ou d'utilisateur
   if (!auth || !user) {
@@ -79,57 +94,82 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
       </div>
 
 
-      <Card className="p-0">
-        <CardHeader className="items-center text-center pb-2">
-          <User className="h-10 w-10 mx-auto mb-2 text-primary" />
-          <CardTitle className="text-lg">{user.firstName} {user.lastName}</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3 px-4 pb-4">
-          <div>
-            <Label className="text-xs font-medium text-gray-500">{t('forms.firstName') || 'Prénom'}</Label>
-            <p className="text-base">{user.firstName}</p>
-          </div>
-          <div>
-            <Label className="text-xs font-medium text-gray-500">{t('forms.name') || 'Nom'}</Label>
-            <p className="text-base">{user.lastName}</p>
-          </div>
-          <div>
-            <Label className="text-xs font-medium text-gray-500">{t('auth.username') || 'Nom d\'utilisateur'}</Label>
-            <p className="text-base">{user.username}</p>
-          </div>
-          <div>
-            <Label className="text-xs font-medium text-gray-500">{t('admin.role') || 'Rôle'}</Label>
-            <Badge size="md" variant="outline" style={{ ...badgeStyle }} className={`${badgeClass} ml-2`}>
-              {t(`roles.${user.role}`) || user.role}
-            </Badge>
-          </div>
-          <div>
-            <Label className="text-xs font-medium text-gray-500">{t('forms.mobile') || 'Téléphone'}</Label>
-            <p className="text-base">{user.phone || <span className="text-gray-400">{t('profile.notProvided') || 'Non renseigné'}</span>}</p>
-          </div>
-          <div>
-            <Label className="text-xs font-medium text-gray-500">{t('profile.email') || 'Email'}</Label>
-            <p className="text-base">{user.email || <span className="text-gray-400">{t('profile.notProvided') || 'Non renseigné'}</span>}</p>
-          </div>
-          {user.role !== 'planificateur' && (
+      <div className="space-y-4">
+        <Card>
+          <CardHeader className="items-center text-center pb-2">
+            <User className="h-10 w-10 mx-auto mb-2 text-primary" />
+            <CardTitle className="text-lg">{user.firstName} {user.lastName}</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 px-4 pb-4">
             <div>
-              <Label className="text-xs font-medium text-gray-500">Type de véhicule</Label>
-              <p className="text-base flex items-center gap-2">
-                <Car className="h-4 w-4" />
-                {user.vehicleType || <span className="text-gray-400">Non renseigné</span>}
-              </p>
+              <Label className="text-xs font-medium text-gray-500">{t('forms.firstName') || 'Prénom'}</Label>
+              <p className="text-base">{user.firstName}</p>
             </div>
-          )}
-          {user.role !== 'planificateur' && (
             <div>
-              <Label className="text-xs font-medium text-gray-500">Type d'employé</Label>
-                <Badge size="md" variant={user.employeeType === 'interne' ? 'default' : 'secondary'} style={{ ...badgeStyle }} className={`${badgeClass} ml-2`}>
-                {user.employeeType === 'interne' ? t('chauffeurs.employeeTypeShort.interne') : user.employeeType === 'externe' ? t('chauffeurs.employeeTypeShort.externe') : 'Non renseigné'}
-              </Badge>
+              <Label className="text-xs font-medium text-gray-500">{t('forms.name') || 'Nom'}</Label>
+              <p className="text-base">{user.lastName}</p>
             </div>
-          )}
-        </CardContent>
-      </Card>
+            <div>
+              <Label className="text-xs font-medium text-gray-500">{t('auth.username') || 'Nom d\'utilisateur'}</Label>
+              <p className="text-base">{user.username}</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Briefcase className="h-5 w-5" />
+              {t('profile.professionalInfo') || 'Information Professionnelle'}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 px-4 pb-4">
+            <div>
+              <Label className="text-xs font-medium text-gray-500">{t('forms.mobile') || 'Téléphone'}</Label>
+              <p className="text-base">{user.phone || <span className="text-gray-400">{t('profile.notProvided') || 'Non renseigné'}</span>}</p>
+            </div>
+            {user.email && (
+              <div>
+                <Label className="text-xs font-medium text-gray-500">Email</Label>
+                <p className="text-base">{user.email}</p>
+              </div>
+            )}
+            {user.role === 'chauffeur' && (
+              <div>
+                <Label className="text-xs font-medium text-gray-500">Type de véhicule</Label>
+                <p className="text-base flex items-center gap-2">
+                  <Car className="h-4 w-4" />
+                  {user.vehicleType || <span className="text-gray-400">Non renseigné</span>}
+                </p>
+              </div>
+            )}
+            {user.role !== 'planificateur' && (
+              <div>
+                <Label className="text-xs font-medium text-gray-500">Type d'employé</Label>
+                <div className="mt-1">
+                  <Badge size="md" variant={user.employeeType === 'interne' ? 'default' : 'secondary'} style={{ ...badgeStyle }} className={`${badgeClass}`}>
+                    {user.employeeType === 'interne' ? t('chauffeurs.employeeTypeShort.interne') : user.employeeType === 'externe' ? t('chauffeurs.employeeTypeShort.externe') : 'Non renseigné'}
+                  </Badge>
+                </div>
+              </div>
+            )}
+            <div>
+              <Label className="text-xs font-medium text-gray-500">{t('admin.role') || 'Rôle'}</Label>
+              <div className="mt-1">
+                <Badge size="md" style={{ ...badgeStyle }} className={`${badgeClass} border ${getRoleBadgeColor(user.role)}`}>
+                  {t(`roles.${user.role}`) || user.role}
+                </Badge>
+              </div>
+            </div>
+            {user.role === 'caissier' && (
+              <div>
+                <Label className="text-xs font-medium text-gray-500">Société</Label>
+                <p className="text-base">{user.companyName || <span className="text-gray-400">Société non renseignée</span>}</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
 
       <Card>
         <CardHeader className="pb-2">
@@ -230,23 +270,18 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
               <Label className="text-sm font-medium text-gray-500">{t('auth.username') || "Nom d'utilisateur"}</Label>
               <p className="text-lg">{user.username}</p>
             </div>
-            <div>
-              <Label className="text-sm font-medium text-gray-500">{t('admin.role') || 'Rôle'}</Label>
-              <Badge size="md" variant="outline" style={{ ...badgeStyle }} className={`${badgeClass} mt-1`}>
-                {t(`roles.${user.role}`) || user.role}
-              </Badge>
-            </div>
+            {/* Role moved to Professional Information card */}
           </CardContent>
         </Card>
 
         {/* Informations de contact et véhicule */}
         <Card>
           <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-              <Phone className="h-5 w-5" />
-              {t('profile.contactAndVehicle') || 'Contact & Véhicule'}
-            </CardTitle>
-          </CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                <Briefcase className="h-5 w-5" />
+                {t('profile.professionalInfo') || 'Information Professionnelle'}
+              </CardTitle>
+            </CardHeader>
           <CardContent className="space-y-4">
             {user.phone && (
               <div>
@@ -260,21 +295,34 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
                 <p className="text-lg">{user.email}</p>
               </div>
             )}
-            {user.role !== 'planificateur' && user.vehicleType && (
+            {user.role === 'chauffeur' && (
               <div>
                 <Label className="text-sm font-medium text-gray-500">Type de véhicule</Label>
                 <p className="text-lg flex items-center gap-2">
                   <Car className="h-4 w-4" />
-                  {user.vehicleType}
+                  {user.vehicleType || <span className="text-gray-400">Non renseigné</span>}
                 </p>
               </div>
             )}
             {user.role !== 'planificateur' && user.employeeType && (
               <div>
                 <Label className="text-sm font-medium text-gray-500">Type d'employé</Label>
-                <Badge size="md" variant={user.employeeType === 'interne' ? 'default' : 'secondary'} style={{ ...badgeStyle }} className={badgeClass}>
-                  {user.employeeType === 'interne' ? t('chauffeurs.employeeTypeShort.interne') : t('chauffeurs.employeeTypeShort.externe')}
-                </Badge>
+                <div className="mt-1">
+                  <Badge size="md" variant={user.employeeType === 'interne' ? 'default' : 'secondary'} style={{ ...badgeStyle }} className={badgeClass}>
+                    {user.employeeType === 'interne' ? t('chauffeurs.employeeTypeShort.interne') : t('chauffeurs.employeeTypeShort.externe')}
+                  </Badge>
+                </div>
+              </div>
+            )}
+            {/* Role badge shown here for professional info */}
+            {user.role && (
+              <div>
+                <Label className="text-sm font-medium text-gray-500">{t('admin.role') || 'Rôle'}</Label>
+                <div className="mt-1">
+                  <Badge size="md" style={{ ...badgeStyle }} className={`${badgeClass} border ${getRoleBadgeColor(user.role)}`}>
+                    {t(`roles.${user.role}`) || user.role}
+                  </Badge>
+                </div>
               </div>
             )}
             {/* Show company for caissier role beneath employee type */}

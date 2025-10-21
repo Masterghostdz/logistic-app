@@ -1,3 +1,8 @@
+import { db } from './firebaseClient';
+import { collection, addDoc, getDocs, query, where, updateDoc, doc, getDoc } from 'firebase/firestore';
+
+const notificationsCollection = collection(db, 'notifications');
+
 // Récupère les notifications pour le planificateur : uniquement les déclarations en panne
 export const getNotificationsForPlanificateur = async (planificateurId) => {
   // Return notifications explicitly targeted to planificateurs
@@ -5,10 +10,6 @@ export const getNotificationsForPlanificateur = async (planificateurId) => {
   const snapshot = await getDocs(q);
   return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 };
-
-import { db } from './firebaseClient';
-import { collection, addDoc, getDocs, query, where, updateDoc, doc, getDoc } from 'firebase/firestore';
-const notificationsCollection = collection(db, 'notifications');
 
 export const addNotification = async (notification) => {
   // Vérifier s'il existe déjà une notification pour cette déclaration et ce statut
