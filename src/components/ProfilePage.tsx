@@ -39,6 +39,17 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
   const { badgeClass, badgeStyle } = useTableZoom();
   const { t } = useTranslation();
 
+  // Helper to render a field or a muted dash when empty
+  const renderField = (val?: any): React.ReactNode => {
+    try {
+      if (val === 0) return 0 as any; // allow zero
+      if (val && String(val).toString().trim() !== '') return val;
+      return <span className="text-muted-foreground">-</span>;
+    } catch (e) {
+      return <span className="text-muted-foreground">-</span>;
+    }
+  };
+
   const getRoleBadgeColor = (role: string) => {
     switch (role) {
       case 'admin':
@@ -96,22 +107,24 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
 
       <div className="space-y-4">
         <Card>
-          <CardHeader className="items-center text-center pb-2">
-            <User className="h-10 w-10 mx-auto mb-2 text-primary" />
-            <CardTitle className="text-lg">{user.firstName} {user.lastName}</CardTitle>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <User className="h-5 w-5" />
+              {t('profile.personalInfo') || 'Informations personnelles'}
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 px-4 pb-4">
             <div>
               <Label className="text-xs font-medium text-gray-500">{t('forms.firstName') || 'Prénom'}</Label>
-              <p className="text-base">{user.firstName}</p>
+              <p className="text-base">{renderField(user.firstName)}</p>
             </div>
             <div>
               <Label className="text-xs font-medium text-gray-500">{t('forms.name') || 'Nom'}</Label>
-              <p className="text-base">{user.lastName}</p>
+              <p className="text-base">{renderField(user.lastName)}</p>
             </div>
             <div>
               <Label className="text-xs font-medium text-gray-500">{t('auth.username') || 'Nom d\'utilisateur'}</Label>
-              <p className="text-base">{user.username}</p>
+              <p className="text-base">{renderField(user.username)}</p>
             </div>
           </CardContent>
         </Card>
@@ -120,26 +133,24 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Briefcase className="h-5 w-5" />
-              {t('profile.professionalInfo') || 'Information Professionnelle'}
+              {t('profile.professionalInfo') || 'Informations Professionnelles'}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 px-4 pb-4">
             <div>
               <Label className="text-xs font-medium text-gray-500">{t('forms.mobile') || 'Téléphone'}</Label>
-              <p className="text-base">{user.phone || <span className="text-gray-400">{t('profile.notProvided') || 'Non renseigné'}</span>}</p>
+              <p className="text-base">{renderField(user.phone)}</p>
             </div>
-            {user.email && (
-              <div>
-                <Label className="text-xs font-medium text-gray-500">Email</Label>
-                <p className="text-base">{user.email}</p>
-              </div>
-            )}
+            <div>
+              <Label className="text-xs font-medium text-gray-500">Email</Label>
+              <p className="text-base">{renderField(user.email)}</p>
+            </div>
             {user.role === 'chauffeur' && (
               <div>
                 <Label className="text-xs font-medium text-gray-500">Type de véhicule</Label>
                 <p className="text-base flex items-center gap-2">
                   <Car className="h-4 w-4" />
-                  {user.vehicleType || <span className="text-gray-400">Non renseigné</span>}
+                  {renderField(user.vehicleType)}
                 </p>
               </div>
             )}
@@ -147,24 +158,33 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
               <div>
                 <Label className="text-xs font-medium text-gray-500">Type d'employé</Label>
                 <div className="mt-1">
-                  <Badge size="md" variant={user.employeeType === 'interne' ? 'default' : 'secondary'} style={{ ...badgeStyle }} className={`${badgeClass}`}>
-                    {user.employeeType === 'interne' ? t('chauffeurs.employeeTypeShort.interne') : user.employeeType === 'externe' ? t('chauffeurs.employeeTypeShort.externe') : 'Non renseigné'}
-                  </Badge>
+                  {user.employeeType ? (
+                    <Badge size="md" variant={user.employeeType === 'interne' ? 'default' : 'secondary'} style={{ ...badgeStyle }} className={`${badgeClass}`}>
+                      {user.employeeType === 'interne' ? t('chauffeurs.employeeTypeShort.interne') : user.employeeType === 'externe' ? t('chauffeurs.employeeTypeShort.externe') : '-'}
+                    </Badge>
+                  ) : (
+                    <div className="text-base">{renderField(user.employeeType)}</div>
+                  )}
                 </div>
               </div>
             )}
             <div>
               <Label className="text-xs font-medium text-gray-500">{t('admin.role') || 'Rôle'}</Label>
               <div className="mt-1">
-                <Badge size="md" style={{ ...badgeStyle }} className={`${badgeClass} border ${getRoleBadgeColor(user.role)}`}>
-                  {t(`roles.${user.role}`) || user.role}
-                </Badge>
+                {user.role ? (
+                  <Badge size="md" style={{ ...badgeStyle }} className={`${badgeClass} border ${getRoleBadgeColor(user.role)}`}>
+                    {t(`roles.${user.role}`) || user.role}
+                  </Badge>
+                ) : (
+                  <div className="text-base">{renderField(user.role)}</div>
+                )}
               </div>
             </div>
-            {user.role === 'caissier' && (
+            {/* Show company when employee is externe OR when role is caissier */}
+            {(user.employeeType === 'externe' && user.role !== 'chauffeur') && (
               <div>
                 <Label className="text-xs font-medium text-gray-500">Société</Label>
-                <p className="text-base">{user.companyName || <span className="text-gray-400">Société non renseignée</span>}</p>
+                <p className="text-base">{renderField(user.companyName)}</p>
               </div>
             )}
           </CardContent>
@@ -174,14 +194,18 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2 text-base">
-            <Shield className="h-5 w-5" />
-            {t('profile.securityTitle') || 'Sécurité'}
+            <User className="h-5 w-5" />
+            {t('profile.accountTitle') || 'Compte'}
           </CardTitle>
           <CardDescription className="text-xs">
             {t('profile.securityDescription') || 'Modifiez votre mot de passe pour sécuriser votre compte'}
           </CardDescription>
         </CardHeader>
         <CardContent className="px-4 pb-4">
+          <div className="mb-3">
+            <Label className="text-xs font-medium text-gray-500">{t('auth.username') || "Nom d'utilisateur"}</Label>
+            <div className="text-base">{renderField(user.username)}</div>
+          </div>
           {!isChangingPassword ? (
             <Button className="w-full" onClick={() => setIsChangingPassword(true)}>
               {t('profile.changePassword') || 'Changer le mot de passe'}
@@ -260,15 +284,15 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
           <CardContent className="space-y-4">
             <div>
               <Label className="text-sm font-medium text-gray-500">{t('forms.firstName') || 'Prénom'}</Label>
-              <p className="text-lg">{user.firstName}</p>
+              <p className="text-lg">{renderField(user.firstName)}</p>
             </div>
             <div>
               <Label className="text-sm font-medium text-gray-500">{t('forms.name') || 'Nom'}</Label>
-              <p className="text-lg">{user.lastName}</p>
+              <p className="text-lg">{renderField(user.lastName)}</p>
             </div>
             <div>
               <Label className="text-sm font-medium text-gray-500">{t('auth.username') || "Nom d'utilisateur"}</Label>
-              <p className="text-lg">{user.username}</p>
+              <p className="text-lg">{renderField(user.username)}</p>
             </div>
             {/* Role moved to Professional Information card */}
           </CardContent>
@@ -279,32 +303,28 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
           <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                 <Briefcase className="h-5 w-5" />
-                {t('profile.professionalInfo') || 'Information Professionnelle'}
+                {t('profile.professionalInfo') || 'Informations Professionnelles'}
               </CardTitle>
             </CardHeader>
           <CardContent className="space-y-4">
-            {user.phone && (
-              <div>
-                <Label className="text-sm font-medium text-gray-500">{t('forms.mobile') || 'Téléphone'}</Label>
-                <p className="text-lg">{user.phone}</p>
-              </div>
-            )}
-            {user.email && (
-              <div>
-                <Label className="text-sm font-medium text-gray-500">Email</Label>
-                <p className="text-lg">{user.email}</p>
-              </div>
-            )}
+            <div>
+              <Label className="text-sm font-medium text-gray-500">{t('forms.mobile') || 'Téléphone'}</Label>
+              <p className="text-lg">{renderField(user.phone)}</p>
+            </div>
+            <div>
+              <Label className="text-sm font-medium text-gray-500">Email</Label>
+              <p className="text-lg">{renderField(user.email)}</p>
+            </div>
             {user.role === 'chauffeur' && (
               <div>
                 <Label className="text-sm font-medium text-gray-500">Type de véhicule</Label>
                 <p className="text-lg flex items-center gap-2">
                   <Car className="h-4 w-4" />
-                  {user.vehicleType || <span className="text-gray-400">Non renseigné</span>}
+                  {renderField(user.vehicleType)}
                 </p>
               </div>
             )}
-            {user.role !== 'planificateur' && user.employeeType && (
+            {user.role !== 'planificateur' && (
               <div>
                 <Label className="text-sm font-medium text-gray-500">Type d'employé</Label>
                 <div className="mt-1">
@@ -326,10 +346,10 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
               </div>
             )}
             {/* Show company for caissier role beneath employee type */}
-            {user.role === 'caissier' && (
+            {(user.employeeType === 'externe' && user.role !== 'chauffeur') && (
               <div>
                 <Label className="text-sm font-medium text-gray-500">Société</Label>
-                <div className="text-lg">{user.companyName || <span className="text-gray-400">Société non renseignée</span>}</div>
+                <div className="text-lg">{renderField(user.companyName)}</div>
               </div>
             )}
           </CardContent>
@@ -340,14 +360,15 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Shield className="h-5 w-5" />
-            {t('profile.securityTitle') || 'Sécurité'}
+            <User className="h-5 w-5" />
+            {t('profile.accountTitle') || 'Compte'}
           </CardTitle>
-          <CardDescription>
-            {t('profile.securityDescription') || 'Modifiez votre mot de passe pour sécuriser votre compte'}
-          </CardDescription>
         </CardHeader>
         <CardContent>
+          <div className="mb-4">
+            <Label className="text-sm font-medium text-gray-500">{t('auth.username') || "Nom d'utilisateur"}</Label>
+            <p className="text-lg">{renderField(user.username)}</p>
+          </div>
           {!isChangingPassword ? (
             <Button onClick={() => setIsChangingPassword(true)}>
               {t('profile.changePassword') || 'Changer le mot de passe'}

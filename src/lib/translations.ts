@@ -597,7 +597,7 @@ export const translations = {
       title: "Mon Profil",
       personalInfo: "Informations personnelles",
       contactAndVehicle: "Contact & Véhicule",
-      professionalInfo: "Information Professionnelle",
+      professionalInfo: "Informations professionnelles",
       notProvided: "Non renseigné",
       userNotFound: "Utilisateur non trouvé"
       ,
